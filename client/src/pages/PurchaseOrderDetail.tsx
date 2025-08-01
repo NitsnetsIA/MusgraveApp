@@ -10,6 +10,7 @@ export default function PurchaseOrderDetail() {
   const { getPurchaseOrderById, getStoreByCode } = useDatabase();
   const [order, setOrder] = useState<any>(null);
   const [store, setStore] = useState<any>(null);
+  const [processedOrder, setProcessedOrder] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,19 @@ export default function PurchaseOrderDetail() {
       if (orderData?.store_code) {
         const storeData = await getStoreByCode(orderData.store_code);
         setStore(storeData);
+      }
+
+      // If status is completed, try to find the associated processed order
+      if (orderData?.status === 'completed') {
+        try {
+          const { query } = await import('../lib/database');
+          const processedOrders = query(`SELECT * FROM orders WHERE purchase_order_id = '${orderData.purchase_order_id}'`);
+          if (processedOrders.length > 0) {
+            setProcessedOrder(processedOrders[0]);
+          }
+        } catch (error) {
+          console.error('Error finding processed order:', error);
+        }
       }
       
       setIsLoading(false);
@@ -118,9 +132,14 @@ export default function PurchaseOrderDetail() {
             <span className={`font-medium ${getStatusColor(order.status)}`}>
               {getStatusText(order.status)}
             </span>
-            <span className="text-blue-600 underline">
-              Pedido asociado: 323232
-            </span>
+            {order.status === 'completed' && processedOrder && (
+              <button 
+                onClick={() => setLocation(`/orders/${processedOrder.order_id}`)}
+                className="text-blue-600 underline"
+              >
+                Pedido asociado: {processedOrder.order_id.substring(0, 6)}
+              </button>
+            )}
           </div>
         </div>
 

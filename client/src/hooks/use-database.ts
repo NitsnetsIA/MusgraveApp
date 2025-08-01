@@ -170,23 +170,68 @@ export function useDatabase() {
 
       const finalTotal = subtotal + taxTotal;
 
-      // Insert purchase order
+      // Simulate workflow - randomly assign status
+      const statuses = ['uncommunicated', 'processing', 'completed'];
+      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+
+      // Insert purchase order with random status
       execute(`
-        INSERT INTO purchase_orders (purchase_order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [purchaseOrderId, userEmail, storeId, now, 'uncommunicated', subtotal, taxTotal, finalTotal]);
+        INSERT INTO purchase_orders (purchase_order_id, user_email, store_code, created_at, status, subtotal, tax_total, final_total)
+        VALUES ('${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', '${randomStatus}', ${subtotal}, ${taxTotal}, ${finalTotal})
+      `);
 
       // Insert purchase order items
       for (const item of cartItems) {
         execute(`
           INSERT INTO purchase_order_items (purchase_order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
-          VALUES (?, ?, ?, ?, ?)
-        `, [purchaseOrderId, item.ean, item.quantity, item.base_price, item.tax_rate]);
+          VALUES ('${purchaseOrderId}', '${item.ean}', ${item.quantity}, ${item.base_price}, ${item.tax_rate})
+        `);
+      }
+
+      // If status is "completed", create a corresponding processed order
+      if (randomStatus === 'completed') {
+        await createProcessedOrder(purchaseOrderId, userEmail, storeId, cartItems, subtotal, taxTotal, finalTotal);
       }
 
       return purchaseOrderId;
     } catch (error) {
       console.error('Error creating purchase order:', error);
+      throw error;
+    }
+  };
+
+  // Create processed order when purchase order is completed
+  const createProcessedOrder = async (
+    purchaseOrderId: string, 
+    userEmail: string, 
+    storeId: string, 
+    cartItems: CartItem[], 
+    subtotal: number, 
+    taxTotal: number, 
+    finalTotal: number
+  ): Promise<string> => {
+    try {
+      const orderId = generateUUID();
+      const now = new Date().toISOString();
+
+      // Insert processed order with same data as purchase order
+      execute(`
+        INSERT INTO orders (order_id, user_email, store_code, created_at, status, subtotal, tax_total, final_total, purchase_order_id)
+        VALUES ('${orderId}', '${userEmail}', '${storeId}', '${now}', 'pending', ${subtotal}, ${taxTotal}, ${finalTotal}, '${purchaseOrderId}')
+      `);
+
+      // Insert order items with same data as purchase order items
+      for (const item of cartItems) {
+        execute(`
+          INSERT INTO order_items (order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
+          VALUES ('${orderId}', '${item.ean}', ${item.quantity}, ${item.base_price}, ${item.tax_rate})
+        `);
+      }
+
+      console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}`);
+      return orderId;
+    } catch (error) {
+      console.error('Error creating processed order:', error);
       throw error;
     }
   };
@@ -246,6 +291,7 @@ export function useDatabase() {
     getPurchaseOrders,
     getPurchaseOrderById,
     createPurchaseOrder,
+    createProcessedOrder,
     getOrders,
     getOrderById,
     getTaxRate,
