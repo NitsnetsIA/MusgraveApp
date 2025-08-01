@@ -48,15 +48,28 @@ export function useDatabase() {
     try {
       console.log('Authenticating user:', { email, password });
       
-      // Get user from database
-      const results = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
-      console.log('Query results:', results);
+      // Debug: Check if database has any users at all
+      const allUsersCount = query('SELECT COUNT(*) as count FROM users');
+      console.log('Total users in database:', allUsersCount);
       
-      const user = results[0];
+      // Debug: Get all users to see what's actually stored
+      const allUsers = query('SELECT email, name, is_active FROM users LIMIT 3');
+      console.log('Sample users in database:', allUsers);
+      
+      // Debug: Try different query variations
+      const directQuery = query(`SELECT * FROM users WHERE email = '${email}' AND is_active = 1`);
+      console.log('Direct query result:', directQuery);
+      
+      const paramQuery = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
+      console.log('Parameterized query result:', paramQuery);
+      
+      const user = paramQuery[0] || directQuery[0];
       if (!user) {
-        console.log('User not found');
+        console.log('User not found in database');
         return null;
       }
+      
+      console.log('Found user:', user);
       
       // Import password verification function
       const { verifyPassword } = await import('../lib/auth');
