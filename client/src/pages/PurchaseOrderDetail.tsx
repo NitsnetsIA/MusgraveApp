@@ -7,8 +7,9 @@ import { useDatabase } from '@/hooks/use-database';
 export default function PurchaseOrderDetail() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute('/purchase-orders/:id');
-  const { getPurchaseOrderById } = useDatabase();
+  const { getPurchaseOrderById, getStoreByCode } = useDatabase();
   const [order, setOrder] = useState<any>(null);
+  const [store, setStore] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,6 +19,13 @@ export default function PurchaseOrderDetail() {
       setIsLoading(true);
       const orderData = await getPurchaseOrderById(params.id);
       setOrder(orderData);
+      
+      // Load store data if order has store_code
+      if (orderData?.store_code) {
+        const storeData = await getStoreByCode(orderData.store_code);
+        setStore(storeData);
+      }
+      
       setIsLoading(false);
     }
 
@@ -103,7 +111,8 @@ export default function PurchaseOrderDetail() {
             Orden de compra: {order.purchase_order_id?.substring(0, 7)}
           </h1>
           <div className="text-sm text-gray-600 mb-2">
-            Centro de entrega Musgrave: 122 - Dolores (Alicante)
+            <div>Tienda: {store?.name || store?.code || 'Cargando...'}</div>
+            <div>Centro de entrega: {store?.delivery_center_name || 'M-005 - Centro de entrega Alicante-Elche'}</div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`font-medium ${getStatusColor(order.status)}`}>

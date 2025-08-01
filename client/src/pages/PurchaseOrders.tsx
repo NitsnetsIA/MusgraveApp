@@ -15,7 +15,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(30);
+  const [itemsPerPage] = useState(10);
   
   // Calculate pagination
   const totalPages = Math.ceil(orders.length / itemsPerPage);
@@ -255,7 +255,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
                 }}
                 className="ml-4 border rounded px-2 py-1 text-sm"
               >
-                <option value={30}>30</option>
+                <option value={10}>10</option>
               </select>
             </div>
           </div>
