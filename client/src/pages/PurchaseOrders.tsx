@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronLeft, ClipboardList, Eye, Info } from 'lucide-react';
+import { ChevronLeft, ClipboardList, Eye, Info, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDatabase } from '@/hooks/use-database';
 
 interface PurchaseOrdersProps {
@@ -13,6 +14,14 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
   const { getPurchaseOrders } = useDatabase();
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(30);
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentOrders = orders.slice(startIndex, endIndex);
 
   useEffect(() => {
     async function loadOrders() {
@@ -21,6 +30,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
       setIsLoading(true);
       const orderList = await getPurchaseOrders(user.email);
       setOrders(orderList);
+      setCurrentPage(1); // Reset to first page when new data loads
       setIsLoading(false);
     }
 
@@ -98,7 +108,25 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
               <tr>
                 <th className="text-left p-3 font-medium">fecha</th>
                 <th className="text-left p-3 font-medium">nº orden</th>
-                <th className="text-left p-3 font-medium">estado</th>
+                <th className="text-left p-3 font-medium">
+                  <div className="flex items-center gap-1">
+                    estado
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <div className="text-sm space-y-1">
+                            <div><strong>Sin comunicar:</strong> La orden se comunicará a Musgrave cuando tenga conexión a internet</div>
+                            <div><strong>Procesando:</strong> La orden se está procesando en las instalaciones de Musgrave</div>
+                            <div><strong>Completado:</strong> La orden ha sido aceptada, puede ver el pedido asociado</div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </th>
                 <th className="text-left p-3 font-medium">importe</th>
                 <th className="text-left p-3 font-medium"></th>
               </tr>
@@ -117,7 +145,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
+                currentOrders.map((order) => (
                   <tr key={order.purchase_order_id} className="border-b">
                     <td className="p-3">
                       {new Date(order.created_at).toLocaleDateString('es-ES')}
@@ -132,10 +160,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
                       </div>
                     </td>
                     <td className="p-3">
-                      <div className="flex items-center">
-                        <Info className="h-4 w-4 text-gray-400 mr-1" />
-                        {order.final_total.toFixed(2)}€
-                      </div>
+                      {order.final_total.toFixed(2).replace('.', ',')}€
                     </td>
                     <td className="p-3">
                       <Button
@@ -153,6 +178,95 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {orders.length > itemsPerPage && (
+          <div className="p-4 border-t flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Mostrando {startIndex + 1}-{Math.min(endIndex, orders.length)} de {orders.length} órdenes
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="text-sm"
+              >
+                &lt;&lt; primera
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="text-sm"
+              >
+                &lt; anterior
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className="w-8 h-8 p-0 text-sm"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="text-sm"
+              >
+                siguiente &gt;
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="text-sm"
+              >
+                última &gt;&gt;
+              </Button>
+
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  // For now, we'll keep it at 30 as requested
+                  // This is for future functionality
+                }}
+                className="ml-4 border rounded px-2 py-1 text-sm"
+              >
+                <option value={30}>30</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
