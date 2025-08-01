@@ -172,12 +172,16 @@ function Router() {
       setLastOrderId(orderId);
       clearCart();
       setCartOpen(false);
-      setLocation('/order-success');
       
+      // Show success popup with order details
       toast({
-        title: "Pedido creado",
-        description: "Su orden de compra ha sido creada exitosamente",
+        title: "✅ Orden de compra creada",
+        description: `Orden ${orderId.substring(0, 7)} creada exitosamente. La orden se comunicará a Musgrave cuando tenga conexión a internet.`,
+        duration: 5000,
       });
+      
+      // Navigate to purchase orders list to see the new order
+      setLocation('/purchase-orders');
     } catch (error) {
       console.error('Checkout error:', error);
       toast({

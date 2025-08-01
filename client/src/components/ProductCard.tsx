@@ -62,6 +62,11 @@ export default function ProductCard({
       
       <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.title}</h3>
       
+      <div className="text-xs text-gray-500 mb-2">
+        <div>EAN: {product.ean}</div>
+        <div>REF: {product.ean.substring(7)}</div>
+      </div>
+      
       <div className="flex items-center justify-between mb-3">
         <div className="text-lg font-bold text-musgrave-600">
           {product.base_price.toFixed(2)} €
