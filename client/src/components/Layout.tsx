@@ -71,6 +71,7 @@ export default function Layout({
         onUpdateQuantity={updateCartItem}
         onRemoveItem={removeFromCart}
         onCheckout={onCheckout}
+        store={store}
       />
 
       <main>{children}</main>

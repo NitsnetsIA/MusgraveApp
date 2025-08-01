@@ -1,4 +1,5 @@
 import { User, ShoppingCart } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 interface HeaderProps {
   user?: any;
@@ -17,6 +18,7 @@ export default function Header({
   onMenuToggle,
   onCartToggle
 }: HeaderProps) {
+  const [, setLocation] = useLocation();
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 py-3">
@@ -28,9 +30,12 @@ export default function Header({
             <div className="text-sm font-medium text-gray-900">{user?.name}</div>
             <div className="text-xs text-gray-500">{store?.name || store?.code}</div>
           </div>
-          <div className="bg-musgrave-500 text-white text-lg font-bold px-2 py-1 rounded transform -rotate-12">
+          <button 
+            onClick={() => setLocation('/')}
+            className="bg-musgrave-500 text-white text-lg font-bold px-2 py-1 rounded transform -rotate-12 hover:bg-musgrave-600 transition-colors"
+          >
             M
-          </div>
+          </button>
         </div>
         <button onClick={onCartToggle} className="relative">
           <ShoppingCart className="h-6 w-6 text-gray-600" />

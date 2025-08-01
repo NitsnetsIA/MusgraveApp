@@ -1,4 +1,5 @@
 import { X, Minus, Plus, Trash2, Search } from 'lucide-react';
+import { useState } from 'react';
 
 interface CartProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface CartProps {
   onUpdateQuantity: (ean: string, quantity: number) => void;
   onRemoveItem: (ean: string) => void;
   onCheckout: () => void;
+  store?: any;
 }
 
 export default function Cart({
@@ -15,8 +17,11 @@ export default function Cart({
   items,
   onUpdateQuantity,
   onRemoveItem,
-  onCheckout
+  onCheckout,
+  store
 }: CartProps) {
+  const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
+  const [tempQuantity, setTempQuantity] = useState<string>('');
   const subtotal = items.reduce((sum, item) => sum + (item.base_price * item.quantity), 0);
   const taxTotal = items.reduce((sum, item) => sum + (item.base_price * item.quantity * item.tax_rate), 0);
   const total = subtotal + taxTotal;
@@ -51,7 +56,9 @@ export default function Cart({
         <div className="p-4 bg-gray-50 border-b">
           <div className="text-center">
             <div className="text-2xl font-bold mb-1">Total: {total.toFixed(2).replace('.', ',')}€</div>
-            <div className="text-sm text-gray-600">Centro de entrega Musgrave: 122 - Dolores (Alicante)</div>
+            <div className="text-sm text-gray-600">
+              Centro de entrega Musgrave: {store?.delivery_center_name || 'M-005 - Centro de entrega Alicante-Elche'}
+            </div>
           </div>
         </div>
         
@@ -100,7 +107,45 @@ export default function Cart({
                           >
                             <Minus className="h-3 w-3" />
                           </button>
-                          <span className="px-2 text-sm font-medium">{item.quantity}</span>
+                          {editingQuantity === item.ean ? (
+                            <input
+                              type="number"
+                              value={tempQuantity}
+                              onChange={(e) => setTempQuantity(e.target.value)}
+                              onBlur={() => {
+                                const newQty = parseInt(tempQuantity) || 0;
+                                if (newQty > 0) {
+                                  onUpdateQuantity(item.ean, newQty);
+                                } else {
+                                  onRemoveItem(item.ean);
+                                }
+                                setEditingQuantity(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const newQty = parseInt(tempQuantity) || 0;
+                                  if (newQty > 0) {
+                                    onUpdateQuantity(item.ean, newQty);
+                                  } else {
+                                    onRemoveItem(item.ean);
+                                  }
+                                  setEditingQuantity(null);
+                                }
+                              }}
+                              className="w-8 px-1 text-sm font-medium text-center border-0 outline-none"
+                              autoFocus
+                            />
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setEditingQuantity(item.ean);
+                                setTempQuantity(item.quantity.toString());
+                              }}
+                              className="px-2 text-sm font-medium hover:bg-gray-50"
+                            >
+                              {item.quantity}
+                            </button>
+                          )}
                           <button
                             onClick={() => onUpdateQuantity(item.ean, item.quantity + 1)}
                             className="p-1 hover:bg-gray-100"
