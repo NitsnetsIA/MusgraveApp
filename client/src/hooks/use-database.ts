@@ -48,25 +48,29 @@ export function useDatabase() {
     try {
       console.log('Authenticating user:', { email, password });
       
-      // Debug: Check all users in table
-      const allUsers = query('SELECT * FROM users');
-      console.log('All users in database:', allUsers);
-      
-      // Debug: Check specific query
+      // Get user from database
       const results = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
-      console.log('Query results for specific email:', results);
-      
-      // Debug: Try without is_active filter
-      const resultsNoFilter = query('SELECT * FROM users WHERE email = ?', [email]);
-      console.log('Query results without is_active filter:', resultsNoFilter);
+      console.log('Query results:', results);
       
       const user = results[0];
-      console.log('Found user:', user);
-      if (user && (password === 'password123' || password === 'hash123')) {
+      if (!user) {
+        console.log('User not found');
+        return null;
+      }
+      
+      // Import password verification function
+      const { verifyPassword } = await import('../lib/auth');
+      
+      // Verify password using SHA3 with email salt
+      const isValidPassword = verifyPassword(password, email, user.password_hash);
+      console.log('Password verification result:', isValidPassword);
+      
+      if (isValidPassword) {
         console.log('Authentication successful');
         return user;
       }
-      console.log('Authentication failed');
+      
+      console.log('Authentication failed - invalid password');
       return null;
     } catch (error) {
       console.error('Error authenticating user:', error);

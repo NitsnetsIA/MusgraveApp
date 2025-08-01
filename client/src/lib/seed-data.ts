@@ -1,3 +1,5 @@
+import { hashPassword } from './auth';
+
 // Simple UUID generator
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -55,18 +57,18 @@ export async function seedDatabase() {
     { code: 'ES010', name: 'Costa Blanca Alimentación', responsible_email: 'compras@costablanca.es', delivery_center_code: 'M-005' }
   ];
 
-  // Users
+  // Users - password123 hashed with SHA3 using email as salt
   const users = [
-    { email: 'luis@esgranvia.es', store_id: 'ES001', name: 'Luis Romero Pérez', password_hash: 'hash123' },
-    { email: 'maria@central.es', store_id: 'ES002', name: 'María García López', password_hash: 'hash123' },
-    { email: 'carlos@bcnnorte.es', store_id: 'ES003', name: 'Carlos Martínez Ruiz', password_hash: 'hash123' },
-    { email: 'ana@valencia.es', store_id: 'ES004', name: 'Ana Fernández Torres', password_hash: 'hash123' },
-    { email: 'pedro@sevilla.es', store_id: 'ES005', name: 'Pedro Sánchez Moreno', password_hash: 'hash123' },
-    { email: 'laura@gourmet.es', store_id: 'ES006', name: 'Laura Jiménez Vázquez', password_hash: 'hash123' },
-    { email: 'miguel@superfresh.es', store_id: 'ES007', name: 'Miguel Rodríguez Silva', password_hash: 'hash123' },
-    { email: 'sofia@despensa.es', store_id: 'ES008', name: 'Sofía González Ramos', password_hash: 'hash123' },
-    { email: 'javier@andalucia.es', store_id: 'ES009', name: 'Javier Hernández Castro', password_hash: 'hash123' },
-    { email: 'elena@costablanca.es', store_id: 'ES010', name: 'Elena Díaz Morales', password_hash: 'hash123' }
+    { email: 'luis@esgranvia.es', store_id: 'ES001', name: 'Luis Romero Pérez', password_hash: hashPassword('password123', 'luis@esgranvia.es') },
+    { email: 'maria@central.es', store_id: 'ES002', name: 'María García López', password_hash: hashPassword('password123', 'maria@central.es') },
+    { email: 'carlos@bcnnorte.es', store_id: 'ES003', name: 'Carlos Martínez Ruiz', password_hash: hashPassword('password123', 'carlos@bcnnorte.es') },
+    { email: 'ana@valencia.es', store_id: 'ES004', name: 'Ana Fernández Torres', password_hash: hashPassword('password123', 'ana@valencia.es') },
+    { email: 'pedro@sevilla.es', store_id: 'ES005', name: 'Pedro Sánchez Moreno', password_hash: hashPassword('password123', 'pedro@sevilla.es') },
+    { email: 'laura@gourmet.es', store_id: 'ES006', name: 'Laura Jiménez Vázquez', password_hash: hashPassword('password123', 'laura@gourmet.es') },
+    { email: 'miguel@superfresh.es', store_id: 'ES007', name: 'Miguel Rodríguez Silva', password_hash: hashPassword('password123', 'miguel@superfresh.es') },
+    { email: 'sofia@despensa.es', store_id: 'ES008', name: 'Sofía González Ramos', password_hash: hashPassword('password123', 'sofia@despensa.es') },
+    { email: 'javier@andalucia.es', store_id: 'ES009', name: 'Javier Hernández Castro', password_hash: hashPassword('password123', 'javier@andalucia.es') },
+    { email: 'elena@costablanca.es', store_id: 'ES010', name: 'Elena Díaz Morales', password_hash: hashPassword('password123', 'elena@costablanca.es') }
   ];
 
   // Spanish grocery products (100 items)

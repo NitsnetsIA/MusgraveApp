@@ -111,16 +111,17 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
             <Button
               type="button"
               onClick={async () => {
-                console.log('Clearing database and forcing fresh creation...');
+                console.log('Clearing database and creating with SHA3 hashed passwords...');
                 localStorage.removeItem('musgrave_db');
                 // Force immediate re-initialization with fresh data
                 const { clearAndReinitDatabase } = await import('../lib/database');
                 await clearAndReinitDatabase();
+                console.log('New database created with proper SHA3 password hashing');
                 window.location.reload();
               }}
-              className="w-full bg-red-500 text-white py-2 rounded-lg font-medium hover:bg-red-600 text-sm"
+              className="w-full bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 text-sm"
             >
-              [DEBUG] Crear BD Nueva
+              [DEBUG] BD con SHA3
             </Button>
             
             <p className="text-xs text-gray-500 text-center">
