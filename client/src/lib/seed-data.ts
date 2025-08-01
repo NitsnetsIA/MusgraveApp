@@ -10,20 +10,20 @@ function generateUUID(): string {
 }
 
 export async function seedDatabase() {
-  console.log('Starting database seeding...');
-  
   // Import database functions
   const { execute, query } = await import('./database');
   
-  // Check if data already exists
+  // Check if data already exists with better control
   try {
     const existingProducts = query('SELECT COUNT(*) as count FROM products');
     if (existingProducts[0]?.count > 0) {
-      return; // Data already seeded - remove repetitive logging
+      return; // Data already seeded
     }
   } catch (error) {
     // Tables might not exist yet, continue with seeding
   }
+  
+  console.log('Starting database seeding...');
 
   // Spanish IVA taxes for grocery
   const taxes = [
@@ -258,7 +258,7 @@ export async function seedDatabase() {
       [config.entity_name, config.last_request_timestamp, config.last_updated_timestamp]);
   }
 
-  // Create 10 sample purchase orders
+  // Create 10+ sample purchase orders (multiple for Luis)
   const samplePurchaseOrders = [
     {
       purchase_order_id: generateUUID(),
@@ -268,6 +268,33 @@ export async function seedDatabase() {
       subtotal: 125.00,
       tax_total: 15.75,
       final_total: 140.75
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'luis@esgranvia.es',
+      store_id: 'ES001',
+      status: 'processing',
+      subtotal: 89.50,
+      tax_total: 10.25,
+      final_total: 99.75
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'luis@esgranvia.es',
+      store_id: 'ES001',
+      status: 'completed',
+      subtotal: 156.80,
+      tax_total: 18.95,
+      final_total: 175.75
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'luis@esgranvia.es',
+      store_id: 'ES001',
+      status: 'uncommunicated',
+      subtotal: 67.40,
+      tax_total: 8.10,
+      final_total: 75.50
     },
     {
       purchase_order_id: generateUUID(),
@@ -355,6 +382,18 @@ export async function seedDatabase() {
   for (const order of samplePurchaseOrders) {
     execute('INSERT INTO purchase_orders (purchase_order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
       [order.purchase_order_id, order.user_email, order.store_id, new Date().toISOString(), order.status, order.subtotal, order.tax_total, order.final_total]);
+    
+    // Add some sample items for each purchase order
+    const sampleItems = [
+      { ean: '8410000000001', quantity: 2, base_price: 1.00, tax_rate: 0.04 },
+      { ean: '8410000000006', quantity: 3, base_price: 0.89, tax_rate: 0.04 },
+      { ean: '8410000000011', quantity: 1, base_price: 1.25, tax_rate: 0.04 }
+    ];
+    
+    for (const item of sampleItems) {
+      execute('INSERT INTO purchase_order_items (purchase_order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order) VALUES (?, ?, ?, ?, ?)',
+        [order.purchase_order_id, item.ean, item.quantity, item.base_price, item.tax_rate]);
+    }
   }
 
   // Create 10 sample orders (final orders from processed purchase orders)

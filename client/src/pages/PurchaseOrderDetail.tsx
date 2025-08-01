@@ -22,7 +22,7 @@ export default function PurchaseOrderDetail() {
     }
 
     loadOrder();
-  }, [params?.id, getPurchaseOrderById]);
+  }, [params?.id]); // Remove getPurchaseOrderById to prevent infinite loop
 
   if (isLoading) {
     return (

@@ -22,7 +22,7 @@ export default function OrderDetail() {
     }
 
     loadOrder();
-  }, [params?.id, getOrderById]);
+  }, [params?.id]); // Remove getOrderById to prevent infinite loop
 
   if (isLoading) {
     return (
