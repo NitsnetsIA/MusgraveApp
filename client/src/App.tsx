@@ -88,6 +88,7 @@ function Router() {
 
   // Cart management
   const addToCart = async (ean: string, quantity: number) => {
+    console.log('addToCart called:', { ean, quantity });
     try {
       // Find existing item in cart
       const existingItemIndex = cartItems.findIndex(item => item.ean === ean);

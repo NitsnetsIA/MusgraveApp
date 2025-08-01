@@ -65,6 +65,7 @@ export default function ProductCatalog({
         <div className="grid grid-cols-2 gap-4">
           {products.map((product) => {
             const cartItem = cartItems.find(item => item.ean === product.ean);
+            console.log('Rendering product:', product.ean, 'cartQuantity:', cartItem?.quantity || 0);
             return (
               <ProductCard
                 key={product.ean}

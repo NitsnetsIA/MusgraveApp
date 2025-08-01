@@ -29,17 +29,22 @@ export default function ProductCard({
 
   const handleQuantityChange = (newQuantity: number) => {
     const qty = Math.max(0, newQuantity);
+    console.log('handleQuantityChange called:', { ean: product.ean, newQuantity: qty, isInCart });
     setLocalQuantity(qty);
     if (isInCart && qty > 0) {
       onUpdateCart(product.ean, qty);
+    } else if (isInCart && qty === 0) {
+      onRemoveFromCart(product.ean);
     }
   };
 
   const handleAddToCart = () => {
+    console.log('handleAddToCart called for product:', product.ean);
     onAddToCart(product.ean, 1); // Always add 1 when clicking AÑADIR
   };
 
   const handleRemove = () => {
+    console.log('handleRemove called for product:', product.ean);
     onRemoveFromCart(product.ean);
     setLocalQuantity(1);
   };
