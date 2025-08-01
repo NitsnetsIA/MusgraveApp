@@ -31,7 +31,7 @@ export default function ProductCatalog({
     }
 
     loadProducts();
-  }, [searchTerm]);
+  }, [searchTerm]); // Remove getProducts from dependencies as it's recreated on every render
 
   return (
     <div className="p-4">

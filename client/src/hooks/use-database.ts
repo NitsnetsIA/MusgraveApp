@@ -220,7 +220,8 @@ export function useDatabase() {
   // Get tax rate by code
   const getTaxRate = async (taxCode: string): Promise<number> => {
     try {
-      const results = query('SELECT tax_rate FROM taxes WHERE code = ?', [taxCode]);
+      // Use direct string substitution due to SQLite parameter binding issue
+      const results = query(`SELECT tax_rate FROM taxes WHERE code = '${taxCode}'`);
       return results[0]?.tax_rate || 0.21;
     } catch (error) {
       console.error('Error getting tax rate:', error);

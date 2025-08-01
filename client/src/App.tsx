@@ -54,7 +54,7 @@ function Router() {
       }
     }
     loadUserData();
-  }, [user, getStoreByCode]);
+  }, [user]); // Remove getStoreByCode from dependencies to prevent infinite loop
 
   // Authentication handlers
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
