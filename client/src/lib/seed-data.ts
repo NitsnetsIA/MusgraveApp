@@ -245,7 +245,7 @@ export async function seedDatabase() {
       [config.entity_name, config.last_request_timestamp, config.last_updated_timestamp]);
   }
 
-  // Create sample purchase orders
+  // Create 10 sample purchase orders
   const samplePurchaseOrders = [
     {
       purchase_order_id: generateUUID(),
@@ -264,6 +264,78 @@ export async function seedDatabase() {
       subtotal: 85.50,
       tax_total: 12.25,
       final_total: 97.75
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'carlos@bcnnorte.es',
+      store_id: 'ES003',
+      status: 'completed',
+      subtotal: 234.80,
+      tax_total: 28.15,
+      final_total: 262.95
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'ana@valencia.es',
+      store_id: 'ES004',
+      status: 'uncommunicated',
+      subtotal: 156.25,
+      tax_total: 18.75,
+      final_total: 175.00
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'pedro@sevilla.es',
+      store_id: 'ES005',
+      status: 'processing',
+      subtotal: 198.40,
+      tax_total: 23.80,
+      final_total: 222.20
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'laura@gourmet.es',
+      store_id: 'ES006',
+      status: 'completed',
+      subtotal: 345.60,
+      tax_total: 41.47,
+      final_total: 387.07
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'miguel@superfresh.es',
+      store_id: 'ES007',
+      status: 'uncommunicated',
+      subtotal: 92.30,
+      tax_total: 11.08,
+      final_total: 103.38
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'sofia@despensa.es',
+      store_id: 'ES008',
+      status: 'processing',
+      subtotal: 167.85,
+      tax_total: 20.14,
+      final_total: 187.99
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'javier@andalucia.es',
+      store_id: 'ES009',
+      status: 'completed',
+      subtotal: 278.90,
+      tax_total: 33.47,
+      final_total: 312.37
+    },
+    {
+      purchase_order_id: generateUUID(),
+      user_email: 'elena@costablanca.es',
+      store_id: 'ES010',
+      status: 'uncommunicated',
+      subtotal: 134.50,
+      tax_total: 16.14,
+      final_total: 150.64
     }
   ];
 
@@ -272,5 +344,93 @@ export async function seedDatabase() {
       [order.purchase_order_id, order.user_email, order.store_id, new Date().toISOString(), order.status, order.subtotal, order.tax_total, order.final_total]);
   }
 
-  console.log('Database seeded successfully');
+  // Create 10 sample orders (final orders from processed purchase orders)
+  const completedPurchaseOrders = samplePurchaseOrders.filter(po => po.status === 'completed');
+  const sampleOrders = completedPurchaseOrders.concat(
+    // Add additional orders to reach 10 total
+    [
+      {
+        purchase_order_id: generateUUID(),
+        user_email: 'luis@esgranvia.es',
+        store_id: 'ES001',
+        status: 'completed',
+        subtotal: 89.30,
+        tax_total: 10.72,
+        final_total: 100.02
+      },
+      {
+        purchase_order_id: generateUUID(),
+        user_email: 'maria@central.es',
+        store_id: 'ES002',
+        status: 'completed',
+        subtotal: 156.75,
+        tax_total: 18.81,
+        final_total: 175.56
+      },
+      {
+        purchase_order_id: generateUUID(),
+        user_email: 'carlos@bcnnorte.es',
+        store_id: 'ES003',
+        status: 'completed',
+        subtotal: 203.40,
+        tax_total: 24.41,
+        final_total: 227.81
+      },
+      {
+        purchase_order_id: generateUUID(),
+        user_email: 'ana@valencia.es',
+        store_id: 'ES004',
+        status: 'completed',
+        subtotal: 312.85,
+        tax_total: 37.54,
+        final_total: 350.39
+      },
+      {
+        purchase_order_id: generateUUID(),
+        user_email: 'pedro@sevilla.es',
+        store_id: 'ES005',
+        status: 'completed',
+        subtotal: 178.20,
+        tax_total: 21.38,
+        final_total: 199.58
+      },
+      {
+        purchase_order_id: generateUUID(),
+        user_email: 'laura@gourmet.es',
+        store_id: 'ES006',
+        status: 'completed',
+        subtotal: 267.90,
+        tax_total: 32.15,
+        final_total: 300.05
+      },
+      {
+        purchase_order_id: generateUUID(),
+        user_email: 'miguel@superfresh.es',
+        store_id: 'ES007',
+        status: 'completed',
+        subtotal: 143.60,
+        tax_total: 17.23,
+        final_total: 160.83
+      }
+    ]
+  ).slice(0, 10);
+
+  for (let i = 0; i < sampleOrders.length; i++) {
+    const order = sampleOrders[i];
+    const orderId = generateUUID();
+    const createdDate = new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString(); // Different dates
+    
+    execute('INSERT INTO orders (order_id, source_purchase_order_id, user_email, store_id, created_at, subtotal, tax_total, final_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+      [orderId, order.purchase_order_id, order.user_email, order.store_id, createdDate, order.subtotal, order.tax_total, order.final_total]);
+  }
+
+  console.log('Database seeded successfully with:');
+  console.log('- 100 products');
+  console.log('- 10 users');
+  console.log('- 10 stores');
+  console.log('- 5 delivery centers');
+  console.log('- 10 purchase orders');
+  console.log('- 10 orders');
+  console.log('- Spanish IVA taxes');
+  console.log('- Sync configuration');
 }
