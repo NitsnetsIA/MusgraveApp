@@ -23,7 +23,7 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
     }
 
     loadProducts();
-  }, [searchTerm, getProducts]);
+  }, [searchTerm]);
 
   return (
     <div className="p-4">

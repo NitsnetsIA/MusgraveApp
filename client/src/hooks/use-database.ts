@@ -46,44 +46,24 @@ export function useDatabase() {
 
   const authenticateUser = async (email: string, password: string): Promise<User | null> => {
     try {
-      console.log('Authenticating user:', { email, password });
+      // Note: Direct SQL string substitution works due to SQLite parameter binding issue
+      const results = query(`SELECT * FROM users WHERE email = '${email}' AND is_active = 1`);
       
-      // Debug: Check if database has any users at all
-      const allUsersCount = query('SELECT COUNT(*) as count FROM users');
-      console.log('Total users in database:', allUsersCount);
-      
-      // Debug: Get all users to see what's actually stored
-      const allUsers = query('SELECT email, name, is_active FROM users LIMIT 3');
-      console.log('Sample users in database:', allUsers);
-      
-      // Debug: Try different query variations
-      const directQuery = query(`SELECT * FROM users WHERE email = '${email}' AND is_active = 1`);
-      console.log('Direct query result:', directQuery);
-      
-      const paramQuery = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
-      console.log('Parameterized query result:', paramQuery);
-      
-      const user = paramQuery[0] || directQuery[0];
+      const user = results[0];
       if (!user) {
-        console.log('User not found in database');
         return null;
       }
-      
-      console.log('Found user:', user);
       
       // Import password verification function
       const { verifyPassword } = await import('../lib/auth');
       
       // Verify password using SHA3 with email salt
       const isValidPassword = verifyPassword(password, email, user.password_hash);
-      console.log('Password verification result:', isValidPassword);
       
       if (isValidPassword) {
-        console.log('Authentication successful');
         return user;
       }
       
-      console.log('Authentication failed - invalid password');
       return null;
     } catch (error) {
       console.error('Error authenticating user:', error);
