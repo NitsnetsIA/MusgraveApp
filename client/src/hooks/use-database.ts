@@ -170,9 +170,9 @@ export function useDatabase() {
 
       const finalTotal = subtotal + taxTotal;
 
-      // Simulate workflow - randomly assign status
-      const statuses = ['uncommunicated', 'processing', 'completed'];
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+      // Simulate workflow - 90% completed for easier testing
+      const random = Math.random();
+      const randomStatus = random < 0.9 ? 'completed' : (random < 0.95 ? 'processing' : 'uncommunicated');
 
       // Insert purchase order with random status
       execute(`

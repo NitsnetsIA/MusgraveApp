@@ -18,6 +18,7 @@ interface LayoutProps {
   removeFromCart: (ean: string) => void;
   clearCart: () => void;
   onCheckout: () => void;
+  onCreateTestCart?: () => void;
 }
 
 export default function Layout({
@@ -33,7 +34,8 @@ export default function Layout({
   updateCartItem,
   removeFromCart,
   clearCart,
-  onCheckout
+  onCheckout,
+  onCreateTestCart
 }: LayoutProps) {
   const { isOffline } = useDatabase();
 
@@ -71,6 +73,7 @@ export default function Layout({
         onUpdateQuantity={updateCartItem}
         onRemoveItem={removeFromCart}
         onCheckout={onCheckout}
+        onCreateTestCart={onCreateTestCart}
         store={store}
       />
 

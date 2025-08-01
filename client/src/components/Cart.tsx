@@ -8,6 +8,7 @@ interface CartProps {
   onUpdateQuantity: (ean: string, quantity: number) => void;
   onRemoveItem: (ean: string) => void;
   onCheckout: () => void;
+  onCreateTestCart?: () => void;
   store?: any;
 }
 
@@ -18,6 +19,7 @@ export default function Cart({
   onUpdateQuantity,
   onRemoveItem,
   onCheckout,
+  onCreateTestCart,
   store
 }: CartProps) {
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
@@ -66,7 +68,15 @@ export default function Cart({
         <div className="flex-1 overflow-y-auto">
           {items.length === 0 ? (
             <div className="text-center text-gray-500 mt-8 p-4">
-              Su carrito está vacío
+              <div className="mb-4">Su carrito está vacío</div>
+              {onCreateTestCart && (
+                <button
+                  onClick={onCreateTestCart}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
+                >
+                  Crear carrito de test (30 productos)
+                </button>
+              )}
             </div>
           ) : (
             <div className="bg-white">

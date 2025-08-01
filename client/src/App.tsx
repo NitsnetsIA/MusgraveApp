@@ -31,6 +31,7 @@ function Router() {
     getStoreByCode,
     getTaxRate,
     createPurchaseOrder,
+    getProducts,
     saveDatabase
   } = useDatabase();
 
@@ -155,6 +156,53 @@ function Router() {
     setCartItems([]);
   };
 
+  // Create test cart with 30 random products
+  const createTestCart = async () => {
+    try {
+      const products = await getProducts();
+      if (products.length === 0) {
+        toast({
+          title: "Error",
+          description: "No hay productos disponibles",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Clear current cart
+      setCartItems([]);
+
+      // Select 30 random products
+      const shuffled = [...products].sort(() => 0.5 - Math.random());
+      const selectedProducts = shuffled.slice(0, Math.min(30, products.length));
+
+      // Create cart items with random quantities (1-5)
+      const testCartItems: CartItem[] = selectedProducts.map(product => ({
+        ean: product.ean,
+        title: product.title,
+        base_price: product.base_price,
+        tax_rate: product.tax_rate,
+        quantity: Math.floor(Math.random() * 5) + 1, // Random quantity 1-5
+        image_url: product.image_url
+      }));
+
+      setCartItems(testCartItems);
+      
+      toast({
+        title: "✅ Carrito de test creado",
+        description: `Se han añadido ${testCartItems.length} productos aleatorios al carrito`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error creating test cart:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el carrito de test",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Checkout handler
   const handleCheckout = async () => {
     if (!user || !store || cartItems.length === 0) {
@@ -233,6 +281,7 @@ function Router() {
       removeFromCart={removeFromCart}
       clearCart={clearCart}
       onCheckout={handleCheckout}
+      onCreateTestCart={createTestCart}
     >
       <Switch>
         <Route path="/" component={() => (
