@@ -28,6 +28,13 @@ Preferred communication style: Simple, everyday language.
 - **Error Handling**: Centralized error middleware with structured responses
 - **Logging**: Request/response logging with duration tracking
 
+### Deployment Architecture
+- **Static Deployment**: Configured for Replit static hosting
+- **Build Process**: Vite builds to `dist/public/`, deployment script moves files to `dist/`
+- **SPA Routing**: `_redirects` file handles client-side routing for React Router
+- **Deployment Script**: `scripts/deploy-prepare.js` automates file preparation for static hosting
+- **Build Command**: `npm run build` followed by deployment preparation script
+
 ### Data Storage Architecture
 - **Client-side Database**: SQL.js (SQLite in browser) for offline-first data storage
 - **Schema Design**: Comprehensive schema including users, stores, products, taxes, delivery centers, purchase orders, and order items
