@@ -46,12 +46,17 @@ export function useDatabase() {
 
   const authenticateUser = async (email: string, password: string): Promise<User | null> => {
     try {
+      console.log('Authenticating user:', { email, password });
       // Simple password check (in real app would use proper hashing)
       const results = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
+      console.log('Query results:', results);
       const user = results[0];
+      console.log('Found user:', user);
       if (user && (password === 'password123' || password === 'hash123')) {
+        console.log('Authentication successful');
         return user;
       }
+      console.log('Authentication failed');
       return null;
     } catch (error) {
       console.error('Error authenticating user:', error);

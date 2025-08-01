@@ -56,9 +56,11 @@ function Router() {
 
   // Authentication handlers
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
+    console.log('handleLogin called with:', { email, password });
     setIsLoading(true);
     try {
       const authenticatedUser = await authenticateUser(email, password);
+      console.log('authenticatedUser result:', authenticatedUser);
       if (authenticatedUser) {
         setUser(authenticatedUser);
         setLocation('/');

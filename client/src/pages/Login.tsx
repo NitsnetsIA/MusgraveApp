@@ -23,10 +23,17 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
   });
 
   const onSubmit = async (data: LoginForm) => {
+    console.log('Form submitted with data:', data);
     setError('');
-    const success = await onLogin(data.email, data.password);
-    if (!success) {
-      setError('Credenciales inválidas');
+    try {
+      const success = await onLogin(data.email, data.password);
+      console.log('Login result:', success);
+      if (!success) {
+        setError('Credenciales inválidas');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Error durante el login');
     }
   };
 
@@ -44,7 +51,10 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
         <p className="text-gray-600 text-center mb-8">Acceda a su cuenta</p>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={(e) => {
+            console.log('Form submit event triggered');
+            form.handleSubmit(onSubmit)(e);
+          }} className="space-y-6">
             <FormField
               control={form.control}
               name="email"
@@ -92,6 +102,7 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
             <Button
               type="submit"
               disabled={isLoading}
+              onClick={() => console.log('Button clicked!')}
               className="w-full bg-musgrave-500 text-white py-3 rounded-lg font-medium hover:bg-musgrave-600"
             >
               {isLoading ? 'Iniciando...' : 'Iniciar sesión'}
