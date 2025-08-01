@@ -214,26 +214,113 @@ export function useDatabase() {
       const orderId = generateUUID();
       const now = new Date().toISOString();
 
-      // Insert processed order with same data as purchase order
+      // Simulate modifications for processed order
+      const { modifiedItems, hasModifications, newSubtotal, newTaxTotal, newFinalTotal } = simulateOrderModifications(cartItems);
+
+      // Create observations if there are modifications
+      const observations = hasModifications ? 
+        "Se han producido cambios sobre su orden de compra. Si tiene cualquier problema póngase en contacto con Musgrave" : 
+        null;
+
+      // Insert processed order with potentially modified totals
       execute(`
-        INSERT INTO orders (order_id, source_purchase_order_id, user_email, store_id, created_at, subtotal, tax_total, final_total)
-        VALUES ('${orderId}', '${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', ${subtotal}, ${taxTotal}, ${finalTotal})
+        INSERT INTO orders (order_id, source_purchase_order_id, user_email, store_id, created_at, observations, subtotal, tax_total, final_total)
+        VALUES ('${orderId}', '${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', ${observations ? `'${observations}'` : 'NULL'}, ${newSubtotal}, ${newTaxTotal}, ${newFinalTotal})
       `);
 
-      // Insert order items with same data as purchase order items
-      for (const item of cartItems) {
+      // Insert order items with modifications
+      for (const item of modifiedItems) {
         execute(`
           INSERT INTO order_items (order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
           VALUES ('${orderId}', '${item.ean}', ${item.quantity}, ${item.base_price}, ${item.tax_rate})
         `);
       }
 
-      console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}`);
+      console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}${hasModifications ? ' with modifications' : ''}`);
       return orderId;
     } catch (error) {
       console.error('Error creating processed order:', error);
       throw error;
     }
+  };
+
+  // Simulate modifications for processed orders
+  const simulateOrderModifications = (originalItems: CartItem[]) => {
+    let modifiedItems: CartItem[] = [];
+    let hasModifications = false;
+    
+    // Get all available products for potential replacements
+    const allProducts = query(`SELECT * FROM products WHERE is_active = 1`);
+    
+    for (const item of originalItems) {
+      // 10% chance of modification per item
+      if (Math.random() < 0.1) {
+        hasModifications = true;
+        const modType = Math.random();
+        
+        if (modType < 0.5) {
+          // 50% chance: Delete item (quantity = 0)
+          // Don't add this item to modifiedItems (effectively deleting it)
+          
+          // 50% chance to add replacement product
+          if (Math.random() < 0.5 && allProducts.length > 0) {
+            const randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)];
+            // Get tax rate for the replacement product
+            const taxResults = query(`SELECT tax_rate FROM taxes WHERE code = '${randomProduct.tax_code}'`);
+            const taxRate = taxResults.length > 0 ? taxResults[0].tax_rate : 0.21;
+            
+            modifiedItems.push({
+              ean: randomProduct.ean,
+              title: randomProduct.title,
+              quantity: item.quantity, // Same quantity as original
+              base_price: randomProduct.base_price,
+              tax_rate: taxRate,
+              image_url: randomProduct.image_url
+            });
+          }
+        } else if (modType < 0.9) {
+          // 40% chance: Decrease quantity (10-50% reduction)
+          const reductionFactor = 0.1 + Math.random() * 0.4; // 10-50% reduction
+          const newQuantity = Math.max(1, Math.floor(item.quantity * (1 - reductionFactor)));
+          modifiedItems.push({
+            ...item,
+            quantity: newQuantity
+          });
+        } else {
+          // 10% chance: Increase quantity (10-30% increase)
+          const increaseFactor = 0.1 + Math.random() * 0.2; // 10-30% increase
+          const newQuantity = Math.ceil(item.quantity * (1 + increaseFactor));
+          modifiedItems.push({
+            ...item,
+            quantity: newQuantity
+          });
+        }
+      } else {
+        // No modification - keep original item
+        modifiedItems.push({ ...item });
+      }
+    }
+    
+    // Calculate new totals
+    let newSubtotal = 0;
+    let newTaxTotal = 0;
+    
+    for (const item of modifiedItems) {
+      const itemSubtotal = item.quantity * item.base_price;
+      const itemTax = itemSubtotal * item.tax_rate;
+      newSubtotal += itemSubtotal;
+      newTaxTotal += itemTax;
+    }
+    
+    const newFinalTotal = newSubtotal + newTaxTotal;
+    
+    return {
+      modifiedItems,
+      hasModifications,
+      newSubtotal,
+      newTaxTotal,
+      newFinalTotal
+    };
   };
 
   // Order operations

@@ -7,8 +7,10 @@ import { useDatabase } from '@/hooks/use-database';
 export default function OrderDetail() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute('/orders/:id');
-  const { getOrderById } = useDatabase();
+  const { getOrderById, getPurchaseOrderById } = useDatabase();
   const [order, setOrder] = useState<any>(null);
+  const [originalPurchaseOrder, setOriginalPurchaseOrder] = useState<any>(null);
+  const [modifications, setModifications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,11 +20,24 @@ export default function OrderDetail() {
       setIsLoading(true);
       const orderData = await getOrderById(params.id);
       setOrder(orderData);
+      
+      // Load original purchase order if available
+      if (orderData?.source_purchase_order_id) {
+        const originalOrder = await getPurchaseOrderById(orderData.source_purchase_order_id);
+        setOriginalPurchaseOrder(originalOrder);
+        
+        // Calculate modifications by comparing original and final orders
+        if (originalOrder?.items && orderData?.items) {
+          const mods = calculateModifications(originalOrder.items, orderData.items);
+          setModifications(mods);
+        }
+      }
+      
       setIsLoading(false);
     }
 
     loadOrder();
-  }, [params?.id]); // Remove getOrderById to prevent infinite loop
+  }, [params?.id]);
 
   if (isLoading) {
     return (
@@ -35,6 +50,60 @@ export default function OrderDetail() {
       </div>
     );
   }
+
+  // Calculate modifications between original purchase order and final order
+  const calculateModifications = (originalItems: any[], finalItems: any[]) => {
+    const modifications = [];
+    
+    // Compare original and final items to find modifications
+    
+    // Check for modified or removed items
+    originalItems.forEach(originalItem => {
+      const finalItem = finalItems.find(item => item.item_ean === originalItem.item_ean);
+      
+      if (!finalItem) {
+        // Item was removed
+        modifications.push({
+          ean: originalItem.item_ean,
+          title: originalItem.title,
+          type: 'removed',
+          originalQuantity: originalItem.quantity,
+          finalQuantity: 0,
+          originalPrice: originalItem.base_price_at_order,
+          finalPrice: originalItem.base_price_at_order
+        });
+      } else if (finalItem.quantity !== originalItem.quantity || finalItem.base_price_at_order !== originalItem.base_price_at_order) {
+        // Item was modified
+        modifications.push({
+          ean: originalItem.item_ean,
+          title: originalItem.title,
+          type: 'modified',
+          originalQuantity: originalItem.quantity,
+          finalQuantity: finalItem.quantity,
+          originalPrice: originalItem.base_price_at_order,
+          finalPrice: finalItem.base_price_at_order
+        });
+      }
+    });
+    
+    // Check for added items
+    finalItems.forEach(finalItem => {
+      const originalItem = originalItems.find(item => item.item_ean === finalItem.item_ean);
+      if (!originalItem) {
+        modifications.push({
+          ean: finalItem.item_ean,
+          title: finalItem.title,
+          type: 'added',
+          originalQuantity: 0,
+          finalQuantity: finalItem.quantity,
+          originalPrice: finalItem.base_price_at_order,
+          finalPrice: finalItem.base_price_at_order
+        });
+      }
+    });
+    
+    return modifications;
+  };
 
   if (!order) {
     return (
@@ -154,45 +223,84 @@ export default function OrderDetail() {
 
       {/* Order Modifications */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
-        <div className="p-4 border-b bg-gray-50">
-          <h3 className="font-medium">Modificaciones efectuadas sobre la orden de compra</h3>
+        <div className="p-4 border-b">
+          <h3 className="font-bold text-lg">Modificaciones efectuadas sobre la orden de compra</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left p-3 font-medium">Producto</th>
-                <th className="text-left p-3 font-medium">Modificación</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b">
-                <td className="p-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0"></div>
-                    <div>
-                      <div className="font-medium">Azúcar blanco paquete 1 Kg</div>
-                      <div className="text-xs text-gray-500">EAN:012345678012</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-3">
-                  <div className="text-sm">Cantidad modificada:</div>
-                  <div className="text-sm text-gray-600">De 8 a 6</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        
+        {modifications.length === 0 ? (
+          <div className="p-4 text-center text-gray-600">
+            ✓ Sin cambios respecto a la orden de compra
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left p-3 font-medium">Producto</th>
+                  <th className="text-left p-3 font-medium">Modificación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modifications.map((mod, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="p-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0">
+                          <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                            IMG
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-medium">{mod.title}</div>
+                          <div className="text-xs text-gray-500">EAN:{mod.ean}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      {mod.type === 'removed' && (
+                        <div>
+                          <div className="text-red-600 font-medium">Cantidad modificada:</div>
+                          <div className="text-sm">De {mod.originalQuantity} a 0</div>
+                        </div>
+                      )}
+                      {mod.type === 'added' && (
+                        <div>
+                          <div className="text-green-600 font-medium">Producto añadido:</div>
+                          <div className="text-sm">Cantidad: {mod.finalQuantity}</div>
+                        </div>
+                      )}
+                      {mod.type === 'modified' && (
+                        <div>
+                          {mod.originalQuantity !== mod.finalQuantity && (
+                            <div>
+                              <div className="text-blue-600 font-medium">Cantidad modificada:</div>
+                              <div className="text-sm">De {mod.originalQuantity} a {mod.finalQuantity}</div>
+                            </div>
+                          )}
+                          {mod.originalPrice !== mod.finalPrice && (
+                            <div className="mt-1">
+                              <div className="text-blue-600 font-medium">Precio modificado:</div>
+                              <div className="text-sm">De {mod.originalPrice.toFixed(2)}€ a {mod.finalPrice.toFixed(2)}€</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Observations */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <h3 className="font-medium mb-3">Observaciones:</h3>
-        <p className="text-sm text-gray-700">
-          {order.observations || 'Se han incluido el producto "Azúcar Moreno paquete 1KG EAN:012345678012" como sustitutivo del "Azúcar Blanco paquete 1KG EAN:012345678012" que no tenía stock. También se han ajustado los precios y cantidades de los productos siguientes...'}
-        </p>
-      </div>
+      {order.observations && (
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <h3 className="font-bold text-lg mb-3">Observaciones:</h3>
+          <p className="text-sm text-gray-700">{order.observations}</p>
+        </div>
+      )}
     </div>
   );
 }
