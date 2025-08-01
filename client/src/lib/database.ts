@@ -20,6 +20,9 @@ export async function initDatabase() {
     } else {
       db = new SQL.Database();
       await createTables();
+      // Dynamically import to avoid circular dependency
+      const { seedDatabase } = await import('./seed-data');
+      await seedDatabase();
     }
 
     return db;
@@ -147,6 +150,14 @@ export function saveDatabase() {
     const data = db.export();
     localStorage.setItem('musgrave_db', JSON.stringify(Array.from(data)));
   }
+}
+
+// Clear and reinitialize database
+export async function clearAndReinitDatabase() {
+  localStorage.removeItem('musgrave_db');
+  db = null;
+  SQL = null;
+  return await initDatabase();
 }
 
 // Execute query and return results

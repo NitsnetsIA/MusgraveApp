@@ -108,6 +108,18 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
               {isLoading ? 'Iniciando...' : 'Iniciar sesión'}
             </Button>
             
+            <Button
+              type="button"
+              onClick={() => {
+                console.log('Clearing database...');
+                localStorage.removeItem('musgrave_db');
+                window.location.reload();
+              }}
+              className="w-full bg-red-500 text-white py-2 rounded-lg font-medium hover:bg-red-600 text-sm"
+            >
+              [DEBUG] Limpiar Base de Datos
+            </Button>
+            
             <p className="text-xs text-gray-500 text-center">
               Si tienes dificultades para entrar en la B2B, envíanos<br />
               un email a: ventasb2b@HOFF.es
