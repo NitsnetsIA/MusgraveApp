@@ -18,11 +18,15 @@ export async function initDatabase() {
       const uint8Array = new Uint8Array(JSON.parse(savedDb));
       db = new SQL.Database(uint8Array);
     } else {
+      console.log('Creating new database...');
       db = new SQL.Database();
+      console.log('Creating tables...');
       await createTables();
+      console.log('Tables created, now seeding...');
       // Dynamically import to avoid circular dependency
       const { seedDatabase } = await import('./seed-data');
       await seedDatabase();
+      console.log('Database initialization complete');
     }
 
     return db;

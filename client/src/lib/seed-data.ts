@@ -1,15 +1,28 @@
-import { execute } from './database';
-import { generateUUID } from './database';
+// Simple UUID generator
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 export async function seedDatabase() {
+  console.log('Starting database seeding...');
+  
+  // Import database functions
+  const { execute, query } = await import('./database');
+  
   // Check if data already exists
   try {
-    const existingProducts = await import('./database').then(db => db.query('SELECT COUNT(*) as count FROM products'));
+    const existingProducts = query('SELECT COUNT(*) as count FROM products');
     if (existingProducts[0]?.count > 0) {
+      console.log('Database already seeded, skipping...');
       return; // Data already seeded
     }
   } catch (error) {
     // Tables might not exist yet, continue with seeding
+    console.log('Tables not ready, continuing with seeding...');
   }
 
   // Spanish IVA taxes for grocery
