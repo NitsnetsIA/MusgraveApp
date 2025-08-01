@@ -108,25 +108,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
               <tr>
                 <th className="text-left p-3 font-medium">fecha</th>
                 <th className="text-left p-3 font-medium">nº orden</th>
-                <th className="text-left p-3 font-medium">
-                  <div className="flex items-center gap-1">
-                    estado
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-gray-400" />
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-xs">
-                          <div className="text-sm space-y-1">
-                            <div><strong>Sin comunicar:</strong> La orden se comunicará a Musgrave cuando tenga conexión a internet</div>
-                            <div><strong>Procesando:</strong> La orden se está procesando en las instalaciones de Musgrave</div>
-                            <div><strong>Completado:</strong> La orden ha sido aceptada, puede ver el pedido asociado</div>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </th>
+                <th className="text-left p-3 font-medium">estado</th>
                 <th className="text-left p-3 font-medium">importe</th>
                 <th className="text-left p-3 font-medium"></th>
               </tr>
@@ -152,11 +134,22 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
                     </td>
                     <td className="p-3">{order.purchase_order_id.slice(-4)}</td>
                     <td className="p-3">
-                      <span className={`font-medium ${getStatusColor(order.status)}`}>
-                        {getStatusText(order.status)}
-                      </span>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {getStatusDescription(order.status)}
+                      <div className="flex items-center gap-1">
+                        <span className={`font-medium ${getStatusColor(order.status)}`}>
+                          {getStatusText(order.status)}
+                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <div className="text-sm">
+                                <strong>{getStatusText(order.status)}:</strong> {getStatusDescription(order.status)}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </td>
                     <td className="p-3">
