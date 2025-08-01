@@ -75,16 +75,15 @@ export function useDatabase() {
   const getProducts = async (searchTerm: string = ''): Promise<Product[]> => {
     try {
       let sql = 'SELECT * FROM products WHERE is_active = 1';
-      let params: string[] = [];
 
       if (searchTerm) {
-        sql += ' AND (ean LIKE ? OR title LIKE ? OR ref LIKE ?)';
-        const searchPattern = `%${searchTerm}%`;
-        params = [searchPattern, searchPattern, searchPattern];
+        // Use direct string substitution due to SQLite parameter binding issue
+        const escapedTerm = searchTerm.replace(/'/g, "''"); // Escape single quotes
+        sql += ` AND (ean LIKE '%${escapedTerm}%' OR title LIKE '%${escapedTerm}%' OR ref LIKE '%${escapedTerm}%')`;
       }
 
       sql += ' ORDER BY title';
-      return query(sql, params);
+      return query(sql);
     } catch (error) {
       console.error('Error getting products:', error);
       return [];
@@ -93,7 +92,8 @@ export function useDatabase() {
 
   const getProductByEan = async (ean: string): Promise<Product | null> => {
     try {
-      const results = query('SELECT * FROM products WHERE ean = ? AND is_active = 1', [ean]);
+      // Use direct string substitution due to SQLite parameter binding issue
+      const results = query(`SELECT * FROM products WHERE ean = '${ean}' AND is_active = 1`);
       return results[0] || null;
     } catch (error) {
       console.error('Error getting product:', error);
@@ -104,12 +104,13 @@ export function useDatabase() {
   // Store operations
   const getStoreByCode = async (code: string) => {
     try {
+      // Use direct string substitution due to SQLite parameter binding issue
       const results = query(`
         SELECT s.*, dc.name as delivery_center_name 
         FROM stores s 
         JOIN delivery_centers dc ON s.delivery_center_code = dc.code 
-        WHERE s.code = ? AND s.is_active = 1
-      `, [code]);
+        WHERE s.code = '${code}' AND s.is_active = 1
+      `);
       return results[0] || null;
     } catch (error) {
       console.error('Error getting store:', error);
