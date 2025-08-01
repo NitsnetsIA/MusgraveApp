@@ -74,15 +74,20 @@ export function useDatabase() {
   // Product operations
   const getProducts = async (searchTerm: string = ''): Promise<Product[]> => {
     try {
-      let sql = 'SELECT * FROM products WHERE is_active = 1';
+      let sql = `
+        SELECT p.*, t.tax_rate 
+        FROM products p 
+        LEFT JOIN taxes t ON p.tax_code = t.code 
+        WHERE p.is_active = 1
+      `;
 
       if (searchTerm) {
         // Use direct string substitution due to SQLite parameter binding issue
         const escapedTerm = searchTerm.replace(/'/g, "''"); // Escape single quotes
-        sql += ` AND (ean LIKE '%${escapedTerm}%' OR title LIKE '%${escapedTerm}%' OR ref LIKE '%${escapedTerm}%')`;
+        sql += ` AND (p.ean LIKE '%${escapedTerm}%' OR p.title LIKE '%${escapedTerm}%' OR p.ref LIKE '%${escapedTerm}%')`;
       }
 
-      sql += ' ORDER BY title';
+      sql += ' ORDER BY p.title';
       return query(sql);
     } catch (error) {
       console.error('Error getting products:', error);

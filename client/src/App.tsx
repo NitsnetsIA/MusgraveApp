@@ -180,11 +180,17 @@ function Router() {
       const testCartItems: CartItem[] = selectedProducts.map(product => ({
         ean: product.ean,
         title: product.title,
-        base_price: product.base_price,
-        tax_rate: product.tax_rate,
+        base_price: Number(product.base_price) || 0,
+        tax_rate: Number(product.tax_rate) || 0.21, // Default to 21% if missing
         quantity: Math.floor(Math.random() * 5) + 1, // Random quantity 1-5
         image_url: product.image_url
       }));
+
+      console.log('Test cart items created:', testCartItems.map(item => ({
+        title: item.title,
+        base_price: item.base_price,
+        tax_rate: item.tax_rate
+      })));
 
       setCartItems(testCartItems);
       

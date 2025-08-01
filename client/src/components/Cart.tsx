@@ -24,8 +24,19 @@ export default function Cart({
 }: CartProps) {
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
   const [tempQuantity, setTempQuantity] = useState<string>('');
-  const subtotal = items.reduce((sum, item) => sum + (item.base_price * item.quantity), 0);
-  const taxTotal = items.reduce((sum, item) => sum + (item.base_price * item.quantity * item.tax_rate), 0);
+  const subtotal = items.reduce((sum, item) => {
+    const price = Number(item.base_price) || 0;
+    const qty = Number(item.quantity) || 0;
+    return sum + (price * qty);
+  }, 0);
+  
+  const taxTotal = items.reduce((sum, item) => {
+    const price = Number(item.base_price) || 0;
+    const qty = Number(item.quantity) || 0;
+    const rate = Number(item.tax_rate) || 0;
+    return sum + (price * qty * rate);
+  }, 0);
+  
   const total = subtotal + taxTotal;
 
   if (!isOpen) return null;
@@ -92,8 +103,11 @@ export default function Cart({
               {/* Products */}
               <div className="divide-y">
                 {items.map((item) => {
-                  const baseTotal = item.base_price * item.quantity;
-                  const taxAmount = baseTotal * item.tax_rate;
+                  const price = Number(item.base_price) || 0;
+                  const qty = Number(item.quantity) || 0;
+                  const rate = Number(item.tax_rate) || 0;
+                  const baseTotal = price * qty;
+                  const taxAmount = baseTotal * rate;
                   const totalWithTax = baseTotal + taxAmount;
                   
                   return (
@@ -166,12 +180,12 @@ export default function Cart({
                       </div>
                       
                       {/* Base Price */}
-                      <div className="col-span-2 text-center text-sm">{item.base_price.toFixed(2).replace('.', ',')}€</div>
+                      <div className="col-span-2 text-center text-sm">{price.toFixed(2).replace('.', ',')}€</div>
                       
                       {/* VAT */}
                       <div className="col-span-2 text-center text-sm">
                         <div>{taxAmount.toFixed(2).replace('.', ',')}€</div>
-                        <div className="text-xs text-gray-500">({(item.tax_rate * 100).toFixed(0)}%)</div>
+                        <div className="text-xs text-gray-500">({(rate * 100).toFixed(0)}%)</div>
                       </div>
                       
                       {/* Total */}
