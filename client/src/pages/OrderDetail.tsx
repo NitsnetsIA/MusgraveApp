@@ -279,9 +279,9 @@ export default function OrderDetail() {
                             </div>
                           )}
                           {mod.originalPrice !== mod.finalPrice && (
-                            <div className="mt-1">
+                            <div className={mod.originalQuantity !== mod.finalQuantity ? "mt-1" : ""}>
                               <div className="text-blue-600 font-medium">Precio modificado:</div>
-                              <div className="text-sm">De {mod.originalPrice.toFixed(2)}€ a {mod.finalPrice.toFixed(2)}€</div>
+                              <div className="text-sm">De {mod.originalPrice.toFixed(2).replace('.', ',')}€ a {mod.finalPrice.toFixed(2).replace('.', ',')}€</div>
                             </div>
                           )}
                         </div>

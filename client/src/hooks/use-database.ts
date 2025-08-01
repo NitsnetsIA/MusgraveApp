@@ -258,14 +258,17 @@ export function useDatabase() {
     const allProducts = query(`SELECT * FROM products WHERE is_active = 1`);
     
     for (const item of originalItems) {
-      // 10% chance of modification per item
+      let modifiedItem = { ...item };
+      let shouldSkipItem = false;
+      
+      // 10% chance of quantity modification per item
       if (Math.random() < 0.1) {
         hasModifications = true;
         const modType = Math.random();
         
         if (modType < 0.5) {
           // 50% chance: Delete item (quantity = 0)
-          // Don't add this item to modifiedItems (effectively deleting it)
+          shouldSkipItem = true;
           
           // 50% chance to add replacement product
           if (Math.random() < 0.5 && allProducts.length > 0) {
@@ -287,23 +290,28 @@ export function useDatabase() {
           // 40% chance: Decrease quantity (10-50% reduction)
           const reductionFactor = 0.1 + Math.random() * 0.4; // 10-50% reduction
           const newQuantity = Math.max(1, Math.floor(item.quantity * (1 - reductionFactor)));
-          modifiedItems.push({
-            ...item,
-            quantity: newQuantity
-          });
+          modifiedItem.quantity = newQuantity;
         } else {
           // 10% chance: Increase quantity (10-30% increase)
           const increaseFactor = 0.1 + Math.random() * 0.2; // 10-30% increase
           const newQuantity = Math.ceil(item.quantity * (1 + increaseFactor));
-          modifiedItems.push({
-            ...item,
-            quantity: newQuantity
-          });
+          modifiedItem.quantity = newQuantity;
         }
-      } else {
-        // No modification - keep original item
-        modifiedItems.push({ ...item });
       }
+      
+      // Skip if item was deleted
+      if (shouldSkipItem) continue;
+      
+      // 10% chance of price modification per item (independent of quantity modification)
+      if (Math.random() < 0.1) {
+        hasModifications = true;
+        // Random ±10% price change
+        const priceChangeFactor = Math.random() < 0.5 ? 0.9 : 1.1; // -10% or +10%
+        modifiedItem.base_price = Number((item.base_price * priceChangeFactor).toFixed(2));
+      }
+      
+      // Add item to modified list
+      modifiedItems.push(modifiedItem);
     }
     
     // Calculate new totals
