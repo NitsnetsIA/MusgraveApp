@@ -13,49 +13,9 @@ export default function OrderDetail() {
   const [modifications, setModifications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadOrder() {
-      if (!params?.id) return;
-      
-      setIsLoading(true);
-      const orderData = await getOrderById(params.id);
-      setOrder(orderData);
-      
-      // Load original purchase order if available
-      if (orderData?.source_purchase_order_id) {
-        const originalOrder = await getPurchaseOrderById(orderData.source_purchase_order_id);
-        setOriginalPurchaseOrder(originalOrder);
-        
-        // Calculate modifications by comparing original and final orders
-        if (originalOrder?.items && orderData?.items) {
-          const mods = calculateModifications(originalOrder.items, orderData.items);
-          setModifications(mods);
-        }
-      }
-      
-      setIsLoading(false);
-    }
-
-    loadOrder();
-  }, [params?.id]);
-
-  if (isLoading) {
-    return (
-      <div className="p-4">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded mb-4"></div>
-          <div className="h-32 bg-gray-200 rounded mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
   // Calculate modifications between original purchase order and final order
   const calculateModifications = (originalItems: any[], finalItems: any[]) => {
     const modifications = [];
-    
-    // Compare original and final items to find modifications
     
     // Check for modified or removed items
     originalItems.forEach(originalItem => {
@@ -104,6 +64,44 @@ export default function OrderDetail() {
     
     return modifications;
   };
+
+  useEffect(() => {
+    async function loadOrder() {
+      if (!params?.id) return;
+      
+      setIsLoading(true);
+      const orderData = await getOrderById(params.id);
+      setOrder(orderData);
+      
+      // Load original purchase order if available
+      if (orderData?.source_purchase_order_id) {
+        const originalOrder = await getPurchaseOrderById(orderData.source_purchase_order_id);
+        setOriginalPurchaseOrder(originalOrder);
+        
+        // Calculate modifications by comparing original and final orders
+        if (originalOrder?.items && orderData?.items) {
+          const mods = calculateModifications(originalOrder.items, orderData.items);
+          setModifications(mods);
+        }
+      }
+      
+      setIsLoading(false);
+    }
+
+    loadOrder();
+  }, [params?.id]);
+
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded mb-4"></div>
+          <div className="h-32 bg-gray-200 rounded mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
