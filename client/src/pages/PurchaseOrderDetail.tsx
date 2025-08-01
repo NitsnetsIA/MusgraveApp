@@ -22,7 +22,7 @@ export default function PurchaseOrderDetail() {
     }
 
     loadOrder();
-  }, [params?.id]); // Remove getPurchaseOrderById to prevent infinite loop
+  }, [params?.id]);
 
   if (isLoading) {
     return (
@@ -64,117 +64,128 @@ export default function PurchaseOrderDetail() {
       case 'uncommunicated':
         return 'text-red-500';
       case 'processing':
-        return 'text-yellow-600';
+        return 'text-blue-500';
       case 'completed':
-        return 'text-green-600';
+        return 'text-green-500';
       default:
         return 'text-gray-500';
     }
   };
 
+  const formatPrice = (price: number) => {
+    return price.toFixed(2).replace('.', ',') + '€';
+  };
+
   return (
-    <div className="p-4">
-      <div className="flex items-center mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation('/purchase-orders')}
-          className="mr-3 p-0"
-        >
-          <ChevronLeft className="h-6 w-6 text-gray-600" />
-        </Button>
-        <ClipboardList className="h-5 w-5 mr-2" />
-        <h1 className="text-xl font-bold">Órdenes de compra</h1>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-        <h2 className="text-lg font-bold mb-2">
-          Orden de compra: {order.purchase_order_id.slice(-6)}
-        </h2>
-        <div className="text-sm text-gray-600 mb-1">
-          Centro de entrega Musgrave: 122 - Dolores (Alicante)
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className={`font-medium ${getStatusColor(order.status)}`}>
-            {getStatusText(order.status)}
-          </span>
-          {order.status === 'completed' && (
-            <span className="text-blue-600">Pedido asociado: 323232</span>
-          )}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/purchase-orders')}
+              className="mr-3 p-1"
+            >
+              <ChevronLeft className="h-5 w-5 text-gray-600" />
+            </Button>
+            <ClipboardList className="h-5 w-5 mr-2 text-gray-600" />
+            <span className="font-medium">Órdenes de compra</span>
+          </div>
         </div>
       </div>
 
-      {/* Product Details Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left p-3 font-medium">Producto</th>
-                <th className="text-left p-3 font-medium">Uds</th>
-                <th className="text-left p-3 font-medium">Base</th>
-                <th className="text-left p-3 font-medium">IVA</th>
-                <th className="text-left p-3 font-medium">Importe</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.items?.map((item: any, index: number) => {
-                const itemTotal = item.quantity * item.base_price_at_order;
-                const itemTax = itemTotal * item.tax_rate_at_order;
+      <div className="p-4">
+        {/* Order Header */}
+        <div className="mb-4">
+          <h1 className="text-lg font-semibold mb-1">
+            Orden de compra: {order.purchase_order_id?.substring(0, 7)}
+          </h1>
+          <div className="text-sm text-gray-600 mb-2">
+            Centro de entrega Musgrave: 122 - Dolores (Alicante)
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`font-medium ${getStatusColor(order.status)}`}>
+              {getStatusText(order.status)}
+            </span>
+            <span className="text-blue-600 underline">
+              Pedido asociado: 323232
+            </span>
+          </div>
+        </div>
+
+        {/* Products Table */}
+        <div className="bg-white rounded-lg border overflow-hidden">
+          {/* Table Header */}
+          <div className="bg-gray-100 px-3 py-2 border-b grid grid-cols-12 gap-1 text-xs font-medium text-gray-700">
+            <div className="col-span-4">Producto</div>
+            <div className="col-span-2 text-center">Uds</div>
+            <div className="col-span-2 text-center">Base</div>
+            <div className="col-span-2 text-center">IVA</div>
+            <div className="col-span-2 text-center">Importe</div>
+          </div>
+
+          {/* Products */}
+          {order.items && order.items.length > 0 ? (
+            <div className="divide-y">
+              {order.items.map((item: any, index: number) => {
+                const baseTotal = item.base_price_at_order * item.quantity;
+                const taxAmount = baseTotal * item.tax_rate_at_order;
+                const totalWithTax = baseTotal + taxAmount;
+                
                 return (
-                  <tr key={index} className="border-b">
-                    <td className="p-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0">
-                          {item.image_url ? (
-                            <img 
-                              src={item.image_url} 
-                              alt={item.title}
-                              className="w-full h-full object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
-                              IMG
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium">{item.title}</div>
-                          <div className="text-xs text-gray-500">EAN:{item.item_ean}</div>
-                        </div>
+                  <div key={index} className="px-3 py-3 grid grid-cols-12 gap-1 items-center">
+                    {/* Product */}
+                    <div className="col-span-4 flex items-center">
+                      <div className="w-8 h-8 bg-blue-100 rounded mr-2 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-5 h-6 bg-blue-400 rounded-sm"></div>
                       </div>
-                    </td>
-                    <td className="p-3">{item.quantity}</td>
-                    <td className="p-3">{item.base_price_at_order.toFixed(2)}€</td>
-                    <td className="p-3">
-                      {itemTax.toFixed(2)}€
-                      <br />
-                      <span className="text-xs text-gray-500">
-                        ({(item.tax_rate_at_order * 100).toFixed(0)}%)
-                      </span>
-                    </td>
-                    <td className="p-3">{(itemTotal + itemTax).toFixed(2)}€</td>
-                  </tr>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium leading-tight">{item.title}</div>
+                        <div className="text-xs text-gray-500">EAN: {item.item_ean}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Units */}
+                    <div className="col-span-2 text-center text-sm">{item.quantity}</div>
+                    
+                    {/* Base Price */}
+                    <div className="col-span-2 text-center text-sm">{formatPrice(item.base_price_at_order)}</div>
+                    
+                    {/* VAT */}
+                    <div className="col-span-2 text-center text-sm">
+                      <div>{formatPrice(taxAmount)}</div>
+                      <div className="text-xs text-gray-500">({(item.tax_rate_at_order * 100).toFixed(0)}%)</div>
+                    </div>
+                    
+                    {/* Total */}
+                    <div className="col-span-2 text-center text-sm font-medium">{formatPrice(totalWithTax)}</div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-gray-500">
+              No hay productos en esta orden
+            </div>
+          )}
         </div>
-        
-        {/* Order Totals */}
-        <div className="p-4 border-t bg-gray-50">
-          <div className="space-y-2 text-sm">
+
+        {/* Totals */}
+        <div className="mt-4 bg-white rounded-lg border p-4">
+          <div className="space-y-2">
             <div className="flex justify-between">
-              <span>Subtotal:</span>
-              <span className="font-medium">{order.subtotal.toFixed(2)}€</span>
+              <span className="font-medium">Subtotal:</span>
+              <span>{formatPrice(order.subtotal || 0)}</span>
             </div>
             <div className="flex justify-between">
-              <span>IVA:</span>
-              <span className="font-medium">{order.tax_total.toFixed(2)}€</span>
+              <span className="font-medium">IVA:</span>
+              <span>{formatPrice(order.tax_total || 0)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold border-t pt-2">
-              <span>Total:</span>
-              <span>{order.final_total.toFixed(2)}€</span>
+              <span>Total</span>
+              <span>{formatPrice(order.final_total || 0)}</span>
             </div>
           </div>
         </div>

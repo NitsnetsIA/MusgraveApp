@@ -122,7 +122,9 @@ export function useDatabase() {
   const getPurchaseOrders = async (userEmail: string): Promise<PurchaseOrder[]> => {
     try {
       // Use direct string substitution due to SQLite parameter binding issue
-      return query(`SELECT * FROM purchase_orders WHERE user_email = '${userEmail}' ORDER BY created_at DESC`);
+      const orders = query(`SELECT * FROM purchase_orders WHERE user_email = '${userEmail}' ORDER BY created_at DESC`);
+      console.log('Purchase orders found:', orders.length, 'for user:', userEmail);
+      return orders;
     } catch (error) {
       console.error('Error getting purchase orders:', error);
       return [];
