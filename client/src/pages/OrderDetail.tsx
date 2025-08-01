@@ -134,9 +134,12 @@ export default function OrderDetail() {
         </h2>
         <div className="text-sm text-gray-600 mb-1">
           Orden de compra asociado: 
-          <span className="text-blue-600 ml-1">
+          <button 
+            onClick={() => setLocation(`/purchase-orders/${order.source_purchase_order_id}`)}
+            className="text-blue-600 ml-1 hover:underline"
+          >
             {order.source_purchase_order_id.slice(-6)}
-          </span>
+          </button>
         </div>
         <div className="text-sm text-gray-600">
           Centro de entrega Musgrave: 122 - Dolores (Alicante)
