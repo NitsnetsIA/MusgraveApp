@@ -64,10 +64,7 @@ function Router() {
       if (authenticatedUser) {
         setUser(authenticatedUser);
         setLocation('/');
-        toast({
-          title: "Inicio de sesión exitoso",
-          description: `Bienvenido ${authenticatedUser.name}`,
-        });
+        // Removed welcome toast message
         return true;
       }
       return false;
@@ -86,10 +83,7 @@ function Router() {
     setSideMenuOpen(false);
     setCartOpen(false);
     setLocation('/login');
-    toast({
-      title: "Sesión cerrada",
-      description: "Has cerrado sesión correctamente",
-    });
+    // Removed logout toast message
   };
 
   // Cart management
@@ -125,10 +119,7 @@ function Router() {
         }
       }
       
-      toast({
-        title: "Producto añadido",
-        description: `${quantity} unidades añadidas al carrito`,
-      });
+      // Removed product added toast message
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast({
@@ -154,10 +145,7 @@ function Router() {
   const removeFromCart = (ean: string) => {
     const updatedItems = cartItems.filter(item => item.ean !== ean);
     setCartItems(updatedItems);
-    toast({
-      title: "Producto eliminado",
-      description: "Producto eliminado del carrito",
-    });
+    // Removed product removed toast message
   };
 
   const clearCart = () => {
@@ -240,7 +228,14 @@ function Router() {
       onCheckout={handleCheckout}
     >
       <Switch>
-        <Route path="/" component={() => <ProductCatalog onAddToCart={addToCart} />} />
+        <Route path="/" component={() => (
+          <ProductCatalog 
+            cartItems={cartItems}
+            onAddToCart={addToCart} 
+            onUpdateCart={updateCartItem}
+            onRemoveFromCart={removeFromCart}
+          />
+        )} />
         <Route path="/purchase-orders" component={() => <PurchaseOrders user={user} />} />
         <Route path="/purchase-orders/:id" component={PurchaseOrderDetail} />
         <Route path="/orders" component={() => <Orders user={user} />} />

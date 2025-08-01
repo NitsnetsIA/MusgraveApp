@@ -26,10 +26,7 @@ export default function Header({
           </button>
           <div className="text-left">
             <div className="text-sm font-medium text-gray-900">{user?.name}</div>
-            <div className="text-xs text-gray-500">{store?.name}</div>
-            <div className="text-xs text-red-500">
-              {isOffline ? 'SIN CONEXIÓN' : 'CONECTADO'}
-            </div>
+            <div className="text-xs text-gray-500">{store?.name || store?.code}</div>
           </div>
           <div className="bg-musgrave-500 text-white text-lg font-bold px-2 py-1 rounded transform -rotate-12">
             M

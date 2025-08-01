@@ -1,25 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 interface ProductCardProps {
   product: any;
+  cartQuantity?: number;
   onAddToCart: (ean: string, quantity: number) => void;
+  onUpdateCart: (ean: string, quantity: number) => void;
+  onRemoveFromCart: (ean: string) => void;
 }
 
-export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
-  const [quantity, setQuantity] = useState(1);
+export default function ProductCard({ 
+  product, 
+  cartQuantity = 0, 
+  onAddToCart, 
+  onUpdateCart, 
+  onRemoveFromCart 
+}: ProductCardProps) {
+  const [localQuantity, setLocalQuantity] = useState(1);
+  const isInCart = cartQuantity > 0;
+
+  useEffect(() => {
+    if (isInCart) {
+      setLocalQuantity(cartQuantity);
+    }
+  }, [cartQuantity, isInCart]);
 
   const handleQuantityChange = (newQuantity: number) => {
-    setQuantity(Math.max(0, newQuantity));
+    const qty = Math.max(0, newQuantity);
+    setLocalQuantity(qty);
+    if (isInCart && qty > 0) {
+      onUpdateCart(product.ean, qty);
+    }
   };
 
   const handleAddToCart = () => {
-    if (quantity > 0) {
-      onAddToCart(product.ean, quantity);
-      setQuantity(1);
-    }
+    onAddToCart(product.ean, 1); // Always add 1 when clicking AÑADIR
+  };
+
+  const handleRemove = () => {
+    onRemoveFromCart(product.ean);
+    setLocalQuantity(1);
   };
 
   return (
@@ -38,42 +60,53 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
       
       <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.title}</h3>
       
-      <div className="text-lg font-bold text-musgrave-600 mb-3">
-        {product.base_price.toFixed(2)} €
-        {product.display_price && (
-          <span className="text-xs text-gray-500 ml-1">({product.display_price})</span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-lg font-bold text-musgrave-600">
+          {product.base_price.toFixed(2)} €
+          {product.display_price && (
+            <span className="text-xs text-gray-500 ml-1">({product.display_price})</span>
+          )}
+        </div>
+        {isInCart && (
+          <button
+            onClick={handleRemove}
+            className="text-gray-400 hover:text-red-500 p-1"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         )}
       </div>
       
-      <div className="flex items-center space-x-2 mb-3">
-        <button
-          onClick={() => handleQuantityChange(quantity - 1)}
-          className="bg-gray-200 text-gray-600 w-8 h-8 rounded flex items-center justify-center"
+      {isInCart ? (
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handleQuantityChange(localQuantity - 1)}
+            className="bg-musgrave-100 text-musgrave-600 w-8 h-8 rounded flex items-center justify-center hover:bg-musgrave-200"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <Input
+            type="number"
+            value={localQuantity}
+            onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
+            className="w-16 text-center border-musgrave-200 focus:border-musgrave-500"
+            min="1"
+          />
+          <button
+            onClick={() => handleQuantityChange(localQuantity + 1)}
+            className="bg-musgrave-100 text-musgrave-600 w-8 h-8 rounded flex items-center justify-center hover:bg-musgrave-200"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <Button
+          onClick={handleAddToCart}
+          className="w-full bg-musgrave-500 hover:bg-musgrave-600 text-white"
         >
-          <Minus className="h-4 w-4" />
-        </button>
-        <Input
-          type="number"
-          value={quantity}
-          onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
-          className="w-12 text-center"
-          min="0"
-        />
-        <button
-          onClick={() => handleQuantityChange(quantity + 1)}
-          className="bg-gray-200 text-gray-600 w-8 h-8 rounded flex items-center justify-center"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </div>
-      
-      <Button
-        onClick={handleAddToCart}
-        className="w-full bg-musgrave-500 hover:bg-musgrave-600 text-white"
-        disabled={quantity === 0}
-      >
-        AÑADIR
-      </Button>
+          AÑADIR
+        </Button>
+      )}
     </div>
   );
 }

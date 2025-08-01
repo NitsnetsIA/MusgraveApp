@@ -5,10 +5,18 @@ import ProductCard from '@/components/ProductCard';
 import { useDatabase } from '@/hooks/use-database';
 
 interface ProductCatalogProps {
+  cartItems: any[];
   onAddToCart: (ean: string, quantity: number) => void;
+  onUpdateCart: (ean: string, quantity: number) => void;
+  onRemoveFromCart: (ean: string) => void;
 }
 
-export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
+export default function ProductCatalog({ 
+  cartItems, 
+  onAddToCart, 
+  onUpdateCart, 
+  onRemoveFromCart 
+}: ProductCatalogProps) {
   const { getProducts } = useDatabase();
   const [products, setProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,13 +63,19 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.ean}
-              product={product}
-              onAddToCart={onAddToCart}
-            />
-          ))}
+          {products.map((product) => {
+            const cartItem = cartItems.find(item => item.ean === product.ean);
+            return (
+              <ProductCard
+                key={product.ean}
+                product={product}
+                cartQuantity={cartItem?.quantity || 0}
+                onAddToCart={onAddToCart}
+                onUpdateCart={onUpdateCart}
+                onRemoveFromCart={onRemoveFromCart}
+              />
+            );
+          })}
         </div>
       )}
 
