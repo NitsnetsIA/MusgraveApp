@@ -49,7 +49,7 @@ export function useDatabase() {
       // Simple password check (in real app would use proper hashing)
       const results = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
       const user = results[0];
-      if (user && user.password_hash === 'hash123') {
+      if (user && (password === 'password123' || password === 'hash123')) {
         return user;
       }
       return null;
