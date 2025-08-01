@@ -21,9 +21,9 @@ export default function PurchaseOrderDetail() {
       const orderData = await getPurchaseOrderById(params.id);
       setOrder(orderData);
       
-      // Load store data if order has store_code
-      if (orderData?.store_code) {
-        const storeData = await getStoreByCode(orderData.store_code);
+      // Load store data if order has store_id  
+      if (orderData?.store_id) {
+        const storeData = await getStoreByCode(orderData.store_id);
         setStore(storeData);
       }
 
