@@ -121,7 +121,8 @@ export function useDatabase() {
   // Purchase order operations
   const getPurchaseOrders = async (userEmail: string): Promise<PurchaseOrder[]> => {
     try {
-      return query('SELECT * FROM purchase_orders WHERE user_email = ? ORDER BY created_at DESC', [userEmail]);
+      // Use direct string substitution due to SQLite parameter binding issue
+      return query(`SELECT * FROM purchase_orders WHERE user_email = '${userEmail}' ORDER BY created_at DESC`);
     } catch (error) {
       console.error('Error getting purchase orders:', error);
       return [];
@@ -130,7 +131,8 @@ export function useDatabase() {
 
   const getPurchaseOrderById = async (id: string): Promise<any> => {
     try {
-      const orders = query('SELECT * FROM purchase_orders WHERE purchase_order_id = ?', [id]);
+      // Use direct string substitution due to SQLite parameter binding issue
+      const orders = query(`SELECT * FROM purchase_orders WHERE purchase_order_id = '${id}'`);
       if (orders.length === 0) return null;
 
       const order = orders[0];
@@ -138,8 +140,8 @@ export function useDatabase() {
         SELECT poi.*, p.title, p.image_url 
         FROM purchase_order_items poi 
         JOIN products p ON poi.item_ean = p.ean 
-        WHERE poi.purchase_order_id = ?
-      `, [id]);
+        WHERE poi.purchase_order_id = '${id}'
+      `);
 
       return { ...order, items };
     } catch (error) {
@@ -190,7 +192,8 @@ export function useDatabase() {
   // Order operations
   const getOrders = async (userEmail: string): Promise<Order[]> => {
     try {
-      return query('SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC', [userEmail]);
+      // Use direct string substitution due to SQLite parameter binding issue
+      return query(`SELECT * FROM orders WHERE user_email = '${userEmail}' ORDER BY created_at DESC`);
     } catch (error) {
       console.error('Error getting orders:', error);
       return [];
@@ -199,7 +202,8 @@ export function useDatabase() {
 
   const getOrderById = async (id: string): Promise<any> => {
     try {
-      const orders = query('SELECT * FROM orders WHERE order_id = ?', [id]);
+      // Use direct string substitution due to SQLite parameter binding issue
+      const orders = query(`SELECT * FROM orders WHERE order_id = '${id}'`);
       if (orders.length === 0) return null;
 
       const order = orders[0];
@@ -207,8 +211,8 @@ export function useDatabase() {
         SELECT oi.*, p.title, p.image_url 
         FROM order_items oi 
         JOIN products p ON oi.item_ean = p.ean 
-        WHERE oi.order_id = ?
-      `, [id]);
+        WHERE oi.order_id = '${id}'
+      `);
 
       return { ...order, items };
     } catch (error) {

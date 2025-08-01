@@ -25,7 +25,7 @@ export default function Orders({ user }: OrdersProps) {
     }
 
     loadOrders();
-  }, [user?.email, getOrders]);
+  }, [user?.email]); // Remove getOrders to prevent infinite loop
 
   const viewOrder = (orderId: string) => {
     setLocation(`/orders/${orderId}`);

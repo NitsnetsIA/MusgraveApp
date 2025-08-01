@@ -25,7 +25,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
     }
 
     loadOrders();
-  }, [user?.email, getPurchaseOrders]);
+  }, [user?.email]); // Remove getPurchaseOrders to prevent infinite loop
 
   const getStatusText = (status: string) => {
     switch (status) {

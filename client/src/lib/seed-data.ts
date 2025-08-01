@@ -19,12 +19,10 @@ export async function seedDatabase() {
   try {
     const existingProducts = query('SELECT COUNT(*) as count FROM products');
     if (existingProducts[0]?.count > 0) {
-      console.log('Database already seeded, skipping...');
-      return; // Data already seeded
+      return; // Data already seeded - remove repetitive logging
     }
   } catch (error) {
     // Tables might not exist yet, continue with seeding
-    console.log('Tables not ready, continuing with seeding...');
   }
 
   // Spanish IVA taxes for grocery
