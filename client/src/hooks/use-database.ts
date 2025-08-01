@@ -47,9 +47,19 @@ export function useDatabase() {
   const authenticateUser = async (email: string, password: string): Promise<User | null> => {
     try {
       console.log('Authenticating user:', { email, password });
-      // Simple password check (in real app would use proper hashing)
+      
+      // Debug: Check all users in table
+      const allUsers = query('SELECT * FROM users');
+      console.log('All users in database:', allUsers);
+      
+      // Debug: Check specific query
       const results = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
-      console.log('Query results:', results);
+      console.log('Query results for specific email:', results);
+      
+      // Debug: Try without is_active filter
+      const resultsNoFilter = query('SELECT * FROM users WHERE email = ?', [email]);
+      console.log('Query results without is_active filter:', resultsNoFilter);
+      
       const user = results[0];
       console.log('Found user:', user);
       if (user && (password === 'password123' || password === 'hash123')) {
