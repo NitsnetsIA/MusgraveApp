@@ -31,7 +31,7 @@ export default function PurchaseOrderDetail() {
       if (orderData?.status === 'completed') {
         try {
           const { query } = await import('../lib/database');
-          const processedOrders = query(`SELECT * FROM orders WHERE purchase_order_id = '${orderData.purchase_order_id}'`);
+          const processedOrders = query(`SELECT * FROM orders WHERE source_purchase_order_id = '${orderData.purchase_order_id}'`);
           if (processedOrders.length > 0) {
             setProcessedOrder(processedOrders[0]);
           }

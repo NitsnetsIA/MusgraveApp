@@ -176,7 +176,7 @@ export function useDatabase() {
 
       // Insert purchase order with random status
       execute(`
-        INSERT INTO purchase_orders (purchase_order_id, user_email, store_code, created_at, status, subtotal, tax_total, final_total)
+        INSERT INTO purchase_orders (purchase_order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total)
         VALUES ('${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', '${randomStatus}', ${subtotal}, ${taxTotal}, ${finalTotal})
       `);
 
@@ -216,8 +216,8 @@ export function useDatabase() {
 
       // Insert processed order with same data as purchase order
       execute(`
-        INSERT INTO orders (order_id, user_email, store_code, created_at, status, subtotal, tax_total, final_total, purchase_order_id)
-        VALUES ('${orderId}', '${userEmail}', '${storeId}', '${now}', 'pending', ${subtotal}, ${taxTotal}, ${finalTotal}, '${purchaseOrderId}')
+        INSERT INTO orders (order_id, source_purchase_order_id, user_email, store_id, created_at, subtotal, tax_total, final_total)
+        VALUES ('${orderId}', '${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', ${subtotal}, ${taxTotal}, ${finalTotal})
       `);
 
       // Insert order items with same data as purchase order items
