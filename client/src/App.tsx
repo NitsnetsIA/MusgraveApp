@@ -38,6 +38,11 @@ function Router() {
   const [user, setUser] = useState<User | null>(null);
   const [store, setStore] = useState<any>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  
+  // Debug cart items changes
+  useEffect(() => {
+    console.log('Cart items state changed:', cartItems);
+  }, [cartItems]);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,11 +102,15 @@ function Router() {
         // Update existing item
         const updatedItems = [...cartItems];
         updatedItems[existingItemIndex].quantity += quantity;
+        console.log('Updating existing item:', updatedItems[existingItemIndex]);
         setCartItems(updatedItems);
+        console.log('Cart items after updating:', updatedItems);
       } else {
         // Add new item - we need to get product details first
         const { query } = await import('./lib/database');
-        const products = query('SELECT * FROM products WHERE ean = ?', [ean]);
+        // Use direct string substitution due to SQLite parameter binding issue
+        const products = query(`SELECT * FROM products WHERE ean = '${ean}'`);
+        console.log('Query result for product:', ean, products);
         if (products.length > 0) {
           const product = products[0];
           const taxRate = await getTaxRate(product.tax_code);
@@ -116,7 +125,9 @@ function Router() {
             display_price: product.display_price
           };
           
+          console.log('Adding new item to cart:', newItem);
           setCartItems([...cartItems, newItem]);
+          console.log('Cart items after adding:', [...cartItems, newItem]);
         }
       }
       
