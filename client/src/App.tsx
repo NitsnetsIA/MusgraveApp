@@ -96,12 +96,16 @@ function Router() {
       const existingItemIndex = cartItems.findIndex(item => item.ean === ean);
       
       if (existingItemIndex >= 0) {
-        // Update existing item
+        // Update existing item and move it to the top
         const updatedItems = [...cartItems];
-        updatedItems[existingItemIndex].quantity += quantity;
-        setCartItems(updatedItems);
+        const existingItem = updatedItems[existingItemIndex];
+        existingItem.quantity += quantity;
+        
+        // Remove from current position and add to the top
+        updatedItems.splice(existingItemIndex, 1);
+        setCartItems([existingItem, ...updatedItems]);
       } else {
-        // Add new item - we need to get product details first
+        // Add new item at the top - we need to get product details first
         const { query } = await import('./lib/database');
         // Use direct string substitution due to SQLite parameter binding issue
         const products = query(`SELECT * FROM products WHERE ean = '${ean}'`);
@@ -119,7 +123,8 @@ function Router() {
             display_price: product.display_price
           };
           
-          setCartItems([...cartItems, newItem]);
+          // Add new item at the top of the cart
+          setCartItems([newItem, ...cartItems]);
         }
       }
       

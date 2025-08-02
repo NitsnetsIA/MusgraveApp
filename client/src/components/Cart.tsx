@@ -86,18 +86,17 @@ export default function Cart({
           // Add one unit to cart
           onAddToCart(ean, 1);
           
-          // Show success message with animation
-          setBarcodeMessage(`✓ ${product.title} añadido al carrito`);
+          // Mark as newly added for highlighting
           setAddedProduct(ean);
           
-          // Clear success message and animation
+          // Clear highlighting after a few seconds
           setTimeout(() => {
-            setBarcodeMessage('');
             setAddedProduct(null);
-          }, 3000);
+          }, 5000);
           
           // Clear barcode input
           setBarcodeInput('');
+          setBarcodeMessage('');
         } else {
           // Show error message
           setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
@@ -176,7 +175,7 @@ export default function Cart({
                     <div 
                       key={item.ean} 
                       className={`p-3 grid grid-cols-12 gap-1 items-center transition-all duration-500 ${
-                        isNewlyAdded ? 'bg-green-50 border-l-4 border-green-400' : ''
+                        isNewlyAdded ? 'bg-green-100 border-l-4 border-musgrave-500' : 'hover:bg-gray-50'
                       }`}
                     >
                       {/* Product */}
@@ -282,13 +281,9 @@ export default function Cart({
               />
             </div>
             
-            {/* Barcode Scanner Message */}
-            {barcodeMessage && (
-              <div className={`mt-2 p-3 rounded-lg text-sm font-medium ${
-                barcodeMessage.startsWith('✓') 
-                  ? 'bg-green-100 text-green-800 border border-green-200' 
-                  : 'bg-red-100 text-red-800 border border-red-200'
-              }`}>
+            {/* Error message only for product not found */}
+            {barcodeMessage && barcodeMessage.startsWith('✗') && (
+              <div className="mt-2 p-3 rounded-lg text-sm font-medium bg-red-100 text-red-800 border border-red-200">
                 {barcodeMessage}
               </div>
             )}
