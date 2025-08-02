@@ -101,44 +101,57 @@ export default function PurchaseOrderDetail() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation('/purchase-orders')}
-              className="mr-3 p-1"
-            >
-              <ChevronLeft className="h-5 w-5 text-gray-600" />
-            </Button>
-            <ClipboardList className="h-5 w-5 mr-2 text-gray-600" />
-            <span className="font-medium">Órdenes de compra</span>
-          </div>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/purchase-orders')}
+            className="mr-3 p-1"
+          >
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
+          </Button>
+          <ClipboardList className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="font-medium">Órdenes de compra</span>
         </div>
       </div>
 
       <div className="p-4">
-        {/* Order Header */}
-        <div className="mb-4">
-          <h1 className="text-lg font-semibold mb-1">
-            Orden de compra: {order.purchase_order_id}
-          </h1>
-          <div className="text-sm text-gray-600 mb-2">
-            <div>Tienda: {store?.name || store?.code || 'Cargando...'}</div>
-            <div>Centro de entrega: {store?.delivery_center_name || 'M-005 - Centro de entrega Alicante-Elche'}</div>
+        {/* Order Header - Optimized Layout */}
+        <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
+          <div className="mb-3">
+            <h1 className="text-lg font-bold text-gray-900 mb-1">
+              Nº Orden: {order.purchase_order_id}
+            </h1>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Estado:</span>
+                <span className={`text-sm font-medium ${getStatusColor(order.status)}`}>
+                  {getStatusText(order.status)}
+                </span>
+              </div>
+              {order.status === 'completed' && processedOrder && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Pedido:</span>
+                  <button 
+                    onClick={() => setLocation(`/orders/${processedOrder.order_id}`)}
+                    className="text-sm text-blue-600 font-medium underline"
+                  >
+                    {processedOrder.order_id.substring(0, 6)}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`font-medium ${getStatusColor(order.status)}`}>
-              {getStatusText(order.status)}
-            </span>
-            {order.status === 'completed' && processedOrder && (
-              <button 
-                onClick={() => setLocation(`/orders/${processedOrder.order_id}`)}
-                className="text-blue-600 underline"
-              >
-                Pedido asociado: {processedOrder.order_id.substring(0, 6)}
-              </button>
-            )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div>
+              <div className="text-gray-600">Centro de entrega:</div>
+              <div className="font-medium">122 - Dolores (Alicante)</div>
+            </div>
+            <div>
+              <div className="text-gray-600">Tienda:</div>
+              <div className="font-medium">{store?.code || 'ES001'} - {store?.name || 'E.S. Gran VIA'}</div>
+            </div>
           </div>
         </div>
 
