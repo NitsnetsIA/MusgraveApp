@@ -133,13 +133,10 @@ export default function Cart({
           <h1 className="text-xl font-bold">Checkout</h1>
         </div>
 
-        {/* Total Summary */}
+        {/* Delivery Center Info */}
         <div className="p-4 bg-gray-50 border-b">
-          <div className="text-center">
-            <div className="text-2xl font-bold mb-1">Total: {formatSpanishCurrency(total)}</div>
-            <div className="text-sm text-gray-600">
-              Centro de entrega Musgrave: {store?.delivery_center_name || '122 - Dolores (Alicante)'}
-            </div>
+          <div className="text-center text-sm text-gray-600">
+            Centro de entrega Musgrave: {store?.delivery_center_name || '122 - Dolores (Alicante)'}
           </div>
         </div>
         
@@ -162,10 +159,9 @@ export default function Cart({
               {/* Table Header */}
               <div className="bg-gray-50 border-b grid grid-cols-12 gap-1 text-xs font-medium text-gray-700 p-3">
                 <div className="col-span-4">Producto</div>
-                <div className="col-span-2 text-center">Unidades</div>
-                <div className="col-span-2 text-center">Base</div>
-                <div className="col-span-2 text-center">IVA</div>
-                <div className="col-span-2 text-center">Importe</div>
+                <div className="col-span-2 text-center">Base+IVA</div>
+                <div className="col-span-3 text-center">Unidades</div>
+                <div className="col-span-3 text-center">Importe</div>
               </div>
 
               {/* Products */}
@@ -192,12 +188,17 @@ export default function Cart({
                           <Package className="h-4 w-4 text-blue-600" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium leading-tight truncate">{item.title}</div>
+                          <div className="text-sm font-medium leading-tight line-clamp-2" style={{lineHeight: "1.2", minHeight: "2.4em"}}>{item.title}</div>
                         </div>
                       </div>
                       
+                      {/* Price (Base + IVA) */}
+                      <div className="col-span-2 text-center text-sm">
+                        {formatSpanishCurrency(totalWithTax / qty)}
+                      </div>
+                      
                       {/* Units with controls */}
-                      <div className="col-span-2 flex items-center justify-center">
+                      <div className="col-span-3 flex items-center justify-center">
                         <div className="flex items-center border rounded">
                           <button
                             onClick={() => onUpdateQuantity(item.ean, Math.max(0, item.quantity - 1))}
@@ -253,20 +254,29 @@ export default function Cart({
                         </div>
                       </div>
                       
-                      {/* Base Price */}
-                      <div className="col-span-2 text-center text-sm">{formatSpanishCurrency(price)}</div>
-                      
-                      {/* VAT */}
-                      <div className="col-span-2 text-center text-sm">
-                        <div>{formatSpanishCurrency(taxAmount)}</div>
-                        <div className="text-xs text-gray-500">({(rate * 100).toFixed(0)}%)</div>
-                      </div>
-                      
                       {/* Total */}
-                      <div className="col-span-2 text-center text-sm font-medium">{formatSpanishCurrency(totalWithTax)}</div>
+                      <div className="col-span-3 text-center text-sm font-medium">{formatSpanishCurrency(totalWithTax)}</div>
                     </div>
                   );
                 })}
+              </div>
+              
+              {/* Totals Summary */}
+              <div className="bg-gray-50 border-t p-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal (Base):</span>
+                    <span>{formatSpanishCurrency(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>IVA:</span>
+                    <span>{formatSpanishCurrency(taxTotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span>Total:</span>
+                    <span>{formatSpanishCurrency(total)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -297,23 +307,6 @@ export default function Cart({
             )}
           </div>
 
-          {/* Totals Summary - only show if items exist */}
-          {items.length > 0 && (
-            <div className="p-4 space-y-2 border-b">
-              <div className="flex justify-between">
-                <span className="font-medium">Subtotal:</span>
-                <span>{formatSpanishCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">IVA:</span>
-                <span>{formatSpanishCurrency(taxTotal)}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold border-t pt-2">
-                <span>Total</span>
-                <span>{formatSpanishCurrency(total)}</span>
-              </div>
-            </div>
-          )}
           
           {/* Checkout Button */}
           {items.length > 0 && (
