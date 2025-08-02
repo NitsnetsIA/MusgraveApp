@@ -108,22 +108,21 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left p-3 font-medium">fecha</th>
-                <th className="text-left p-3 font-medium">nº orden</th>
-                <th className="text-left p-3 font-medium">estado</th>
+                <th className="text-left p-3 font-medium">nº de orden</th>
                 <th className="text-left p-3 font-medium">importe</th>
-                <th className="text-left p-3 font-medium"></th>
+                <th className="text-left p-3 font-medium w-12"></th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
+                  <td colSpan={4} className="p-8 text-center text-gray-500">
                     Cargando órdenes...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
+                  <td colSpan={4} className="p-8 text-center text-gray-500">
                     No hay órdenes de compra
                   </td>
                 </tr>
@@ -133,35 +132,37 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
                     <td className="p-3">
                       {new Date(order.created_at).toLocaleDateString('es-ES')}
                     </td>
-                    <td className="p-3">{order.purchase_order_id.slice(-4)}</td>
                     <td className="p-3">
-                      <div className="flex items-center gap-1">
-                        <span className={`font-medium ${getStatusColor(order.status)}`}>
-                          {getStatusText(order.status)}
-                        </span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="h-4 w-4 text-gray-400" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-xs">
-                              <div className="text-sm">
-                                <strong>{getStatusText(order.status)}:</strong> {getStatusDescription(order.status)}
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                      <div className="leading-tight">
+                        <div className="font-medium text-sm">{order.purchase_order_id.slice(-4)}</div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className={`text-xs font-medium ${getStatusColor(order.status)}`}>
+                            {getStatusText(order.status)}
+                          </span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="h-3 w-3 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <div className="text-sm">
+                                  <strong>{getStatusText(order.status)}:</strong> {getStatusDescription(order.status)}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </td>
                     <td className="p-3">
                       {formatSpanishCurrency(order.final_total)}
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 w-12">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => viewOrder(order.purchase_order_id)}
-                        className="text-blue-600 p-1"
+                        className="text-blue-600 p-1 flex-shrink-0"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
