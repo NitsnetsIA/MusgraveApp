@@ -156,56 +156,57 @@ export default function PurchaseOrderDetail() {
         </div>
 
         {/* Products Table */}
-        <div className="bg-white rounded-lg border overflow-hidden">
-          {/* Table Header */}
-          <div className="bg-gray-100 px-3 py-2 border-b grid grid-cols-12 gap-1 text-xs font-medium text-gray-700">
-            <div className="col-span-4">Producto</div>
-            <div className="col-span-2 text-center">Uds</div>
-            <div className="col-span-2 text-center">Base</div>
-            <div className="col-span-2 text-center">IVA</div>
-            <div className="col-span-2 text-center">Importe</div>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="w-full">
+            <table className="w-full text-sm table-fixed">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left p-2 font-medium w-[45%]">Producto</th>
+                  <th className="text-left p-2 font-medium w-[15%]">Uds</th>
+                  <th className="text-left p-2 font-medium w-[20%]">
+                    <div className="text-xs leading-tight">
+                      <div>Base</div>
+                      <div>IVA</div>
+                    </div>
+                  </th>
+                  <th className="text-left p-2 font-medium w-[20%]">Importe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items?.map((item: any, index: number) => {
+                  const itemTotal = item.quantity * item.base_price_at_order;
+                  const itemTax = itemTotal * item.tax_rate_at_order;
+                  return (
+                    <tr key={index} className="border-b">
+                      <td className="p-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 bg-gray-100 rounded flex-shrink-0">
+                            <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                              IMG
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm leading-tight line-clamp-2" style={{lineHeight: "1.2", minHeight: "2.4em"}}>{item.title}</div>
+                            <div className="text-xs text-gray-500">EAN:{item.item_ean}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-2 text-center">{item.quantity}</td>
+                      <td className="p-2">
+                        <div className="text-xs leading-none">
+                          <div className="mb-0.5">{formatSpanishCurrency(item.base_price_at_order)}</div>
+                          <div className="mb-0.5">{formatSpanishCurrency(item.base_price_at_order * item.tax_rate_at_order)}</div>
+                          <div className="text-gray-500">{(item.tax_rate_at_order * 100).toFixed(0)}%</div>
+                        </div>
+                      </td>
+                      <td className="p-2 text-right">{formatSpanishCurrency(itemTotal + itemTax)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-
-          {/* Products */}
-          {order.items && order.items.length > 0 ? (
-            <div className="divide-y">
-              {order.items.map((item: any, index: number) => {
-                const baseTotal = item.base_price_at_order * item.quantity;
-                const taxAmount = baseTotal * item.tax_rate_at_order;
-                const totalWithTax = baseTotal + taxAmount;
-                
-                return (
-                  <div key={index} className="px-3 py-3 grid grid-cols-12 gap-1 items-center">
-                    {/* Product */}
-                    <div className="col-span-4 flex items-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded mr-2 flex-shrink-0 flex items-center justify-center">
-                        <div className="w-5 h-6 bg-blue-400 rounded-sm"></div>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium leading-tight">{item.title}</div>
-                        <div className="text-xs text-gray-500">EAN: {item.item_ean}</div>
-                      </div>
-                    </div>
-                    
-                    {/* Units */}
-                    <div className="col-span-2 text-center text-sm">{item.quantity}</div>
-                    
-                    {/* Base Price */}
-                    <div className="col-span-2 text-center text-sm">{formatSpanishCurrency(item.base_price_at_order)}</div>
-                    
-                    {/* VAT */}
-                    <div className="col-span-2 text-center text-sm">
-                      <div>{formatSpanishCurrency(taxAmount)}</div>
-                      <div className="text-xs text-gray-500">({(item.tax_rate_at_order * 100).toFixed(0)}%)</div>
-                    </div>
-                    
-                    {/* Total */}
-                    <div className="col-span-2 text-center text-sm font-medium">{formatSpanishCurrency(totalWithTax)}</div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
+          {(!order.items || order.items.length === 0) && (
             <div className="p-8 text-center text-gray-500">
               No hay productos en esta orden
             </div>
