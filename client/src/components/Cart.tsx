@@ -89,6 +89,14 @@ export default function Cart({
           // Mark as newly added for highlighting
           setAddedProduct(ean);
           
+          // Scroll to top to show the newly added product
+          setTimeout(() => {
+            const productsList = document.querySelector('.products-list');
+            if (productsList) {
+              productsList.scrollTop = 0;
+            }
+          }, 100);
+          
           // Clear highlighting after a few seconds
           setTimeout(() => {
             setAddedProduct(null);
@@ -136,7 +144,7 @@ export default function Cart({
         </div>
         
         {/* Products Table */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto products-list">
           {items.length === 0 ? (
             <div className="text-center text-gray-500 mt-8 p-4">
               <div className="mb-4">Su carrito está vacío</div>
@@ -179,12 +187,12 @@ export default function Cart({
                       }`}
                     >
                       {/* Product */}
-                      <div className="col-span-4 flex items-center">
+                      <div className="col-span-4 flex items-center min-w-0">
                         <div className="w-8 h-8 bg-blue-100 rounded mr-2 flex-shrink-0 flex items-center justify-center">
                           <Package className="h-4 w-4 text-blue-600" />
                         </div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium leading-tight">{item.title}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium leading-tight truncate">{item.title}</div>
                         </div>
                       </div>
                       
