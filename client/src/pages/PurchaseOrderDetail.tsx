@@ -178,16 +178,16 @@ export default function PurchaseOrderDetail() {
                     <div className="col-span-2 text-center text-sm">{item.quantity}</div>
                     
                     {/* Base Price */}
-                    <div className="col-span-2 text-center text-sm">{formatPrice(item.base_price_at_order)}</div>
+                    <div className="col-span-2 text-center text-sm">{formatSpanishCurrency(item.base_price_at_order)}</div>
                     
                     {/* VAT */}
                     <div className="col-span-2 text-center text-sm">
-                      <div>{formatPrice(taxAmount)}</div>
+                      <div>{formatSpanishCurrency(taxAmount)}</div>
                       <div className="text-xs text-gray-500">({(item.tax_rate_at_order * 100).toFixed(0)}%)</div>
                     </div>
                     
                     {/* Total */}
-                    <div className="col-span-2 text-center text-sm font-medium">{formatPrice(totalWithTax)}</div>
+                    <div className="col-span-2 text-center text-sm font-medium">{formatSpanishCurrency(totalWithTax)}</div>
                   </div>
                 );
               })}
@@ -204,15 +204,15 @@ export default function PurchaseOrderDetail() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="font-medium">Subtotal:</span>
-              <span>{formatPrice(order.subtotal || 0)}</span>
+              <span>{formatSpanishCurrency(order.subtotal || 0)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">IVA:</span>
-              <span>{formatPrice(order.tax_total || 0)}</span>
+              <span>{formatSpanishCurrency(order.tax_total || 0)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total</span>
-              <span>{formatPrice(order.final_total || 0)}</span>
+              <span>{formatSpanishCurrency(order.final_total || 0)}</span>
             </div>
           </div>
         </div>
