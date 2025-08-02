@@ -17,10 +17,11 @@ export default function ProductCatalog({
   onUpdateCart, 
   onRemoveFromCart 
 }: ProductCatalogProps) {
-  const { getProducts } = useDatabase();
+  const { getProducts, getProductByEan } = useDatabase();
   const [products, setProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [barcodeMessage, setBarcodeMessage] = useState('');
 
   useEffect(() => {
     async function loadProducts() {
@@ -33,6 +34,34 @@ export default function ProductCatalog({
     loadProducts();
   }, [searchTerm]); // Remove getProducts from dependencies as it's recreated on every render
 
+  // Handle barcode scanner input (EAN + Enter)
+  const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const ean = searchTerm.trim();
+      
+      // Check if input looks like an EAN (13 digits)
+      if (/^\d{13}$/.test(ean)) {
+        const product = await getProductByEan(ean);
+        
+        if (product) {
+          // Add one unit to cart
+          onAddToCart(ean, 1);
+          
+          // Show success message
+          setBarcodeMessage(`✓ ${product.title} añadido al carrito`);
+          setTimeout(() => setBarcodeMessage(''), 3000);
+          
+          // Clear search
+          setSearchTerm('');
+        } else {
+          // Show error message
+          setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
+          setTimeout(() => setBarcodeMessage(''), 3000);
+        }
+      }
+    }
+  };
+
   return (
     <div className="p-4">
       {/* Search Bar */}
@@ -43,10 +72,22 @@ export default function ProductCatalog({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleBarcodeInput}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-musgrave-500"
-            placeholder="Buscar por EAN, REF o Nombre"
+            placeholder="Buscar por EAN, REF o Nombre - Escáner: EAN + Enter"
           />
         </div>
+        
+        {/* Barcode Scanner Message */}
+        {barcodeMessage && (
+          <div className={`mt-2 p-3 rounded-lg text-sm font-medium ${
+            barcodeMessage.startsWith('✓') 
+              ? 'bg-green-100 text-green-800 border border-green-200' 
+              : 'bg-red-100 text-red-800 border border-red-200'
+          }`}>
+            {barcodeMessage}
+          </div>
+        )}
       </div>
 
       {/* Product Grid */}
