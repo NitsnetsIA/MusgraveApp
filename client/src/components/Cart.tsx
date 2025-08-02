@@ -192,9 +192,11 @@ export default function Cart({
                         </div>
                       </div>
                       
-                      {/* Price (Base + IVA) */}
-                      <div className="col-span-2 text-center text-sm">
-                        {formatSpanishCurrency(totalWithTax / qty)}
+                      {/* Price (Base + IVA) - 3 lines */}
+                      <div className="col-span-2 text-center text-xs leading-none">
+                        <div className="mb-0.5">{formatSpanishCurrency(price)}</div>
+                        <div className="mb-0.5">{formatSpanishCurrency(price * rate)}</div>
+                        <div className="text-gray-500">{(rate * 100).toFixed(0)}%</div>
                       </div>
                       
                       {/* Units with controls */}
@@ -231,7 +233,7 @@ export default function Cart({
                                   setEditingQuantity(null);
                                 }
                               }}
-                              className="w-8 px-1 text-sm font-medium text-center border-0 outline-none"
+                              className="w-12 h-8 px-2 text-sm font-medium text-center border-0 outline-none"
                               autoFocus
                             />
                           ) : (
@@ -240,7 +242,7 @@ export default function Cart({
                                 setEditingQuantity(item.ean);
                                 setTempQuantity(item.quantity.toString());
                               }}
-                              className="px-2 text-sm font-medium hover:bg-gray-50"
+                              className="px-3 py-1 text-sm font-medium hover:bg-gray-50 min-w-[3rem] h-8"
                             >
                               {item.quantity}
                             </button>
