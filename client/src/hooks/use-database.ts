@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { initDatabase, query, execute, saveDatabase, generateUUID } from '@/lib/database';
+import { initDatabase, query, execute, saveDatabase, generateUUID, generatePurchaseOrderId } from '@/lib/database';
 import { seedDatabase } from '@/lib/seed-data';
 import type { User, Product, PurchaseOrder, Order, CartItem } from '@shared/schema';
 
@@ -159,7 +159,7 @@ export function useDatabase() {
 
   const createPurchaseOrder = async (userEmail: string, storeId: string, cartItems: CartItem[]): Promise<string> => {
     try {
-      const purchaseOrderId = generateUUID();
+      const purchaseOrderId = generatePurchaseOrderId(storeId);
       const now = new Date().toISOString();
 
       let subtotal = 0;

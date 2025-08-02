@@ -81,7 +81,7 @@ export default function Orders({ user }: OrdersProps) {
                     <td className="p-3">{order.order_id.slice(-4)}</td>
                     <td className="p-3">
                       <button className="text-blue-600">
-                        {order.source_purchase_order_id.slice(-6)}
+                        {order.source_purchase_order_id}
                       </button>
                     </td>
                     <td className="p-3">{order.final_total.toFixed(2)}€</td>

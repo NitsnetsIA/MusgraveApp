@@ -139,7 +139,7 @@ export default function OrderDetail() {
             onClick={() => setLocation(`/purchase-orders/${order.source_purchase_order_id}`)}
             className="text-blue-600 ml-1 hover:underline"
           >
-            {order.source_purchase_order_id.slice(-6)}
+            {order.source_purchase_order_id}
           </button>
         </div>
         <div className="text-sm text-gray-600">

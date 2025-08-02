@@ -134,7 +134,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
                     </td>
                     <td className="p-3">
                       <div className="leading-tight">
-                        <div className="font-medium text-sm">{order.purchase_order_id.slice(-4)}</div>
+                        <div className="font-medium text-sm">{order.purchase_order_id}</div>
                         <div className="flex items-center gap-1 mt-0.5">
                           <span className={`text-xs font-medium ${getStatusColor(order.status)}`}>
                             {getStatusText(order.status)}

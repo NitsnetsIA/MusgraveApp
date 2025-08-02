@@ -121,7 +121,7 @@ export default function PurchaseOrderDetail() {
         {/* Order Header */}
         <div className="mb-4">
           <h1 className="text-lg font-semibold mb-1">
-            Orden de compra: {order.purchase_order_id?.substring(0, 7)}
+            Orden de compra: {order.purchase_order_id}
           </h1>
           <div className="text-sm text-gray-600 mb-2">
             <div>Tienda: {store?.name || store?.code || 'Cargando...'}</div>

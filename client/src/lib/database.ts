@@ -208,3 +208,27 @@ export function generateUUID(): string {
     return v.toString(16);
   });
 }
+
+// Generate Purchase Order ID in format: [store code]-[timestamp YYMMDDHHMMSS]-[3 alphanumeric digits]
+export function generatePurchaseOrderId(storeCode: string): string {
+  const now = new Date();
+  
+  // Format timestamp as YYMMDDHHMMSS
+  const year = now.getFullYear().toString().slice(-2);
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  
+  const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
+  
+  // Generate 3 alphanumeric characters
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let suffix = '';
+  for (let i = 0; i < 3; i++) {
+    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  return `${storeCode}-${timestamp}-${suffix}`;
+}
