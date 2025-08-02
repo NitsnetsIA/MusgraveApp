@@ -16,6 +16,7 @@ interface LayoutProps {
   cartItems: any[];
   updateCartItem: (ean: string, quantity: number) => void;
   removeFromCart: (ean: string) => void;
+  addToCart: (ean: string, quantity: number) => void;
   clearCart: () => void;
   onCheckout: () => void;
   onCreateTestCart?: () => void;
@@ -33,6 +34,7 @@ export default function Layout({
   cartItems,
   updateCartItem,
   removeFromCart,
+  addToCart,
   clearCart,
   onCheckout,
   onCreateTestCart
@@ -72,6 +74,7 @@ export default function Layout({
         items={cartItems}
         onUpdateQuantity={updateCartItem}
         onRemoveItem={removeFromCart}
+        onAddToCart={addToCart}
         onCheckout={onCheckout}
         onCreateTestCart={onCreateTestCart}
         store={store}

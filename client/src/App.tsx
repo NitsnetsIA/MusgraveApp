@@ -285,6 +285,7 @@ function Router() {
       cartItems={cartItems}
       updateCartItem={updateCartItem}
       removeFromCart={removeFromCart}
+      addToCart={addToCart}
       clearCart={clearCart}
       onCheckout={handleCheckout}
       onCreateTestCart={createTestCart}

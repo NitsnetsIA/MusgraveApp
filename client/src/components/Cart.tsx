@@ -1,5 +1,9 @@
-import { X, Minus, Plus, Trash2, Search } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronLeft, Minus, Plus, ShoppingCart, Package } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useDatabase } from '@/hooks/use-database';
+import { formatSpanishCurrency } from '@/lib/utils/currency';
 
 interface CartProps {
   isOpen: boolean;
@@ -8,6 +12,7 @@ interface CartProps {
   onUpdateQuantity: (ean: string, quantity: number) => void;
   onRemoveItem: (ean: string) => void;
   onCheckout: () => void;
+  onAddToCart: (ean: string, quantity: number) => void;
   onCreateTestCart?: () => void;
   store?: any;
 }
@@ -19,11 +24,17 @@ export default function Cart({
   onUpdateQuantity,
   onRemoveItem,
   onCheckout,
+  onAddToCart,
   onCreateTestCart,
   store
 }: CartProps) {
+  const { getProductByEan } = useDatabase();
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
   const [tempQuantity, setTempQuantity] = useState<string>('');
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [barcodeMessage, setBarcodeMessage] = useState('');
+  const [addedProduct, setAddedProduct] = useState<string | null>(null);
+  
   const subtotal = items.reduce((sum, item) => {
     const price = Number(item.base_price) || 0;
     const qty = Number(item.quantity) || 0;
@@ -39,38 +50,88 @@ export default function Cart({
   
   const total = subtotal + taxTotal;
 
+  // Global barcode scanner for when input is not focused
+  useEffect(() => {
+    const handleGlobalKeydown = (e: KeyboardEvent) => {
+      // Only handle if no input is focused and it's a digit
+      if (document.activeElement?.tagName !== 'INPUT' && /\d/.test(e.key)) {
+        const inputElement = document.getElementById('barcode-input') as HTMLInputElement;
+        if (inputElement) {
+          inputElement.focus();
+          inputElement.value = e.key;
+          setBarcodeInput(e.key);
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleGlobalKeydown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeydown);
+    };
+  }, [isOpen]);
+
+  // Handle barcode scanner input
+  const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const ean = barcodeInput.trim();
+      
+      // Check if input looks like an EAN (13 digits)
+      if (/^\d{13}$/.test(ean)) {
+        const product = await getProductByEan(ean);
+        
+        if (product) {
+          // Add one unit to cart
+          onAddToCart(ean, 1);
+          
+          // Show success message with animation
+          setBarcodeMessage(`✓ ${product.title} añadido al carrito`);
+          setAddedProduct(ean);
+          
+          // Clear success message and animation
+          setTimeout(() => {
+            setBarcodeMessage('');
+            setAddedProduct(null);
+          }, 3000);
+          
+          // Clear barcode input
+          setBarcodeInput('');
+        } else {
+          // Show error message
+          setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
+          setTimeout(() => setBarcodeMessage(''), 3000);
+        }
+      }
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
-      <div className="bg-white h-full w-full flex flex-col">
+    <div className="fixed inset-0 bg-white z-50">
+      <div className="h-full w-full flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b flex items-center justify-between">
-          <div className="flex items-center">
-            <button onClick={onClose}>
-              <X className="h-6 w-6 text-gray-600" />
-            </button>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="p-4 border-b">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por EAN, REF o Nombre"
-              className="w-full pl-10 pr-4 py-2 border rounded-md text-sm"
-            />
-          </div>
+        <div className="p-4 flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="mr-3 p-0"
+          >
+            <ChevronLeft className="h-6 w-6 text-gray-600" />
+          </Button>
+          <ShoppingCart className="h-5 w-5 mr-2" />
+          <h1 className="text-xl font-bold">Checkout</h1>
         </div>
 
         {/* Total Summary */}
         <div className="p-4 bg-gray-50 border-b">
           <div className="text-center">
-            <div className="text-2xl font-bold mb-1">Total: {total.toFixed(2).replace('.', ',')}€</div>
+            <div className="text-2xl font-bold mb-1">Total: {formatSpanishCurrency(total)}</div>
             <div className="text-sm text-gray-600">
-              Centro de entrega Musgrave: {store?.delivery_center_name || 'M-005 - Centro de entrega Alicante-Elche'}
+              Centro de entrega Musgrave: {store?.delivery_center_name || '122 - Dolores (Alicante)'}
             </div>
           </div>
         </div>
@@ -90,9 +151,9 @@ export default function Cart({
               )}
             </div>
           ) : (
-            <div className="bg-white">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               {/* Table Header */}
-              <div className="bg-gray-100 px-3 py-2 border-b grid grid-cols-12 gap-1 text-xs font-medium text-gray-700 sticky top-0">
+              <div className="bg-gray-50 border-b grid grid-cols-12 gap-1 text-xs font-medium text-gray-700 p-3">
                 <div className="col-span-4">Producto</div>
                 <div className="col-span-2 text-center">Unidades</div>
                 <div className="col-span-2 text-center">Base</div>
@@ -109,13 +170,19 @@ export default function Cart({
                   const baseTotal = price * qty;
                   const taxAmount = baseTotal * rate;
                   const totalWithTax = baseTotal + taxAmount;
+                  const isNewlyAdded = addedProduct === item.ean;
                   
                   return (
-                    <div key={item.ean} className="px-3 py-3 grid grid-cols-12 gap-1 items-center">
+                    <div 
+                      key={item.ean} 
+                      className={`p-3 grid grid-cols-12 gap-1 items-center transition-all duration-500 ${
+                        isNewlyAdded ? 'bg-green-50 border-l-4 border-green-400' : ''
+                      }`}
+                    >
                       {/* Product */}
                       <div className="col-span-4 flex items-center">
                         <div className="w-8 h-8 bg-blue-100 rounded mr-2 flex-shrink-0 flex items-center justify-center">
-                          <div className="w-5 h-6 bg-blue-400 rounded-sm"></div>
+                          <Package className="h-4 w-4 text-blue-600" />
                         </div>
                         <div className="min-w-0">
                           <div className="text-sm font-medium leading-tight">{item.title}</div>
@@ -180,16 +247,16 @@ export default function Cart({
                       </div>
                       
                       {/* Base Price */}
-                      <div className="col-span-2 text-center text-sm">{price.toFixed(2).replace('.', ',')}€</div>
+                      <div className="col-span-2 text-center text-sm">{formatSpanishCurrency(price)}</div>
                       
                       {/* VAT */}
                       <div className="col-span-2 text-center text-sm">
-                        <div>{taxAmount.toFixed(2).replace('.', ',')}€</div>
+                        <div>{formatSpanishCurrency(taxAmount)}</div>
                         <div className="text-xs text-gray-500">({(rate * 100).toFixed(0)}%)</div>
                       </div>
                       
                       {/* Total */}
-                      <div className="col-span-2 text-center text-sm font-medium">{totalWithTax.toFixed(2).replace('.', ',')}€</div>
+                      <div className="col-span-2 text-center text-sm font-medium">{formatSpanishCurrency(totalWithTax)}</div>
                     </div>
                   );
                 })}
@@ -198,36 +265,65 @@ export default function Cart({
           )}
         </div>
 
-        {/* Bottom Totals and Checkout */}
-        {items.length > 0 && (
-          <div className="border-t bg-white">
-            {/* Totals Summary */}
-            <div className="p-4 space-y-2">
+        {/* Fixed Bottom Section */}
+        <div className="border-t bg-white mt-auto">
+          {/* Barcode Input */}
+          <div className="p-4 border-b">
+            <div className="relative">
+              <Package className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                id="barcode-input"
+                type="text"
+                value={barcodeInput}
+                onChange={(e) => setBarcodeInput(e.target.value)}
+                onKeyDown={handleBarcodeInput}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-musgrave-500"
+                placeholder="Añadir producto por EAN"
+              />
+            </div>
+            
+            {/* Barcode Scanner Message */}
+            {barcodeMessage && (
+              <div className={`mt-2 p-3 rounded-lg text-sm font-medium ${
+                barcodeMessage.startsWith('✓') 
+                  ? 'bg-green-100 text-green-800 border border-green-200' 
+                  : 'bg-red-100 text-red-800 border border-red-200'
+              }`}>
+                {barcodeMessage}
+              </div>
+            )}
+          </div>
+
+          {/* Totals Summary - only show if items exist */}
+          {items.length > 0 && (
+            <div className="p-4 space-y-2 border-b">
               <div className="flex justify-between">
                 <span className="font-medium">Subtotal:</span>
-                <span>{subtotal.toFixed(2).replace('.', ',')}€</span>
+                <span>{formatSpanishCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">IVA:</span>
-                <span>{taxTotal.toFixed(2).replace('.', ',')}€</span>
+                <span>{formatSpanishCurrency(taxTotal)}</span>
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Total</span>
-                <span>{total.toFixed(2).replace('.', ',')}€</span>
+                <span>{formatSpanishCurrency(total)}</span>
               </div>
             </div>
-            
-            {/* Checkout Button */}
+          )}
+          
+          {/* Checkout Button */}
+          {items.length > 0 && (
             <div className="p-4">
-              <button
+              <Button
                 onClick={onCheckout}
                 className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600"
               >
-                Confirmar orden ({total.toFixed(2).replace('.', ',')}€)
-              </button>
+                Confirmar orden ({formatSpanishCurrency(total)})
+              </Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
