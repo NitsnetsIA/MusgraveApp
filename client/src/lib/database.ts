@@ -232,3 +232,27 @@ export function generatePurchaseOrderId(storeCode: string): string {
   
   return `${storeCode}-${timestamp}-${suffix}`;
 }
+
+// Generate Processed Order ID in format: [musgrave center code]-[timestamp YYMMDDHHMMSS]-[3 alphanumeric digits]
+export function generateProcessedOrderId(musgraveCenterCode: string): string {
+  const now = new Date();
+  
+  // Format timestamp as YYMMDDHHMMSS
+  const year = now.getFullYear().toString().slice(-2);
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  
+  const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
+  
+  // Generate 3 alphanumeric characters
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let suffix = '';
+  for (let i = 0; i < 3; i++) {
+    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  return `${musgraveCenterCode}-${timestamp}-${suffix}`;
+}

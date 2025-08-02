@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { initDatabase, query, execute, saveDatabase, generateUUID, generatePurchaseOrderId } from '@/lib/database';
+import { initDatabase, query, execute, saveDatabase, generateUUID, generatePurchaseOrderId, generateProcessedOrderId } from '@/lib/database';
 import { seedDatabase } from '@/lib/seed-data';
 import type { User, Product, PurchaseOrder, Order, CartItem } from '@shared/schema';
 
@@ -216,7 +216,8 @@ export function useDatabase() {
     finalTotal: number
   ): Promise<string> => {
     try {
-      const orderId = generateUUID();
+      // Use Musgrave center code for processed order ID (122 for Dolores Alicante)
+      const orderId = generateProcessedOrderId('122');
       const now = new Date().toISOString();
 
       // Simulate modifications for processed order
