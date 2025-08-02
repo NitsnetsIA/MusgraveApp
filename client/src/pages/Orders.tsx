@@ -48,44 +48,37 @@ export default function Orders({ user }: OrdersProps) {
 
       {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+        <table className="w-full text-sm table-fixed">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="text-left p-2 font-medium w-[25%]">Fecha</th>
+              <th className="text-left p-2 font-medium w-[30%]">Nº Pedido</th>
+              <th className="text-left p-2 font-medium w-[25%]">Importe</th>
+              <th className="text-left p-2 font-medium w-[20%]">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
               <tr>
-                <th className="text-left p-3 font-medium">fecha</th>
-                <th className="text-left p-3 font-medium">nº pedido</th>
-                <th className="text-left p-3 font-medium">nº de orden</th>
-                <th className="text-left p-3 font-medium">importe</th>
-                <th className="text-left p-3 font-medium">detalle</th>
+                <td colSpan={4} className="p-8 text-center text-gray-500">
+                  Cargando pedidos...
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
-                    Cargando pedidos...
-                  </td>
-                </tr>
-              ) : orders.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
-                    No hay pedidos
-                  </td>
-                </tr>
-              ) : (
+            ) : orders.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-8 text-center text-gray-500">
+                  No hay pedidos
+                </td>
+              </tr>
+            ) : (
                 orders.map((order) => (
                   <tr key={order.order_id} className="border-b">
-                    <td className="p-3">
+                    <td className="p-2 text-xs">
                       {new Date(order.created_at).toLocaleDateString('es-ES')}
                     </td>
-                    <td className="p-3">{order.order_id.slice(-4)}</td>
-                    <td className="p-3">
-                      <button className="text-blue-600">
-                        {order.source_purchase_order_id}
-                      </button>
-                    </td>
-                    <td className="p-3">{order.final_total.toFixed(2)}€</td>
-                    <td className="p-3">
+                    <td className="p-2 text-xs">{order.order_id.slice(-6)}</td>
+                    <td className="p-2 text-xs">{order.final_total.toFixed(2)}€</td>
+                    <td className="p-2">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -100,7 +93,6 @@ export default function Orders({ user }: OrdersProps) {
               )}
             </tbody>
           </table>
-        </div>
         
         {/* Pagination */}
         <div className="p-3 border-t bg-gray-50 text-sm">

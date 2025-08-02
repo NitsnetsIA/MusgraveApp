@@ -139,25 +139,17 @@ export default function OrderDetail() {
             <h1 className="text-lg font-bold text-gray-900 mb-1">
               Nº Pedido: {order.order_id.slice(-6)}
             </h1>
-            <div className="flex items-center gap-4 flex-wrap">
+            {order.source_purchase_order_id && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Estado:</span>
-                <span className="text-sm font-medium text-green-500">
-                  Completado
-                </span>
+                <span className="text-sm text-gray-600">Orden compra:</span>
+                <button 
+                  onClick={() => setLocation(`/purchase-orders/${order.source_purchase_order_id}`)}
+                  className="text-sm text-blue-600 font-medium underline"
+                >
+                  {order.source_purchase_order_id}
+                </button>
               </div>
-              {order.source_purchase_order_id && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Orden compra:</span>
-                  <button 
-                    onClick={() => setLocation(`/purchase-orders/${order.source_purchase_order_id}`)}
-                    className="text-sm text-blue-600 font-medium underline"
-                  >
-                    {order.source_purchase_order_id}
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
           
           <div className="text-xs text-gray-600">
