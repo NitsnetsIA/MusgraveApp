@@ -143,15 +143,15 @@ export default function PurchaseOrderDetail() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="text-gray-600">Centro de entrega:</div>
-              <div className="font-medium">122 - Dolores (Alicante)</div>
-            </div>
-            <div>
-              <div className="text-gray-600">Tienda:</div>
-              <div className="font-medium">{store?.code || 'ES001'} - {store?.name || 'E.S. Gran VIA'}</div>
-            </div>
+          <div className="text-xs text-gray-600">
+            <span className="inline-block mr-4">
+              <span className="text-gray-600">Centro Musgrave:</span>
+              <span className="font-medium ml-1">122 - Dolores (Alicante)</span>
+            </span>
+            <span className="inline-block">
+              <span className="text-gray-600">Tienda:</span>
+              <span className="font-medium ml-1">{store?.code || 'ES001'} - {store?.name || 'E.S. Gran VIA'}</span>
+            </span>
           </div>
         </div>
 
