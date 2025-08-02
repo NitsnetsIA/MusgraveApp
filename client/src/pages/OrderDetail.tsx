@@ -155,8 +155,7 @@ export default function OrderDetail() {
               <tr>
                 <th className="text-left p-3 font-medium">Producto</th>
                 <th className="text-left p-3 font-medium">Uds</th>
-                <th className="text-left p-3 font-medium">Base</th>
-                <th className="text-left p-3 font-medium">IVA</th>
+                <th className="text-left p-3 font-medium">Base+IVA</th>
                 <th className="text-left p-3 font-medium">Importe</th>
               </tr>
             </thead>
@@ -188,13 +187,12 @@ export default function OrderDetail() {
                       </div>
                     </td>
                     <td className="p-3">{item.quantity}</td>
-                    <td className="p-3">{formatSpanishCurrency(item.base_price_at_order)}</td>
                     <td className="p-3">
-                      {formatSpanishCurrency(itemTax)}
-                      <br />
-                      <span className="text-xs text-gray-500">
-                        ({(item.tax_rate_at_order * 100).toFixed(0)}%)
-                      </span>
+                      <div className="text-xs leading-none">
+                        <div className="mb-0.5">{formatSpanishCurrency(item.base_price_at_order)}</div>
+                        <div className="mb-0.5">{formatSpanishCurrency(item.base_price_at_order * item.tax_rate_at_order)}</div>
+                        <div className="text-gray-500">{(item.tax_rate_at_order * 100).toFixed(0)}%</div>
+                      </div>
                     </td>
                     <td className="p-3">{formatSpanishCurrency(itemTotal + itemTax)}</td>
                   </tr>
