@@ -13,7 +13,7 @@ export default function OrderSuccess({ orderId }: OrderSuccessProps) {
     <div className="p-4 text-center">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4">
-          Orden #{orderId?.slice(-6) || '123555'} realizada
+          Orden #{orderId || '123555'} realizada
         </h1>
         <p className="text-gray-600 mb-4">
           Hemos recibido correctamente tu pedido. Va a ser procesado por nuestro equipo.

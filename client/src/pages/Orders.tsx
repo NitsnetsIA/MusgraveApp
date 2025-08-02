@@ -76,7 +76,7 @@ export default function Orders({ user }: OrdersProps) {
                     <td className="p-2 text-xs">
                       {new Date(order.created_at).toLocaleDateString('es-ES')}
                     </td>
-                    <td className="p-2 text-xs">{order.order_id.slice(-6)}</td>
+                    <td className="p-2 text-xs">{order.order_id}</td>
                     <td className="p-2 text-xs">{order.final_total.toFixed(2)}€</td>
                     <td className="p-2">
                       <Button

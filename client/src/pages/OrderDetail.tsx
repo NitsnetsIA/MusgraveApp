@@ -137,7 +137,7 @@ export default function OrderDetail() {
         <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
           <div className="mb-3">
             <h1 className="text-lg font-bold text-gray-900 mb-1">
-              Nº Pedido: {order.order_id.slice(-6)}
+              Nº Pedido: {order.order_id}
             </h1>
             {order.source_purchase_order_id && (
               <div className="flex items-center gap-2">
