@@ -115,37 +115,62 @@ export default function OrderDetail() {
   }
 
   return (
-    <div className="p-4">
-      <div className="flex items-center mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation('/orders')}
-          className="mr-3 p-0"
-        >
-          <ChevronLeft className="h-6 w-6 text-gray-600" />
-        </Button>
-        <Package className="h-5 w-5 mr-2" />
-        <h1 className="text-xl font-bold">Mis pedidos</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b px-4 py-3">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/orders')}
+            className="mr-3 p-1"
+          >
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
+          </Button>
+          <Package className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="font-medium">Mis pedidos</span>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-        <h2 className="text-lg font-bold mb-2">
-          Pedido: {order.order_id.slice(-6)}
-        </h2>
-        <div className="text-sm text-gray-600 mb-1">
-          Orden de compra asociado: 
-          <button 
-            onClick={() => setLocation(`/purchase-orders/${order.source_purchase_order_id}`)}
-            className="text-blue-600 ml-1 hover:underline"
-          >
-            {order.source_purchase_order_id}
-          </button>
+      <div className="p-4">
+        {/* Order Header - Optimized Layout */}
+        <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
+          <div className="mb-3">
+            <h1 className="text-lg font-bold text-gray-900 mb-1">
+              Nº Pedido: {order.order_id.slice(-6)}
+            </h1>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Estado:</span>
+                <span className="text-sm font-medium text-green-500">
+                  Completado
+                </span>
+              </div>
+              {order.source_purchase_order_id && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Orden compra:</span>
+                  <button 
+                    onClick={() => setLocation(`/purchase-orders/${order.source_purchase_order_id}`)}
+                    className="text-sm text-blue-600 font-medium underline"
+                  >
+                    {order.source_purchase_order_id}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="text-xs text-gray-600">
+            <span className="inline-block mr-4">
+              <span className="text-gray-600">Centro Musgrave:</span>
+              <span className="font-medium ml-1">122 - Dolores (Alicante)</span>
+            </span>
+            <span className="inline-block">
+              <span className="text-gray-600">Tienda:</span>
+              <span className="font-medium ml-1">ES001 - E.S. Gran VIA</span>
+            </span>
+          </div>
         </div>
-        <div className="text-sm text-gray-600">
-          Centro de entrega Musgrave: 122 - Dolores (Alicante)
-        </div>
-      </div>
 
       {/* Product Details Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
@@ -299,13 +324,14 @@ export default function OrderDetail() {
         )}
       </div>
 
-      {/* Observations */}
-      {order.observations && (
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h3 className="font-bold text-lg mb-3">Observaciones:</h3>
-          <p className="text-sm text-gray-700">{order.observations}</p>
-        </div>
-      )}
+        {/* Observations */}
+        {order.observations && (
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="font-bold text-lg mb-3">Observaciones:</h3>
+            <p className="text-sm text-gray-700">{order.observations}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
