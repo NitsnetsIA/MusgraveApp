@@ -3,6 +3,7 @@ import { useLocation, useRoute } from 'wouter';
 import { ChevronLeft, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDatabase } from '@/hooks/use-database';
+import { formatSpanishCurrency } from '@/lib/utils/currency';
 
 export default function OrderDetail() {
   const [, setLocation] = useLocation();
@@ -187,15 +188,15 @@ export default function OrderDetail() {
                       </div>
                     </td>
                     <td className="p-3">{item.quantity}</td>
-                    <td className="p-3">{item.base_price_at_order.toFixed(2)}€</td>
+                    <td className="p-3">{formatSpanishCurrency(item.base_price_at_order)}</td>
                     <td className="p-3">
-                      {itemTax.toFixed(2)}€
+                      {formatSpanishCurrency(itemTax)}
                       <br />
                       <span className="text-xs text-gray-500">
                         ({(item.tax_rate_at_order * 100).toFixed(0)}%)
                       </span>
                     </td>
-                    <td className="p-3">{(itemTotal + itemTax).toFixed(2)}€</td>
+                    <td className="p-3">{formatSpanishCurrency(itemTotal + itemTax)}</td>
                   </tr>
                 );
               })}
@@ -208,15 +209,15 @@ export default function OrderDetail() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span className="font-medium">{order.subtotal.toFixed(2)}€</span>
+              <span className="font-medium">{formatSpanishCurrency(order.subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span>IVA:</span>
-              <span className="font-medium">{order.tax_total.toFixed(2)}€</span>
+              <span className="font-medium">{formatSpanishCurrency(order.tax_total)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total:</span>
-              <span>{order.final_total.toFixed(2)}€</span>
+              <span>{formatSpanishCurrency(order.final_total)}</span>
             </div>
           </div>
         </div>

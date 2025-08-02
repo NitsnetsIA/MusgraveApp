@@ -3,6 +3,7 @@ import { useLocation, useRoute } from 'wouter';
 import { ChevronLeft, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDatabase } from '@/hooks/use-database';
+import { formatSpanishCurrency } from '@/lib/utils/currency';
 
 export default function PurchaseOrderDetail() {
   const [, setLocation] = useLocation();
@@ -94,9 +95,7 @@ export default function PurchaseOrderDetail() {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return price.toFixed(2).replace('.', ',') + '€';
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">

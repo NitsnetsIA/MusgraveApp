@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatSpanishCurrency, formatPricePerUnit } from '@/lib/utils/currency';
 
 interface ProductCardProps {
   product: any;
@@ -68,24 +69,26 @@ export default function ProductCard({
         </h3>
       </div>
       
-      {/* Fixed height EAN/REF section */}
-      <div className="text-xs text-gray-500 mb-2 h-8 flex-shrink-0">
+      {/* Fixed height EAN/REF section with better spacing */}
+      <div className="text-xs text-gray-500 mb-4 h-8 flex-shrink-0">
         <div>EAN: {product.ean}</div>
         <div>REF: {product.ean.substring(7)}</div>
       </div>
       
-      {/* Fixed height price section */}
-      <div className="flex items-center justify-between mb-3 h-8 flex-shrink-0">
-        <div className="text-lg font-bold text-musgrave-600">
-          {product.base_price.toFixed(2)} €
-          {product.display_price && (
-            <span className="text-xs text-gray-500 ml-1">({product.display_price})</span>
-          )}
+      {/* Fixed height price section - always 2 lines */}
+      <div className="flex items-start justify-between mb-3 h-12 flex-shrink-0">
+        <div className="flex flex-col justify-between h-12">
+          <div className="text-lg font-bold text-musgrave-600 leading-tight">
+            {formatSpanishCurrency(product.base_price)}
+          </div>
+          <div className="text-xs text-gray-500 leading-tight h-4">
+            {product.display_price || '\u00A0'}
+          </div>
         </div>
         {isInCart && (
           <button
             onClick={handleRemove}
-            className="text-gray-400 hover:text-red-500 p-1"
+            className="text-gray-400 hover:text-red-500 p-1 mt-1"
           >
             <Trash2 className="h-4 w-4" />
           </button>

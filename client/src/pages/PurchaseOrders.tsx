@@ -4,6 +4,7 @@ import { ChevronLeft, ClipboardList, Eye, Info, ChevronRight } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDatabase } from '@/hooks/use-database';
+import { formatSpanishCurrency } from '@/lib/utils/currency';
 
 interface PurchaseOrdersProps {
   user?: any;
@@ -153,7 +154,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
                       </div>
                     </td>
                     <td className="p-3">
-                      {order.final_total.toFixed(2).replace('.', ',')}€
+                      {formatSpanishCurrency(order.final_total)}
                     </td>
                     <td className="p-3">
                       <Button
