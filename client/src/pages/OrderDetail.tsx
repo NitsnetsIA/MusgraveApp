@@ -149,14 +149,19 @@ export default function OrderDetail() {
 
       {/* Product Details Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="w-full">
+          <table className="w-full text-sm table-fixed">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="text-left p-3 font-medium">Producto</th>
-                <th className="text-left p-3 font-medium">Uds</th>
-                <th className="text-left p-3 font-medium">Base+IVA</th>
-                <th className="text-left p-3 font-medium">Importe</th>
+                <th className="text-left p-2 font-medium w-[45%]">Producto</th>
+                <th className="text-left p-2 font-medium w-[15%]">Uds</th>
+                <th className="text-left p-2 font-medium w-[20%]">
+                  <div className="text-xs leading-tight">
+                    <div>Base</div>
+                    <div>IVA</div>
+                  </div>
+                </th>
+                <th className="text-left p-2 font-medium w-[20%]">Importe</th>
               </tr>
             </thead>
             <tbody>
@@ -165,9 +170,9 @@ export default function OrderDetail() {
                 const itemTax = itemTotal * item.tax_rate_at_order;
                 return (
                   <tr key={index} className="border-b">
-                    <td className="p-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0">
+                    <td className="p-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gray-100 rounded flex-shrink-0">
                           {item.image_url ? (
                             <img 
                               src={item.image_url} 
@@ -180,21 +185,21 @@ export default function OrderDetail() {
                             </div>
                           )}
                         </div>
-                        <div>
-                          <div className="font-medium">{item.title}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm leading-tight line-clamp-2" style={{lineHeight: "1.2", minHeight: "2.4em"}}>{item.title}</div>
                           <div className="text-xs text-gray-500">EAN:{item.item_ean}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-3">{item.quantity}</td>
-                    <td className="p-3">
+                    <td className="p-2 text-center">{item.quantity}</td>
+                    <td className="p-2">
                       <div className="text-xs leading-none">
                         <div className="mb-0.5">{formatSpanishCurrency(item.base_price_at_order)}</div>
                         <div className="mb-0.5">{formatSpanishCurrency(item.base_price_at_order * item.tax_rate_at_order)}</div>
                         <div className="text-gray-500">{(item.tax_rate_at_order * 100).toFixed(0)}%</div>
                       </div>
                     </td>
-                    <td className="p-3">{formatSpanishCurrency(itemTotal + itemTax)}</td>
+                    <td className="p-2 text-right">{formatSpanishCurrency(itemTotal + itemTax)}</td>
                   </tr>
                 );
               })}

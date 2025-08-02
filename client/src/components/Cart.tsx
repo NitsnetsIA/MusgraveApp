@@ -159,7 +159,10 @@ export default function Cart({
               {/* Table Header */}
               <div className="bg-gray-50 border-b grid grid-cols-12 gap-1 text-xs font-medium text-gray-700 p-3">
                 <div className="col-span-4">Producto</div>
-                <div className="col-span-2 text-center">Base+IVA</div>
+                <div className="col-span-2 text-center text-xs leading-tight">
+                  <div>Base</div>
+                  <div>IVA</div>
+                </div>
                 <div className="col-span-3 text-center">Unidades</div>
                 <div className="col-span-3 text-center">Importe</div>
               </div>
