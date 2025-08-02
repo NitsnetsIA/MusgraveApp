@@ -47,8 +47,9 @@ export default function ProductCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-4">
-      <div className="w-full h-32 bg-gray-100 rounded mb-3 flex items-center justify-center">
+    <div className="bg-white rounded-lg shadow-sm border p-4 h-[360px] flex flex-col">
+      {/* Fixed height image section */}
+      <div className="w-full h-32 bg-gray-100 rounded mb-3 flex items-center justify-center flex-shrink-0">
         {product.image_url ? (
           <img 
             src={product.image_url} 
@@ -60,14 +61,21 @@ export default function ProductCard({
         )}
       </div>
       
-      <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.title}</h3>
+      {/* Fixed height title section - exactly 2 lines */}
+      <div className="h-10 mb-2 flex-shrink-0">
+        <h3 className="font-medium text-sm leading-5 line-clamp-2 overflow-hidden text-ellipsis">
+          {product.title}
+        </h3>
+      </div>
       
-      <div className="text-xs text-gray-500 mb-2">
+      {/* Fixed height EAN/REF section */}
+      <div className="text-xs text-gray-500 mb-2 h-8 flex-shrink-0">
         <div>EAN: {product.ean}</div>
         <div>REF: {product.ean.substring(7)}</div>
       </div>
       
-      <div className="flex items-center justify-between mb-3">
+      {/* Fixed height price section */}
+      <div className="flex items-center justify-between mb-3 h-8 flex-shrink-0">
         <div className="text-lg font-bold text-musgrave-600">
           {product.base_price.toFixed(2)} €
           {product.display_price && (
@@ -84,36 +92,42 @@ export default function ProductCard({
         )}
       </div>
       
-      {isInCart ? (
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handleQuantityChange(localQuantity - 1)}
-            className="bg-musgrave-100 text-musgrave-600 w-8 h-8 rounded flex items-center justify-center hover:bg-musgrave-200"
+      {/* Spacer to push button to bottom */}
+      <div className="flex-grow"></div>
+      
+      {/* Fixed height button section */}
+      <div className="h-10 flex items-center">
+        {isInCart ? (
+          <div className="flex items-center space-x-2 w-full">
+            <button
+              onClick={() => handleQuantityChange(localQuantity - 1)}
+              className="bg-musgrave-100 text-musgrave-600 w-8 h-8 rounded flex items-center justify-center hover:bg-musgrave-200"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <Input
+              type="number"
+              value={localQuantity}
+              onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
+              className="w-16 text-center border-musgrave-200 focus:border-musgrave-500 h-8"
+              min="1"
+            />
+            <button
+              onClick={() => handleQuantityChange(localQuantity + 1)}
+              className="bg-musgrave-100 text-musgrave-600 w-8 h-8 rounded flex items-center justify-center hover:bg-musgrave-200"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <Button
+            onClick={handleAddToCart}
+            className="w-full bg-musgrave-500 hover:bg-musgrave-600 text-white h-10"
           >
-            <Minus className="h-4 w-4" />
-          </button>
-          <Input
-            type="number"
-            value={localQuantity}
-            onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
-            className="w-16 text-center border-musgrave-200 focus:border-musgrave-500"
-            min="1"
-          />
-          <button
-            onClick={() => handleQuantityChange(localQuantity + 1)}
-            className="bg-musgrave-100 text-musgrave-600 w-8 h-8 rounded flex items-center justify-center hover:bg-musgrave-200"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
-        <Button
-          onClick={handleAddToCart}
-          className="w-full bg-musgrave-500 hover:bg-musgrave-600 text-white"
-        >
-          AÑADIR
-        </Button>
-      )}
+            AÑADIR
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
