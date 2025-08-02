@@ -283,7 +283,8 @@ export function useDatabase() {
               quantity: item.quantity, // Same quantity as original
               base_price: randomProduct.base_price,
               tax_rate: taxRate,
-              image_url: randomProduct.image_url
+              image_url: randomProduct.image_url,
+              display_price: randomProduct.display_price
             });
           }
         } else if (modType < 0.9) {
