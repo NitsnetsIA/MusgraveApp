@@ -204,29 +204,20 @@ export default function OrderDetail() {
           </table>
         </div>
         
-        {/* Order Totals - Recalculated from actual items */}
+        {/* Order Totals */}
         <div className="p-4 border-t bg-gray-50">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span className="font-medium">{formatSpanishCurrency(
-                order.items?.reduce((sum: number, item: any) => 
-                  sum + (item.quantity * item.base_price_at_order), 0) || 0
-              )}</span>
+              <span className="font-medium">{formatSpanishCurrency(order.subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span>IVA:</span>
-              <span className="font-medium">{formatSpanishCurrency(
-                order.items?.reduce((sum: number, item: any) => 
-                  sum + (item.quantity * item.base_price_at_order * item.tax_rate_at_order), 0) || 0
-              )}</span>
+              <span className="font-medium">{formatSpanishCurrency(order.tax_total)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total:</span>
-              <span>{formatSpanishCurrency(
-                order.items?.reduce((sum: number, item: any) => 
-                  sum + (item.quantity * item.base_price_at_order * (1 + item.tax_rate_at_order)), 0) || 0
-              )}</span>
+              <span>{formatSpanishCurrency(order.final_total)}</span>
             </div>
           </div>
         </div>
@@ -306,15 +297,12 @@ export default function OrderDetail() {
       </div>
 
       {/* Observations */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <h3 className="font-bold text-lg mb-3">Observaciones:</h3>
-        <p className="text-sm text-gray-700">
-          {modifications.length > 0 
-            ? "Se han producido cambios sobre su orden de compra. Si tiene cualquier problema póngase en contacto con Musgrave"
-            : order.observations || "Sin observaciones"
-          }
-        </p>
-      </div>
+      {order.observations && (
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <h3 className="font-bold text-lg mb-3">Observaciones:</h3>
+          <p className="text-sm text-gray-700">{order.observations}</p>
+        </div>
+      )}
     </div>
   );
 }
