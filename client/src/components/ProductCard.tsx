@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,21 +20,66 @@ export default function ProductCard({
   onRemoveFromCart 
 }: ProductCardProps) {
   const [localQuantity, setLocalQuantity] = useState(1);
+  const [inputValue, setInputValue] = useState('1');
+  const inputRef = useRef<HTMLInputElement>(null);
   const isInCart = cartQuantity > 0;
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    if (isInCart) {
+    if (isInCart && cartQuantity !== localQuantity) {
       setLocalQuantity(cartQuantity);
+      setInputValue(cartQuantity.toString());
     }
   }, [cartQuantity, isInCart]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleQuantityChange = (newQuantity: number) => {
     const qty = Math.max(0, newQuantity);
     setLocalQuantity(qty);
-    if (isInCart && qty > 0) {
-      onUpdateCart(product.ean, qty);
-    } else if (isInCart && qty === 0) {
-      onRemoveFromCart(product.ean);
+    setInputValue(qty.toString());
+    
+    // Debounce the cart update to prevent excessive re-renders
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    
+    updateTimeoutRef.current = setTimeout(() => {
+      if (isInCart && qty > 0) {
+        onUpdateCart(product.ean, qty);
+      } else if (isInCart && qty === 0) {
+        onRemoveFromCart(product.ean);
+      }
+    }, 300);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    const numericValue = parseInt(value) || 0;
+    if (numericValue >= 0) {
+      setLocalQuantity(numericValue);
+      
+      // Debounce the cart update
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      
+      updateTimeoutRef.current = setTimeout(() => {
+        if (isInCart && numericValue > 0) {
+          onUpdateCart(product.ean, numericValue);
+        } else if (isInCart && numericValue === 0) {
+          onRemoveFromCart(product.ean);
+        }
+      }, 500); // Longer delay for typing
     }
   };
 
@@ -109,9 +154,10 @@ export default function ProductCard({
               <Minus className="h-4 w-4" />
             </button>
             <Input
+              ref={inputRef}
               type="number"
-              value={localQuantity}
-              onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
+              value={inputValue}
+              onChange={handleInputChange}
               className="w-16 text-center border-musgrave-200 focus:border-musgrave-500 h-8"
               min="1"
             />
