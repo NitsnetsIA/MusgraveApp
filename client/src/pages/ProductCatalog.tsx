@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,13 @@ function ProductCatalog({
   const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
   const endIndex = startIndex + PRODUCTS_PER_PAGE;
   const currentProducts = allProducts.slice(startIndex, endIndex);
+
+  // Memoize cart lookup to prevent unnecessary re-renders
+  const cartItemsMap = useMemo(() => {
+    const map = new Map();
+    cartItems.forEach(item => map.set(item.ean, item.quantity));
+    return map;
+  }, [cartItems]);
 
   // Pagination handlers with localStorage persistence
   const goToFirstPage = () => {
@@ -150,19 +157,16 @@ function ProductCatalog({
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {currentProducts.map((product) => {
-            const cartItem = cartItems.find(item => item.ean === product.ean);
-            return (
-              <ProductCard
-                key={product.ean}
-                product={product}
-                cartQuantity={cartItem?.quantity || 0}
-                onAddToCart={onAddToCart}
-                onUpdateCart={onUpdateCart}
-                onRemoveFromCart={onRemoveFromCart}
-              />
-            );
-          })}
+          {currentProducts.map((product) => (
+            <ProductCard
+              key={product.ean}
+              product={product}
+              cartQuantity={cartItemsMap.get(product.ean) || 0}
+              onAddToCart={onAddToCart}
+              onUpdateCart={onUpdateCart}
+              onRemoveFromCart={onRemoveFromCart}
+            />
+          ))}
         </div>
       )}
 

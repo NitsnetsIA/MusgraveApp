@@ -123,8 +123,8 @@ function Router() {
             display_price: product.display_price
           };
           
-          // Add new item at the top of the cart
-          setCartItems([newItem, ...cartItems]);
+          // Add new item at the top of the cart using functional update
+          setCartItems(prev => [newItem, ...prev]);
         }
       }
       

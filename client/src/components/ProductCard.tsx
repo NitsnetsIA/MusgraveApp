@@ -90,6 +90,11 @@ function ProductCard({
   };
 
   const handleAddToCart = () => {
+    // Update local state immediately to prevent flickering
+    if (!isInCart) {
+      setLocalQuantity(1);
+      setInputValue('1');
+    }
     onAddToCart(product.ean, 1); // Always add 1 when clicking AÑADIR
   };
 
