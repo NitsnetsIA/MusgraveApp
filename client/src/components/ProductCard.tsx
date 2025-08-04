@@ -90,22 +90,6 @@ function ProductCard({
   };
 
   const handleAddToCart = () => {
-    // Prevent double-clicks and multiple rapid additions
-    if (updateTimeoutRef.current) {
-      return;
-    }
-    
-    // Update local state immediately to prevent flickering
-    if (!isInCart) {
-      setLocalQuantity(1);
-      setInputValue('1');
-    }
-    
-    // Add a small delay to prevent rapid clicking issues
-    updateTimeoutRef.current = setTimeout(() => {
-      updateTimeoutRef.current = undefined;
-    }, 100);
-    
     onAddToCart(product.ean, 1); // Always add 1 when clicking AÑADIR
   };
 
@@ -203,14 +187,5 @@ function ProductCard({
   );
 }
 
-// Memo with custom comparison to prevent unnecessary re-renders
-const areEqual = (prevProps: ProductCardProps, nextProps: ProductCardProps) => {
-  return (
-    prevProps.product.ean === nextProps.product.ean &&
-    prevProps.cartQuantity === nextProps.cartQuantity &&
-    prevProps.product.base_price === nextProps.product.base_price &&
-    prevProps.product.title === nextProps.product.title
-  );
-};
-
-export default memo(ProductCard, areEqual);
+// Export component with basic memo for performance
+export default memo(ProductCard);

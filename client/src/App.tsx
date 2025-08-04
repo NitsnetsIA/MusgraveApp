@@ -89,65 +89,51 @@ function Router() {
     // Removed logout toast message
   };
 
-  // Cart management with debouncing to prevent rapid updates
-  const addToCartTimeoutRef = useRef<NodeJS.Timeout>();
-  
+  // Cart management - simplified without debouncing
   const addToCart = async (ean: string, quantity: number) => {
-    // Clear any pending cart additions to prevent rapid fire additions
-    if (addToCartTimeoutRef.current) {
-      clearTimeout(addToCartTimeoutRef.current);
-    }
-    
-    addToCartTimeoutRef.current = setTimeout(async () => {
-      try {
-        // Find existing item in cart
-        const existingItemIndex = cartItems.findIndex(item => item.ean === ean);
-        
-        if (existingItemIndex >= 0) {
-          // Update existing item and move it to the top
-          setCartItems(prevItems => {
-            const updatedItems = [...prevItems];
-            const existingItem = { ...updatedItems[existingItemIndex] };
-            existingItem.quantity += quantity;
-            
-            // Remove from current position and add to the top
-            updatedItems.splice(existingItemIndex, 1);
-            return [existingItem, ...updatedItems];
-          });
-        } else {
-          // Add new item at the top - we need to get product details first
-          const { query } = await import('./lib/database');
-          // Use direct string substitution due to SQLite parameter binding issue
-          const products = query(`SELECT * FROM products WHERE ean = '${ean}'`);
-          if (products.length > 0) {
-            const product = products[0];
-            const taxRate = await getTaxRate(product.tax_code);
-            
-            const newItem: CartItem = {
-              ean: product.ean,
-              title: product.title,
-              base_price: product.base_price,
-              tax_rate: taxRate,
-              quantity,
-              image_url: product.image_url,
-              display_price: product.display_price
-            };
-            
-            // Add new item at the top of the cart using functional update
-            setCartItems(prev => [newItem, ...prev]);
-          }
+    try {
+      // Find existing item in cart
+      const existingItemIndex = cartItems.findIndex(item => item.ean === ean);
+      
+      if (existingItemIndex >= 0) {
+        // Update existing item quantity without moving position to reduce DOM changes
+        setCartItems(prevItems => 
+          prevItems.map((item, index) => 
+            index === existingItemIndex 
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          )
+        );
+      } else {
+        // Add new item - get product details first
+        const { query } = await import('./lib/database');
+        const products = query(`SELECT * FROM products WHERE ean = '${ean}'`);
+        if (products.length > 0) {
+          const product = products[0];
+          const taxRate = await getTaxRate(product.tax_code);
+          
+          const newItem: CartItem = {
+            ean: product.ean,
+            title: product.title,
+            base_price: product.base_price,
+            tax_rate: taxRate,
+            quantity,
+            image_url: product.image_url,
+            display_price: product.display_price
+          };
+          
+          // Add new item at the end to minimize DOM restructuring
+          setCartItems(prev => [...prev, newItem]);
         }
-        
-        // Removed product added toast message
-      } catch (error) {
-        console.error('Error adding to cart:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo añadir el producto al carrito",
-          variant: "destructive",
-        });
       }
-    }, 50); // Small delay to batch rapid additions
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo añadir el producto al carrito",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateCartItem = (ean: string, quantity: number) => {
