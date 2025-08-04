@@ -145,6 +145,12 @@ function Router() {
       return;
     }
     
+    // Only update if quantity actually changed to prevent unnecessary re-renders
+    const currentItem = cartItems.find(item => item.ean === ean);
+    if (currentItem && currentItem.quantity === quantity) {
+      return; // No change needed
+    }
+    
     const updatedItems = cartItems.map(item =>
       item.ean === ean ? { ...item, quantity } : item
     );

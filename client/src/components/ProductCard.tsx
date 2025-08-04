@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,23 +12,28 @@ interface ProductCardProps {
   onRemoveFromCart: (ean: string) => void;
 }
 
-export default function ProductCard({ 
+function ProductCard({ 
   product, 
   cartQuantity = 0, 
   onAddToCart, 
   onUpdateCart, 
   onRemoveFromCart 
 }: ProductCardProps) {
-  const [localQuantity, setLocalQuantity] = useState(1);
-  const [inputValue, setInputValue] = useState('1');
+  const [localQuantity, setLocalQuantity] = useState(() => cartQuantity || 1);
+  const [inputValue, setInputValue] = useState(() => (cartQuantity || 1).toString());
   const inputRef = useRef<HTMLInputElement>(null);
   const isInCart = cartQuantity > 0;
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  const prevCartQuantityRef = useRef(cartQuantity);
 
+  // Only update local state if cart quantity actually changed (not on re-renders)
   useEffect(() => {
-    if (isInCart && cartQuantity !== localQuantity) {
-      setLocalQuantity(cartQuantity);
-      setInputValue(cartQuantity.toString());
+    if (cartQuantity !== prevCartQuantityRef.current) {
+      prevCartQuantityRef.current = cartQuantity;
+      if (isInCart) {
+        setLocalQuantity(cartQuantity);
+        setInputValue(cartQuantity.toString());
+      }
     }
   }, [cartQuantity, isInCart]);
 
@@ -43,21 +48,22 @@ export default function ProductCard({
 
   const handleQuantityChange = (newQuantity: number) => {
     const qty = Math.max(0, newQuantity);
+    
+    // Update local state immediately for responsive UI
     setLocalQuantity(qty);
     setInputValue(qty.toString());
     
-    // Debounce the cart update to prevent excessive re-renders
+    // Clear any pending updates
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
     
-    updateTimeoutRef.current = setTimeout(() => {
-      if (isInCart && qty > 0) {
-        onUpdateCart(product.ean, qty);
-      } else if (isInCart && qty === 0) {
-        onRemoveFromCart(product.ean);
-      }
-    }, 300);
+    // Immediate update for button clicks to reduce flickering
+    if (isInCart && qty > 0) {
+      onUpdateCart(product.ean, qty);
+    } else if (isInCart && qty === 0) {
+      onRemoveFromCart(product.ean);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,7 +85,7 @@ export default function ProductCard({
         } else if (isInCart && numericValue === 0) {
           onRemoveFromCart(product.ean);
         }
-      }, 500); // Longer delay for typing
+      }, 300); // Shorter delay for typing
     }
   };
 
@@ -180,3 +186,15 @@ export default function ProductCard({
     </div>
   );
 }
+
+// Memo with custom comparison to prevent unnecessary re-renders
+const areEqual = (prevProps: ProductCardProps, nextProps: ProductCardProps) => {
+  return (
+    prevProps.product.ean === nextProps.product.ean &&
+    prevProps.cartQuantity === nextProps.cartQuantity &&
+    prevProps.product.base_price === nextProps.product.base_price &&
+    prevProps.product.title === nextProps.product.title
+  );
+};
+
+export default memo(ProductCard, areEqual);
