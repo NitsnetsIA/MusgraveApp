@@ -90,11 +90,22 @@ function ProductCard({
   };
 
   const handleAddToCart = () => {
+    // Prevent double-clicks and multiple rapid additions
+    if (updateTimeoutRef.current) {
+      return;
+    }
+    
     // Update local state immediately to prevent flickering
     if (!isInCart) {
       setLocalQuantity(1);
       setInputValue('1');
     }
+    
+    // Add a small delay to prevent rapid clicking issues
+    updateTimeoutRef.current = setTimeout(() => {
+      updateTimeoutRef.current = undefined;
+    }, 100);
+    
     onAddToCart(product.ean, 1); // Always add 1 when clicking AÑADIR
   };
 

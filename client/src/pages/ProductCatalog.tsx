@@ -157,9 +157,9 @@ function ProductCatalog({
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {currentProducts.map((product) => (
+          {currentProducts.map((product, index) => (
             <ProductCard
-              key={product.ean}
+              key={`${product.ean}-${currentPage}-${index}`}
               product={product}
               cartQuantity={cartItemsMap.get(product.ean) || 0}
               onAddToCart={onAddToCart}
