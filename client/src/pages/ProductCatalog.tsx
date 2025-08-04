@@ -90,10 +90,10 @@ export default function ProductCatalog({
         )}
       </div>
 
-      {/* Product Grid */}
+      {/* Product Grid - Responsive: 2 cols mobile, 3 cols tablet, 4 cols desktop, 5 cols large screens */}
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-4">
-          {[...Array(6)].map((_, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {[...Array(10)].map((_, i) => (
             <div key={i} className="bg-white rounded-lg shadow-sm border p-4 animate-pulse">
               <div className="w-full h-32 bg-gray-200 rounded mb-3"></div>
               <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -103,7 +103,7 @@ export default function ProductCatalog({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {products.map((product) => {
             const cartItem = cartItems.find(item => item.ean === product.ean);
             return (
