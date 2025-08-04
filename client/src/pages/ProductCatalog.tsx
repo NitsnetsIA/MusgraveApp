@@ -25,18 +25,24 @@ export default function ProductCatalog({
   const [barcodeMessage, setBarcodeMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const PRODUCTS_PER_PAGE = 60;
+  const [shouldResetPagination, setShouldResetPagination] = useState(true);
 
   useEffect(() => {
     async function loadProducts() {
       setIsLoading(true);
       const productList = await getProducts(searchTerm);
       setAllProducts(productList);
-      setCurrentPage(1); // Reset to first page when search changes
+      
+      // Only reset pagination when explicitly requested (user search, not barcode clearing)
+      if (shouldResetPagination) {
+        setCurrentPage(1);
+      }
+      
       setIsLoading(false);
     }
 
     loadProducts();
-  }, [searchTerm]); // Remove getProducts from dependencies as it's recreated on every render
+  }, [searchTerm, shouldResetPagination]);
 
   // Calculate pagination
   const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
@@ -67,8 +73,11 @@ export default function ProductCatalog({
           setBarcodeMessage(`✓ ${product.title} añadido al carrito`);
           setTimeout(() => setBarcodeMessage(''), 3000);
           
-          // Clear search
+          // Clear search without resetting pagination
+          setShouldResetPagination(false);
           setSearchTerm('');
+          // Re-enable pagination reset for next search
+          setTimeout(() => setShouldResetPagination(true), 100);
         } else {
           // Show error message
           setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
@@ -87,7 +96,10 @@ export default function ProductCatalog({
           <Input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setShouldResetPagination(true); // Manual typing should reset pagination
+              setSearchTerm(e.target.value);
+            }}
             onKeyDown={handleBarcodeInput}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-musgrave-500"
             placeholder="Buscar por EAN, REF o Nombre - Escáner: EAN + Enter"
