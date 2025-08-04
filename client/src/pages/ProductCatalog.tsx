@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ interface ProductCatalogProps {
   onRemoveFromCart: (ean: string) => void;
 }
 
-export default function ProductCatalog({ 
+function ProductCatalog({ 
   cartItems, 
   onAddToCart, 
   onUpdateCart, 
@@ -217,3 +217,6 @@ export default function ProductCatalog({
     </div>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export default memo(ProductCatalog);
