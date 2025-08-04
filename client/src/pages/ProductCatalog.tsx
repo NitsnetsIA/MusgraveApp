@@ -23,9 +23,11 @@ function ProductCatalog({
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [barcodeMessage, setBarcodeMessage] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const savedPage = localStorage.getItem('productCatalogPage');
+    return savedPage ? parseInt(savedPage, 10) : 1;
+  });
   const PRODUCTS_PER_PAGE = 60;
-  const [shouldResetPagination, setShouldResetPagination] = useState(true);
 
   useEffect(() => {
     async function loadProducts() {
@@ -33,17 +35,17 @@ function ProductCatalog({
       const productList = await getProducts(searchTerm);
       setAllProducts(productList);
       
-      // Only reset pagination when explicitly requested (user search, not barcode clearing)
-      if (shouldResetPagination) {
+      // Reset to page 1 only when searching (not when clearing search via barcode)
+      if (searchTerm.length > 0) {
         setCurrentPage(1);
-        setShouldResetPagination(false); // Reset the flag after using it
+        localStorage.setItem('productCatalogPage', '1');
       }
       
       setIsLoading(false);
     }
 
     loadProducts();
-  }, [searchTerm]); // Remove shouldResetPagination from dependency array
+  }, [searchTerm]);
 
   // Calculate pagination
   const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
@@ -51,11 +53,25 @@ function ProductCatalog({
   const endIndex = startIndex + PRODUCTS_PER_PAGE;
   const currentProducts = allProducts.slice(startIndex, endIndex);
 
-  // Pagination handlers
-  const goToFirstPage = () => setCurrentPage(1);
-  const goToPreviousPage = () => setCurrentPage(Math.max(1, currentPage - 1));
-  const goToNextPage = () => setCurrentPage(Math.min(totalPages, currentPage + 1));
-  const goToLastPage = () => setCurrentPage(totalPages);
+  // Pagination handlers with localStorage persistence
+  const goToFirstPage = () => {
+    setCurrentPage(1);
+    localStorage.setItem('productCatalogPage', '1');
+  };
+  const goToPreviousPage = () => {
+    const newPage = Math.max(1, currentPage - 1);
+    setCurrentPage(newPage);
+    localStorage.setItem('productCatalogPage', newPage.toString());
+  };
+  const goToNextPage = () => {
+    const newPage = Math.min(totalPages, currentPage + 1);
+    setCurrentPage(newPage);
+    localStorage.setItem('productCatalogPage', newPage.toString());
+  };
+  const goToLastPage = () => {
+    setCurrentPage(totalPages);
+    localStorage.setItem('productCatalogPage', totalPages.toString());
+  };
 
   // Handle barcode scanner input (EAN + Enter)
   const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -75,10 +91,7 @@ function ProductCatalog({
           setTimeout(() => setBarcodeMessage(''), 3000);
           
           // Clear search without resetting pagination
-          setShouldResetPagination(false);
           setSearchTerm('');
-          // Re-enable pagination reset for next search
-          setTimeout(() => setShouldResetPagination(true), 100);
         } else {
           // Show error message
           setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
@@ -97,10 +110,7 @@ function ProductCatalog({
           <Input
             type="text"
             value={searchTerm}
-            onChange={(e) => {
-              setShouldResetPagination(true); // Manual typing should reset pagination
-              setSearchTerm(e.target.value);
-            }}
+            onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleBarcodeInput}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-musgrave-500"
             placeholder="Buscar por EAN, REF o Nombre - Escáner: EAN + Enter"
@@ -219,24 +229,5 @@ function ProductCatalog({
   );
 }
 
-// Custom comparison function for memo to check if relevant props changed
-const arePropsEqual = (prevProps: ProductCatalogProps, nextProps: ProductCatalogProps) => {
-  // Compare cart items by EAN and quantity to determine if re-render is needed
-  if (prevProps.cartItems.length !== nextProps.cartItems.length) {
-    return false; // Cart item count changed, need to re-render
-  }
-  
-  // Check if quantities changed for existing items (for display purposes)
-  for (let i = 0; i < prevProps.cartItems.length; i++) {
-    const prevItem = prevProps.cartItems[i];
-    const nextItem = nextProps.cartItems.find(item => item.ean === prevItem.ean);
-    if (!nextItem || prevItem.quantity !== nextItem.quantity) {
-      return false; // Item quantity changed, need to re-render
-    }
-  }
-  
-  return true; // No relevant changes, prevent re-render
-};
-
-// Export memoized component to prevent unnecessary re-renders
-export default memo(ProductCatalog, arePropsEqual);
+// Export component without memo to allow normal re-renders but with persistent pagination
+export default ProductCatalog;
