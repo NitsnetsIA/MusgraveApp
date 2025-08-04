@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import { useDatabase } from '@/hooks/use-database';
 
@@ -18,21 +19,36 @@ export default function ProductCatalog({
   onRemoveFromCart 
 }: ProductCatalogProps) {
   const { getProducts, getProductByEan } = useDatabase();
-  const [products, setProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [barcodeMessage, setBarcodeMessage] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PRODUCTS_PER_PAGE = 60;
 
   useEffect(() => {
     async function loadProducts() {
       setIsLoading(true);
       const productList = await getProducts(searchTerm);
-      setProducts(productList);
+      setAllProducts(productList);
+      setCurrentPage(1); // Reset to first page when search changes
       setIsLoading(false);
     }
 
     loadProducts();
   }, [searchTerm]); // Remove getProducts from dependencies as it's recreated on every render
+
+  // Calculate pagination
+  const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = startIndex + PRODUCTS_PER_PAGE;
+  const currentProducts = allProducts.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToPreviousPage = () => setCurrentPage(Math.max(1, currentPage - 1));
+  const goToNextPage = () => setCurrentPage(Math.min(totalPages, currentPage + 1));
+  const goToLastPage = () => setCurrentPage(totalPages);
 
   // Handle barcode scanner input (EAN + Enter)
   const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -90,6 +106,13 @@ export default function ProductCatalog({
         )}
       </div>
 
+      {/* Pagination Info */}
+      {!isLoading && allProducts.length > 0 && (
+        <div className="mb-4 text-sm text-gray-600 text-center">
+          Mostrando {allProducts.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, allProducts.length)} de {allProducts.length} productos
+        </div>
+      )}
+
       {/* Product Grid - Responsive: 2 cols mobile, 3 cols tablet, 4 cols desktop, 5 cols large screens */}
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -104,7 +127,7 @@ export default function ProductCatalog({
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {products.map((product) => {
+          {currentProducts.map((product) => {
             const cartItem = cartItems.find(item => item.ean === product.ean);
             return (
               <ProductCard
@@ -120,9 +143,63 @@ export default function ProductCatalog({
         </div>
       )}
 
-      {!isLoading && products.length === 0 && (
+      {!isLoading && allProducts.length === 0 && (
         <div className="text-center text-gray-500 mt-8">
           {searchTerm ? 'No se encontraron productos' : 'No hay productos disponibles'}
+        </div>
+      )}
+
+      {/* Pagination Controls - Mobile-friendly */}
+      {!isLoading && totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center space-x-2">
+          {/* First Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToFirstPage}
+            disabled={currentPage === 1}
+            className="p-2"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+
+          {/* Previous Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
+            className="p-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {/* Page Counter */}
+          <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded">
+            {currentPage}/{totalPages}
+          </div>
+
+          {/* Next Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+            className="p-2"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+
+          {/* Last Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToLastPage}
+            disabled={currentPage === totalPages}
+            className="p-2"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
         </div>
       )}
     </div>
