@@ -36,13 +36,14 @@ function ProductCatalog({
       // Only reset pagination when explicitly requested (user search, not barcode clearing)
       if (shouldResetPagination) {
         setCurrentPage(1);
+        setShouldResetPagination(false); // Reset the flag after using it
       }
       
       setIsLoading(false);
     }
 
     loadProducts();
-  }, [searchTerm, shouldResetPagination]);
+  }, [searchTerm]); // Remove shouldResetPagination from dependency array
 
   // Calculate pagination
   const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
@@ -218,5 +219,24 @@ function ProductCatalog({
   );
 }
 
+// Custom comparison function for memo to check if relevant props changed
+const arePropsEqual = (prevProps: ProductCatalogProps, nextProps: ProductCatalogProps) => {
+  // Compare cart items by EAN and quantity to determine if re-render is needed
+  if (prevProps.cartItems.length !== nextProps.cartItems.length) {
+    return false; // Cart item count changed, need to re-render
+  }
+  
+  // Check if quantities changed for existing items (for display purposes)
+  for (let i = 0; i < prevProps.cartItems.length; i++) {
+    const prevItem = prevProps.cartItems[i];
+    const nextItem = nextProps.cartItems.find(item => item.ean === prevItem.ean);
+    if (!nextItem || prevItem.quantity !== nextItem.quantity) {
+      return false; // Item quantity changed, need to re-render
+    }
+  }
+  
+  return true; // No relevant changes, prevent re-render
+};
+
 // Export memoized component to prevent unnecessary re-renders
-export default memo(ProductCatalog);
+export default memo(ProductCatalog, arePropsEqual);
