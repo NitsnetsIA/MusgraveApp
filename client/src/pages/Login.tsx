@@ -164,8 +164,8 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
         </div>
             
         <p className="text-xs text-gray-500 text-center mt-6">
-          Si tienes dificultades para entrar en la B2B, envíanos<br />
-          un email a: ventasb2b@HOFF.es
+          Si tienes dificultades para entrar en la aplicación, envíanos<br />
+          un email a: info@musgrave.com
         </p>
       </div>
     </div>
