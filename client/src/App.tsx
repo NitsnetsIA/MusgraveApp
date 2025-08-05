@@ -20,6 +20,7 @@ import Orders from "@/pages/Orders";
 import OrderDetail from "@/pages/OrderDetail";
 import Account from "@/pages/Account";
 import OrderSuccess from "@/pages/OrderSuccess";
+import OrderConfirmation from "@/pages/OrderConfirmation";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -234,15 +235,8 @@ function Router() {
       clearCart();
       setCartOpen(false);
       
-      // Show success popup with order details
-      toast({
-        title: "✅ Orden de compra creada",
-        description: `Orden ${orderId.substring(0, 7)} creada exitosamente. La orden se comunicará a Musgrave cuando tenga conexión a internet.`,
-        duration: 5000,
-      });
-      
-      // Navigate to purchase orders list to see the new order
-      setLocation('/purchase-orders');
+      // Navigate to order confirmation page
+      setLocation(`/order-confirmation/${orderId}`);
     } catch (error) {
       console.error('Checkout error:', error);
       toast({
@@ -312,6 +306,7 @@ function Router() {
         <Route path="/orders/:id" component={OrderDetail} />
         <Route path="/account" component={() => <Account user={user} store={store} />} />
         <Route path="/order-success" component={() => <OrderSuccess orderId={lastOrderId} />} />
+        <Route path="/order-confirmation/:orderId" component={OrderConfirmation} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
