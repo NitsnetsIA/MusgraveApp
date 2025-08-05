@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronLeft, Package, Eye } from 'lucide-react';
+import { ChevronLeft, Package, Eye, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDatabase } from '@/hooks/use-database';
 
@@ -13,6 +13,14 @@ export default function Orders({ user }: OrdersProps) {
   const { getOrders } = useDatabase();
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentOrders = orders.slice(startIndex, endIndex);
 
   useEffect(() => {
     async function loadOrders() {
@@ -21,6 +29,7 @@ export default function Orders({ user }: OrdersProps) {
       setIsLoading(true);
       const orderList = await getOrders(user.email);
       setOrders(orderList);
+      setCurrentPage(1); // Reset to first page when new data loads
       setIsLoading(false);
     }
 
@@ -30,6 +39,12 @@ export default function Orders({ user }: OrdersProps) {
   const viewOrder = (orderId: string) => {
     setLocation(`/orders/${orderId}`);
   };
+
+  // Pagination functions
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToPreviousPage = () => setCurrentPage(Math.max(1, currentPage - 1));
+  const goToNextPage = () => setCurrentPage(Math.min(totalPages, currentPage + 1));
+  const goToLastPage = () => setCurrentPage(totalPages);
 
   return (
     <div className="p-4">
@@ -71,7 +86,7 @@ export default function Orders({ user }: OrdersProps) {
                 </td>
               </tr>
             ) : (
-                orders.map((order) => (
+                currentOrders.map((order) => (
                   <tr key={order.order_id} className="border-b">
                     <td className="p-2 text-xs">
                       {new Date(order.created_at).toLocaleDateString('es-ES')}
@@ -93,23 +108,62 @@ export default function Orders({ user }: OrdersProps) {
               )}
             </tbody>
           </table>
-        
-        {/* Pagination */}
-        <div className="p-3 border-t bg-gray-50 text-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span>&lt;&lt; first</span>
-              <span>&lt; previous</span>
-              <span className="font-medium">1 2 3 <span className="text-blue-600">4</span> 5 6</span>
-              <span>next &gt;</span>
-              <span>last &gt;&gt;</span>
-            </div>
-            <select className="border border-gray-300 rounded px-2 py-1 text-sm">
-              <option>30</option>
-            </select>
-          </div>
-        </div>
+
       </div>
+
+      {/* Pagination Controls - Mobile-friendly */}
+      {!isLoading && totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center space-x-2">
+          {/* First Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToFirstPage}
+            disabled={currentPage === 1}
+            className="p-2"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+
+          {/* Previous Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
+            className="p-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {/* Page Counter */}
+          <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded">
+            {currentPage}/{totalPages}
+          </div>
+
+          {/* Next Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+            className="p-2"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+
+          {/* Last Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToLastPage}
+            disabled={currentPage === totalPages}
+            className="p-2"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

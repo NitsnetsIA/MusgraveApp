@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronLeft, ClipboardList, Eye, Info, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ClipboardList, Eye, Info, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDatabase } from '@/hooks/use-database';
@@ -80,6 +80,12 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
   const viewOrder = (orderId: string) => {
     setLocation(`/purchase-orders/${orderId}`);
   };
+
+  // Pagination functions
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToPreviousPage = () => setCurrentPage(Math.max(1, currentPage - 1));
+  const goToNextPage = () => setCurrentPage(Math.min(totalPages, currentPage + 1));
+  const goToLastPage = () => setCurrentPage(totalPages);
 
   return (
     <div className="p-4">
@@ -176,96 +182,61 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        {orders.length > itemsPerPage && (
-          <div className="p-4 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Mostrando {startIndex + 1}-{Math.min(endIndex, orders.length)} de {orders.length} órdenes
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
-                className="text-sm"
-              >
-                &lt;&lt; primera
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="text-sm"
-              >
-                &lt; anterior
-              </Button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={currentPage === pageNum ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setCurrentPage(pageNum)}
-                      className="w-8 h-8 p-0 text-sm"
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
-              </div>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="text-sm"
-              >
-                siguiente &gt;
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
-                className="text-sm"
-              >
-                última &gt;&gt;
-              </Button>
-
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  // For now, we'll keep it at 30 as requested
-                  // This is for future functionality
-                }}
-                className="ml-4 border rounded px-2 py-1 text-sm"
-              >
-                <option value={10}>10</option>
-              </select>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Pagination Controls - Mobile-friendly */}
+      {!isLoading && totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center space-x-2">
+          {/* First Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToFirstPage}
+            disabled={currentPage === 1}
+            className="p-2"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+
+          {/* Previous Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
+            className="p-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {/* Page Counter */}
+          <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded">
+            {currentPage}/{totalPages}
+          </div>
+
+          {/* Next Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+            className="p-2"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+
+          {/* Last Page Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToLastPage}
+            disabled={currentPage === totalPages}
+            className="p-2"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
