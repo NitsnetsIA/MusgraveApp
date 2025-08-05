@@ -73,105 +73,105 @@ export async function seedDatabase() {
   const products = [
     // Azúcar y Endulzantes
     { ean: '8410000000001', title: 'Azúcar blanco Día paquete 1 Kg', base_price: 1.00, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.0 },
-    { ean: '8410000000002', title: 'Azúcar moreno integral 1 Kg', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.0 },
-    { ean: '8410000000003', title: 'Edulcorante sacarina 300 pastillas', base_price: 2.45, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 300.0 },
-    { ean: '8410000000004', title: 'Miel de flores 500g', base_price: 3.20, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
-    { ean: '8410000000005', title: 'Stevia en polvo 100g', base_price: 4.50, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.1 },
-    
-    // Lácteos
-    { ean: '8410000000006', title: 'Leche entera UHT 1L', base_price: 0.89, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.0 },
-    { ean: '8410000000007', title: 'Leche semidesnatada UHT 1L', base_price: 0.85, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.0 },
-    { ean: '8410000000008', title: 'Yogur natural pack 4 UD', base_price: 1.35, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 4.0 },
-    { ean: '8410000000009', title: 'Queso manchego curado 200g', base_price: 4.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.2 },
-    { ean: '8410000000010', title: 'Mantequilla sin sal 250g', base_price: 2.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25 },
+    { ean: '8410000000002', title: 'Azúcar moreno integral 500g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000003', title: 'Edulcorante líquido stevia 90ml', base_price: 3.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.09 },
+    { ean: '8410000000004', title: 'Miel pura de flores 500g', base_price: 4.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000005', title: 'Azúcar glas para repostería 250g', base_price: 1.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25 },
 
-    // Cereales y Derivados
-    { ean: '8410000000011', title: 'Arroz redondo 1 Kg', base_price: 1.25, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.0 },
-    { ean: '8410000000012', title: 'Pasta espaguetis 500g', base_price: 0.89, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
-    { ean: '8410000000013', title: 'Pan de molde integral 680g', base_price: 1.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.68 },
-    { ean: '8410000000014', title: 'Harina de trigo 1 Kg', base_price: 0.95, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.0 },
-    { ean: '8410000000015', title: 'Cereales corn flakes 375g', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.375 },
+    // Aceites y Vinagres  
+    { ean: '8410000000006', title: 'Aceite de oliva virgen extra Carbonell 1L', base_price: 4.85, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.0 },
+    { ean: '8410000000007', title: 'Aceite de girasol Coosur 1L', base_price: 2.15, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.0 },
+    { ean: '8410000000008', title: 'Vinagre de Jerez DO 250ml', base_price: 1.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25 },
+    { ean: '8410000000009', title: 'Aceite de oliva 0,4º Hojiblanca 500ml', base_price: 3.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000010', title: 'Vinagre de manzana ecológico 500ml', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
 
-    // Carnes y Embutidos
-    { ean: '8410000000016', title: 'Jamón serrano lonchas 100g', base_price: 3.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.1 },
-    { ean: '8410000000017', title: 'Chorizo ibérico lonchas 80g', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.08 },
-    { ean: '8410000000018', title: 'Pollo entero fresco 1,5 Kg aprox', base_price: 4.50, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.5 },
-    { ean: '8410000000019', title: 'Ternera filetes 500g', base_price: 8.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
-    { ean: '8410000000020', title: 'Lomo embuchado lonchas 100g', base_price: 4.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.1 },
+    // Harinas y Levaduras
+    { ean: '8410000000011', title: 'Harina de trigo panadera 1 Kg', base_price: 0.95, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.0 },
+    { ean: '8410000000012', title: 'Levadura fresca prensada 25g', base_price: 0.35, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.025 },
+    { ean: '8410000000013', title: 'Harina integral de espelta 500g', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000014', title: 'Levadura química Royal sobre 16g', base_price: 0.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.016 },
+    { ean: '8410000000015', title: 'Harina de avena sin gluten 400g', base_price: 3.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4 },
 
-    // Pescados y Mariscos
-    { ean: '8410000000021', title: 'Salmón ahumado lonchas 100g', base_price: 5.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.1},
-    { ean: '8410000000022', title: 'Atún en aceite lata 80g', base_price: 1.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.08},
-    { ean: '8410000000023', title: 'Sardinas en aceite pack 3 latas', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 3},
-    { ean: '8410000000024', title: 'Mejillones en escabeche lata 115g', base_price: 2.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.115},
-    { ean: '8410000000025', title: 'Bacalao congelado 400g', base_price: 6.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4},
+    // Especias y Condimentos
+    { ean: '8410000000016', title: 'Sal marina fina 1 Kg', base_price: 0.65, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.0 },
+    { ean: '8410000000017', title: 'Pimienta negra molida 50g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.05 },
+    { ean: '8410000000018', title: 'Pimentón dulce de La Vera 75g', base_price: 2.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.075 },
+    { ean: '8410000000019', title: 'Orégano seco especias 20g', base_price: 1.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.02 },
+    { ean: '8410000000020', title: 'Ajo en polvo especias 60g', base_price: 1.65, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.06 },
 
-    // Frutas y Verduras
-    { ean: '8410000000026', title: 'Plátanos de Canarias 1 Kg', base_price: 1.95, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1},
-    { ean: '8410000000027', title: 'Manzanas Golden 1 Kg', base_price: 1.75, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1},
-    { ean: '8410000000028', title: 'Tomates maduros 1 Kg', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1},
-    { ean: '8410000000029', title: 'Patatas para guisar 2 Kg', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 2},
-    { ean: '8410000000030', title: 'Cebolla dulce 1 Kg', base_price: 1.25, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1},
+    // Pasta y Arroces
+    { ean: '8410000000021', title: 'Espaguetis nº3 Gallo 500g', base_price: 1.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000022', title: 'Arroz bomba Calasparra DOP 500g', base_price: 3.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000023', title: 'Macarrones Barilla 500g', base_price: 1.35, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000024', title: 'Arroz largo La Fallera 1 Kg', base_price: 1.95, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1.0 },
+    { ean: '8410000000025', title: 'Fideuá nº2 Gallo 500g', base_price: 1.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
 
-    // Legumbres y Frutos Secos
-    { ean: '8410000000031', title: 'Garbanzos cocidos lata 400g', base_price: 0.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4},
-    { ean: '8410000000032', title: 'Lentejas pardinas 500g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 1},
-    { ean: '8410000000033', title: 'Almendras crudas 200g', base_price: 3.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.2},
-    { ean: '8410000000034', title: 'Nueces con cáscara 500g', base_price: 4.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5},
-    { ean: '8410000000035', title: 'Judías blancas 500g', base_price: 2.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5},
+    // Conservas y Encurtidos
+    { ean: '8410000000026', title: 'Tomate triturado Orlando 400g', base_price: 0.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4 },
+    { ean: '8410000000027', title: 'Atún en aceite Ortiz 80g', base_price: 2.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.08 },
+    { ean: '8410000000028', title: 'Aceitunas rellenas anchoa 150g', base_price: 1.65, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.15 },
+    { ean: '8410000000029', title: 'Pimientos del piquillo Lodosa 185g', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.185 },
+    { ean: '8410000000030', title: 'Sardinas en aceite 120g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.12 },
 
-    // Aceites y Vinagres
-    { ean: '8410000000036', title: 'Aceite oliva virgen extra 1L', base_price: 4.95, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1},
-    { ean: '8410000000037', title: 'Aceite girasol 1L', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1},
-    { ean: '8410000000038', title: 'Vinagre de Jerez 500ml', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5},
-    { ean: '8410000000039', title: 'Vinagre balsámico 250ml', base_price: 3.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25},
-    { ean: '8410000000040', title: 'Aceite oliva suave 500ml', base_price: 2.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5},
+    // Legumbres secas
+    { ean: '8410000000031', title: 'Garbanzos pedrosillanos 500g', base_price: 1.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000032', title: 'Lentejas castellanas 500g', base_price: 1.75, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000033', title: 'Alubias blancas riñón 500g', base_price: 2.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000034', title: 'Guisantes secos partidos 500g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000035', title: 'Soja texturizada fina 150g', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.15 },
 
-    // Conservas y Salsas
-    { ean: '8410000000041', title: 'Tomate frito lata 400g', base_price: 1.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4},
-    { ean: '8410000000042', title: 'Mayonesa clásica 450ml', base_price: 2.25, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.45},
-    { ean: '8410000000043', title: 'Ketchup 570g', base_price: 1.95, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.57},
-    { ean: '8410000000044', title: 'Mermelada fresa 340g', base_price: 2.15, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.34},
-    { ean: '8410000000045', title: 'Pimientos rojos asados 225g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.225},
+    // Frutos secos
+    { ean: '8410000000036', title: 'Almendras crudas 200g', base_price: 3.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.2 },
+    { ean: '8410000000037', title: 'Nueces con cáscara 500g', base_price: 2.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000038', title: 'Pistachos tostados con sal 100g', base_price: 4.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.1 },
+    { ean: '8410000000039', title: 'Cacahuetes tostados 150g', base_price: 1.65, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.15 },
+    { ean: '8410000000040', title: 'Avellanas tostadas 200g', base_price: 3.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.2 },
 
-    // Bebidas
-    { ean: '8410000000046', title: 'Agua mineral 1,5L', base_price: 0.35, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 5},
-    { ean: '8410000000047', title: 'Zumo naranja natural 1L', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1},
-    { ean: '8410000000048', title: 'Refresco cola 2L', base_price: 1.95, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 2},
-    { ean: '8410000000049', title: 'Cerveza sin alcohol pack 6', base_price: 2.85, tax_code: 'IVA21', unit_of_measure: 'PACK', quantity_measure: 6},
-    { ean: '8410000000050', title: 'Vino tinto crianza 750ml', base_price: 4.95, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.75},
+    // Lácteos y Huevos
+    { ean: '8410000000041', title: 'Leche entera Central Lechera 1L', base_price: 1.05, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.0 },
+    { ean: '8410000000042', title: 'Yogur natural Danone pack 4', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 1 },
+    { ean: '8410000000043', title: 'Queso manchego curado 250g', base_price: 6.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25 },
+    { ean: '8410000000044', title: 'Huevos frescos categoría M docena', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'DOCENA', quantity_measure: 1 },
+    { ean: '8410000000045', title: 'Mantequilla sin sal 250g', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25 },
 
-    // Productos de panadería y bollería
-    { ean: '8410000000051', title: 'Galletas maría 800g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.8},
-    { ean: '8410000000052', title: 'Magdalenas esponjosas pack 12', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 1},
-    { ean: '8410000000053', title: 'Tostadas integrales 270g', base_price: 1.65, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.27},
-    { ean: '8410000000054', title: 'Bizcocho mármol 400g', base_price: 2.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4},
-    { ean: '8410000000055', title: 'Croissants mantequilla pack 6', base_price: 2.25, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 6},
+    // Cárnicos y Embutidos
+    { ean: '8410000000046', title: 'Jamón serrano reserva lonchas 100g', base_price: 4.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.1 },
+    { ean: '8410000000047', title: 'Chorizo ibérico extra dulce 200g', base_price: 5.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.2 },
+    { ean: '8410000000048', title: 'Lomo embuchado ibérico lonchas 80g', base_price: 3.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.08 },
+    { ean: '8410000000049', title: 'Salchichón extra lonchas 100g', base_price: 3.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.1 },
+    { ean: '8410000000050', title: 'Morcilla de Burgos 200g', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.2 },
+
+    // Pan y Bollería
+    { ean: '8410000000051', title: 'Pan de molde integral Bimbo 680g', base_price: 1.75, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.68 },
+    { ean: '8410000000052', title: 'Tostadas artesanas pack 30', base_price: 2.15, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 1 },
+    { ean: '8410000000053', title: 'Magdalenas caseras pack 12', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 1 },
+    { ean: '8410000000054', title: 'Galletas María Fontaneda 800g', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.8 },
+    { ean: '8410000000055', title: 'Croissants mantequilla pack 6', base_price: 1.95, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 1 },
+
+    // Bebidas no alcohólicas
+    { ean: '8410000000056', title: 'Agua mineral Bezoya 1.5L', base_price: 0.65, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.5 },
+    { ean: '8410000000057', title: 'Zumo de naranja Don Simón 1L', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.0 },
+    { ean: '8410000000058', title: 'Refresco cola Coca-Cola 2L', base_price: 2.15, tax_code: 'IVA21', unit_of_measure: 'L', quantity_measure: 2.0 },
+    { ean: '8410000000059', title: 'Té verde Hornimans 25 bolsitas', base_price: 2.45, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 25 },
+    { ean: '8410000000060', title: 'Café molido natural Marcilla 250g', base_price: 3.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25 },
 
     // Congelados
-    { ean: '8410000000056', title: 'Pizza 4 quesos 350g', base_price: 3.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.35},
-    { ean: '8410000000057', title: 'Verduras parrilla congeladas 400g', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4},
-    { ean: '8410000000058', title: 'Helado vainilla 1L', base_price: 3.95, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1},
-    { ean: '8410000000059', title: 'Patatas fritas congeladas 750g', base_price: 1.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.75},
-    { ean: '8410000000060', title: 'Langostinos cocidos 200g', base_price: 5.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 1},
+    { ean: '8410000000061', title: 'Verduras menestra Findus 400g', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4 },
+    { ean: '8410000000062', title: 'Pescadilla sin espinas 500g', base_price: 4.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.5 },
+    { ean: '8410000000063', title: 'Pizza 4 quesos Buitoni 365g', base_price: 3.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.365 },
+    { ean: '8410000000064', title: 'Helado de vainilla 1L', base_price: 3.85, tax_code: 'IVA4', unit_of_measure: 'L', quantity_measure: 1.0 },
+    { ean: '8410000000065', title: 'Patatas fritas McCain 750g', base_price: 2.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.75 },
 
-    // Especias y condimentos
-    { ean: '8410000000061', title: 'Sal marina fina 1 Kg', base_price: 0.45, tax_code: 'IVA4', unit_of_measure: 'KG', quantity_measure: 1},
-    { ean: '8410000000062', title: 'Pimienta negra molida 50g', base_price: 1.85, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.05},
-    { ean: '8410000000063', title: 'Pimentón dulce 75g', base_price: 1.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.075},
-    { ean: '8410000000064', title: 'Ajo en polvo 60g', base_price: 1.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.06},
-    { ean: '8410000000065', title: 'Oregano seco 20g', base_price: 0.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.02},
+    // Limpieza personal
+    { ean: '8410000000066', title: 'Champú anticaspa H&S 360ml', base_price: 4.25, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.36 },
+    { ean: '8410000000067', title: 'Pasta de dientes Signal 75ml', base_price: 1.85, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.075 },
+    { ean: '8410000000068', title: 'Gel de ducha Nivea 600ml', base_price: 2.95, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.6 },
+    { ean: '8410000000069', title: 'Desodorante spray Rexona 150ml', base_price: 2.45, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.15 },
+    { ean: '8410000000070', title: 'Papel higiénico Scottex pack 12', base_price: 6.85, tax_code: 'IVA21', unit_of_measure: 'PACK', quantity_measure: 1 },
 
-    // Higiene y limpieza
-    { ean: '8410000000066', title: 'Detergente lavadora 40 dosis', base_price: 8.95, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 1},
-    { ean: '8410000000067', title: 'Suavizante concentrado 1,5L', base_price: 2.85, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 5},
-    { ean: '8410000000068', title: 'Lavavajillas líquido 750ml', base_price: 1.95, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.75},
-    { ean: '8410000000069', title: 'Papel higiénico pack 12 rollos', base_price: 6.45, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 1},
-    { ean: '8410000000070', title: 'Servilletas papel pack 100 UD', base_price: 1.25, tax_code: 'IVA21', unit_of_measure: 'PACK', quantity_measure: 100},
-
-    // Café e infusiones
-    { ean: '8410000000071', title: 'Café molido natural 250g', base_price: 3.45, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.25},
-    { ean: '8410000000072', title: 'Té verde bolsitas pack 25', base_price: 2.85, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 25},
+    // Limpieza del hogar
+    { ean: '8410000000071', title: 'Detergente líquido Ariel 27 dosis', base_price: 5.95, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 1 },
+    { ean: '8410000000072', title: 'Lavavajillas Fairy limón 650ml', base_price: 2.15, tax_code: 'IVA21', unit_of_measure: 'UD', quantity_measure: 0.65 },
     { ean: '8410000000073', title: 'Cacao en polvo 400g', base_price: 3.95, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.4},
     { ean: '8410000000074', title: 'Manzanilla bolsitas pack 20', base_price: 1.65, tax_code: 'IVA4', unit_of_measure: 'PACK', quantity_measure: 20},
     { ean: '8410000000075', title: 'Café soluble 100g', base_price: 4.25, tax_code: 'IVA4', unit_of_measure: 'UD', quantity_measure: 0.1},
@@ -258,231 +258,11 @@ export async function seedDatabase() {
       [config.entity_name, config.last_request_timestamp, config.last_updated_timestamp]);
   }
 
-  // Create 10+ sample purchase orders (multiple for Luis)
-  const samplePurchaseOrders = [
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'luis@esgranvia.es',
-      store_id: 'ES001',
-      status: 'uncommunicated',
-      subtotal: 125.00,
-      tax_total: 15.75,
-      final_total: 140.75
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'luis@esgranvia.es',
-      store_id: 'ES001',
-      status: 'processing',
-      subtotal: 89.50,
-      tax_total: 10.25,
-      final_total: 99.75
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'luis@esgranvia.es',
-      store_id: 'ES001',
-      status: 'completed',
-      subtotal: 156.80,
-      tax_total: 18.95,
-      final_total: 175.75
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'luis@esgranvia.es',
-      store_id: 'ES001',
-      status: 'uncommunicated',
-      subtotal: 67.40,
-      tax_total: 8.10,
-      final_total: 75.50
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'maria@central.es',
-      store_id: 'ES002',
-      status: 'processing',
-      subtotal: 85.50,
-      tax_total: 12.25,
-      final_total: 97.75
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'carlos@bcnnorte.es',
-      store_id: 'ES003',
-      status: 'completed',
-      subtotal: 234.80,
-      tax_total: 28.15,
-      final_total: 262.95
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'ana@valencia.es',
-      store_id: 'ES004',
-      status: 'uncommunicated',
-      subtotal: 156.25,
-      tax_total: 18.75,
-      final_total: 175.00
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'pedro@sevilla.es',
-      store_id: 'ES005',
-      status: 'processing',
-      subtotal: 198.40,
-      tax_total: 23.80,
-      final_total: 222.20
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'laura@gourmet.es',
-      store_id: 'ES006',
-      status: 'completed',
-      subtotal: 345.60,
-      tax_total: 41.47,
-      final_total: 387.07
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'miguel@superfresh.es',
-      store_id: 'ES007',
-      status: 'uncommunicated',
-      subtotal: 92.30,
-      tax_total: 11.08,
-      final_total: 103.38
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'sofia@despensa.es',
-      store_id: 'ES008',
-      status: 'processing',
-      subtotal: 167.85,
-      tax_total: 20.14,
-      final_total: 187.99
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'javier@andalucia.es',
-      store_id: 'ES009',
-      status: 'completed',
-      subtotal: 278.90,
-      tax_total: 33.47,
-      final_total: 312.37
-    },
-    {
-      purchase_order_id: generateUUID(),
-      user_email: 'elena@costablanca.es',
-      store_id: 'ES010',
-      status: 'uncommunicated',
-      subtotal: 134.50,
-      tax_total: 16.14,
-      final_total: 150.64
-    }
-  ];
-
-  for (const order of samplePurchaseOrders) {
-    execute('INSERT INTO purchase_orders (purchase_order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-      [order.purchase_order_id, order.user_email, order.store_id, new Date().toISOString(), order.status, order.subtotal, order.tax_total, order.final_total]);
-    
-    // Add some sample items for each purchase order
-    const sampleItems = [
-      { ean: '8410000000001', quantity: 2, base_price: 1.00, tax_rate: 0.04 },
-      { ean: '8410000000006', quantity: 3, base_price: 0.89, tax_rate: 0.04 },
-      { ean: '8410000000011', quantity: 1, base_price: 1.25, tax_rate: 0.04 }
-    ];
-    
-    for (const item of sampleItems) {
-      execute('INSERT INTO purchase_order_items (purchase_order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order) VALUES (?, ?, ?, ?, ?)',
-        [order.purchase_order_id, item.ean, item.quantity, item.base_price, item.tax_rate]);
-    }
-  }
-
-  // Create 10 sample orders (final orders from processed purchase orders)
-  const completedPurchaseOrders = samplePurchaseOrders.filter(po => po.status === 'completed');
-  const sampleOrders = completedPurchaseOrders.concat(
-    // Add additional orders to reach 10 total
-    [
-      {
-        purchase_order_id: generateUUID(),
-        user_email: 'luis@esgranvia.es',
-        store_id: 'ES001',
-        status: 'completed',
-        subtotal: 89.30,
-        tax_total: 10.72,
-        final_total: 100.02
-      },
-      {
-        purchase_order_id: generateUUID(),
-        user_email: 'maria@central.es',
-        store_id: 'ES002',
-        status: 'completed',
-        subtotal: 156.75,
-        tax_total: 18.81,
-        final_total: 175.56
-      },
-      {
-        purchase_order_id: generateUUID(),
-        user_email: 'carlos@bcnnorte.es',
-        store_id: 'ES003',
-        status: 'completed',
-        subtotal: 203.40,
-        tax_total: 24.41,
-        final_total: 227.81
-      },
-      {
-        purchase_order_id: generateUUID(),
-        user_email: 'ana@valencia.es',
-        store_id: 'ES004',
-        status: 'completed',
-        subtotal: 312.85,
-        tax_total: 37.54,
-        final_total: 350.39
-      },
-      {
-        purchase_order_id: generateUUID(),
-        user_email: 'pedro@sevilla.es',
-        store_id: 'ES005',
-        status: 'completed',
-        subtotal: 178.20,
-        tax_total: 21.38,
-        final_total: 199.58
-      },
-      {
-        purchase_order_id: generateUUID(),
-        user_email: 'laura@gourmet.es',
-        store_id: 'ES006',
-        status: 'completed',
-        subtotal: 267.90,
-        tax_total: 32.15,
-        final_total: 300.05
-      },
-      {
-        purchase_order_id: generateUUID(),
-        user_email: 'miguel@superfresh.es',
-        store_id: 'ES007',
-        status: 'completed',
-        subtotal: 143.60,
-        tax_total: 17.23,
-        final_total: 160.83
-      }
-    ]
-  ).slice(0, 10);
-
-  for (let i = 0; i < sampleOrders.length; i++) {
-    const order = sampleOrders[i];
-    const orderId = generateUUID();
-    const createdDate = new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString(); // Different dates
-    
-    execute('INSERT INTO orders (order_id, source_purchase_order_id, user_email, store_id, created_at, subtotal, tax_total, final_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-      [orderId, order.purchase_order_id, order.user_email, order.store_id, createdDate, order.subtotal, order.tax_total, order.final_total]);
-  }
-
   console.log('Database seeded successfully with:');
   console.log('- 100 products');
   console.log('- 10 users');
   console.log('- 10 stores');
   console.log('- 5 delivery centers');
-  console.log('- 10 purchase orders');
-  console.log('- 10 orders');
   console.log('- Spanish IVA taxes');
   console.log('- Sync configuration');
 }
