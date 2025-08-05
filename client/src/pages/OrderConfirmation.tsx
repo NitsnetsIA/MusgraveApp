@@ -41,7 +41,7 @@ export default function OrderConfirmation() {
         <div className="bg-white rounded-lg p-6 mb-6 shadow-sm text-center">
           <div className="mb-4">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
+            <h1 className="text-lg font-bold text-gray-900 mb-2">
               Orden #{orderNumber} realizada
             </h1>
           </div>

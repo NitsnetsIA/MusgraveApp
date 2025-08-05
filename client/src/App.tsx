@@ -202,11 +202,7 @@ function Router() {
 
       setCartItems(testCartItems);
       
-      toast({
-        title: "✅ Carrito de test creado",
-        description: `Se han añadido ${testCartItems.length} productos aleatorios al carrito`,
-        duration: 3000,
-      });
+      // Test cart created - no notification needed
     } catch (error) {
       console.error('Error creating test cart:', error);
       toast({
