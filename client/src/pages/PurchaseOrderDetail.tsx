@@ -129,11 +129,11 @@ export default function PurchaseOrderDetail() {
               </span>
             </div>
             {order.status === 'completed' && processedOrder && (
-              <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Pedido asociado:</span>
                 <button 
                   onClick={() => setLocation(`/orders/${processedOrder.order_id}`)}
-                  className="text-sm text-blue-600 font-medium underline text-left"
+                  className="text-sm text-blue-600 font-medium underline"
                 >
                   {processedOrder.order_id}
                 </button>
