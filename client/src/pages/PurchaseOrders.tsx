@@ -96,10 +96,7 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
         <h1 className="text-xl font-bold">Órdenes de compra</h1>
       </div>
 
-      {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-blue-800">
-        La orden se comunicará a Musgrave cuando tenga conexión a internet
-      </div>
+
 
       {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
