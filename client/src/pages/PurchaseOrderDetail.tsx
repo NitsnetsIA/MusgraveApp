@@ -122,25 +122,23 @@ export default function PurchaseOrderDetail() {
             <h1 className="text-lg font-bold text-gray-900 mb-1">
               Nº Orden: {order.purchase_order_id}
             </h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Estado:</span>
-                <span className={`text-sm font-medium ${getStatusColor(order.status)}`}>
-                  {getStatusText(order.status)}
-                </span>
-              </div>
-              {order.status === 'completed' && processedOrder && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Pedido:</span>
-                  <button 
-                    onClick={() => setLocation(`/orders/${processedOrder.order_id}`)}
-                    className="text-sm text-blue-600 font-medium underline"
-                  >
-                    {processedOrder.order_id.substring(0, 6)}
-                  </button>
-                </div>
-              )}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm text-gray-600">Estado:</span>
+              <span className={`text-sm font-medium ${getStatusColor(order.status)}`}>
+                {getStatusText(order.status)}
+              </span>
             </div>
+            {order.status === 'completed' && processedOrder && (
+              <div className="flex flex-col gap-1">
+                <span className="text-sm text-gray-600">Pedido asociado:</span>
+                <button 
+                  onClick={() => setLocation(`/orders/${processedOrder.order_id}`)}
+                  className="text-sm text-blue-600 font-medium underline text-left"
+                >
+                  {processedOrder.order_id}
+                </button>
+              </div>
+            )}
           </div>
           
           <div className="text-xs text-gray-600">
