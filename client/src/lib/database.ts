@@ -191,9 +191,45 @@ export function saveDatabase() {
 // Clear and reinitialize database
 export async function clearAndReinitDatabase() {
   localStorage.removeItem('musgrave_db');
+  localStorage.removeItem('musgrave_schema_version');
   db = null;
   SQL = null;
   return await initDatabase();
+}
+
+// Clear database completely (no data, no users)
+export async function clearDatabaseCompletely() {
+  localStorage.removeItem('musgrave_db');
+  localStorage.removeItem('musgrave_schema_version');
+  db = null;
+  SQL = null;
+  
+  // Initialize empty database with tables only
+  SQL = await initSqlJs({
+    locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+  });
+  
+  db = new SQL.Database();
+  await createTables();
+  
+  // Set schema version
+  localStorage.setItem('musgrave_schema_version', '2.1');
+  
+  console.log('Database cleared completely - no users or data');
+  return db;
+}
+
+// Reset database to initial test data
+export async function resetDatabaseToTestData() {
+  localStorage.removeItem('musgrave_db');
+  localStorage.removeItem('musgrave_schema_version');
+  db = null;
+  SQL = null;
+  
+  // Reinitialize with test data
+  const freshDb = await initDatabase();
+  console.log('Database reset to initial test data');
+  return freshDb;
 }
 
 // Execute query and return results

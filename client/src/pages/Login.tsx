@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { loginSchema, type LoginForm } from '@shared/schema';
+import { clearDatabaseCompletely, resetDatabaseToTestData } from '@/lib/database';
 
 interface LoginProps {
   onLogin: (email: string, password: string) => Promise<boolean>;
@@ -13,6 +14,7 @@ interface LoginProps {
 
 export default function Login({ onLogin, isLoading }: LoginProps) {
   const [error, setError] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -34,6 +36,34 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
     } catch (error) {
       console.error('Login error:', error);
       setError('Error durante el login');
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    setIsResetting(true);
+    try {
+      await clearDatabaseCompletely();
+      setError('');
+      alert('Base de datos limpiada completamente. Recarga la página para continuar.');
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      setError('Error al limpiar la base de datos');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleResetToTestData = async () => {
+    setIsResetting(true);
+    try {
+      await resetDatabaseToTestData();
+      setError('');
+      alert('Base de datos reiniciada con datos de prueba. Recarga la página para continuar.');
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      setError('Error al reiniciar la base de datos');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -107,15 +137,36 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
             >
               {isLoading ? 'Iniciando...' : 'Iniciar sesión'}
             </Button>
-            
-
-            
-            <p className="text-xs text-gray-500 text-center">
-              Si tienes dificultades para entrar en la B2B, envíanos<br />
-              un email a: ventasb2b@HOFF.es
-            </p>
           </form>
         </Form>
+
+        {/* Test Database Buttons */}
+        <div className="mt-8 space-y-3">
+          <p className="text-xs text-gray-400 text-center font-medium">HERRAMIENTAS DE DESARROLLO</p>
+          
+          <Button
+            type="button"
+            disabled={isResetting}
+            onClick={handleClearDatabase}
+            className="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700"
+          >
+            {isResetting ? 'Procesando...' : '🗑️ Limpiar BD Completamente'}
+          </Button>
+          
+          <Button
+            type="button"
+            disabled={isResetting}
+            onClick={handleResetToTestData}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            {isResetting ? 'Procesando...' : '🔄 Resetear a Datos de Prueba'}
+          </Button>
+        </div>
+            
+        <p className="text-xs text-gray-500 text-center mt-6">
+          Si tienes dificultades para entrar en la B2B, envíanos<br />
+          un email a: ventasb2b@HOFF.es
+        </p>
       </div>
     </div>
   );
