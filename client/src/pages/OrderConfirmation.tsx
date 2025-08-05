@@ -23,7 +23,7 @@ export default function OrderConfirmation() {
   };
 
   const handleContinueShopping = () => {
-    setLocation('/products');
+    setLocation('/');
   };
 
   return (
@@ -42,7 +42,7 @@ export default function OrderConfirmation() {
           <div className="mb-4">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Orden #{orderNumber.substring(0, 8)} realizada
+              Orden #{orderNumber} realizada
             </h1>
           </div>
           
@@ -79,7 +79,7 @@ export default function OrderConfirmation() {
             className="w-full py-3 border-2 border-gray-300 text-gray-700 font-medium"
           >
             <ClipboardList className="h-4 w-4 mr-2" />
-            Orden nº #{orderNumber.substring(0, 7)}
+            Orden nº #{orderNumber}
           </Button>
 
           <div className="text-sm font-medium text-gray-700 mb-2 mt-6">
