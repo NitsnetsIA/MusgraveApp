@@ -13,6 +13,16 @@ export async function initDatabase() {
       locateFile: (file: string) => `https://sql.js.org/dist/${file}`
     });
 
+    // Check schema version and force recreation if needed
+    const schemaVersion = localStorage.getItem('musgrave_schema_version');
+    const currentVersion = '2.1'; // Updated for product snapshots
+    
+    if (schemaVersion !== currentVersion) {
+      console.log('Schema version mismatch, recreating database...');
+      localStorage.removeItem('musgrave_db');
+      localStorage.setItem('musgrave_schema_version', currentVersion);
+    }
+
     // Check if we have existing data in localStorage
     const savedDb = localStorage.getItem('musgrave_db');
     if (savedDb) {
@@ -118,6 +128,11 @@ async function createTables() {
        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
        purchase_order_id TEXT NOT NULL,
        item_ean TEXT NOT NULL,
+       item_title TEXT,
+       item_description TEXT,
+       unit_of_measure TEXT,
+       quantity_measure REAL,
+       image_url TEXT,
        quantity REAL NOT NULL,
        base_price_at_order REAL NOT NULL,
        tax_rate_at_order REAL NOT NULL,
@@ -143,6 +158,11 @@ async function createTables() {
        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
        order_id TEXT NOT NULL,
        item_ean TEXT NOT NULL,
+       item_title TEXT,
+       item_description TEXT,
+       unit_of_measure TEXT,
+       quantity_measure REAL,
+       image_url TEXT,
        quantity REAL NOT NULL,
        base_price_at_order REAL NOT NULL,
        tax_rate_at_order REAL NOT NULL,

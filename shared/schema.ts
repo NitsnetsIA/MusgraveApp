@@ -56,6 +56,11 @@ export interface PurchaseOrderItem {
   item_id: number;
   purchase_order_id: string; // UUID
   item_ean: string;
+  item_title: string; // Snapshot at order time
+  item_description?: string; // Snapshot at order time
+  unit_of_measure: string; // Snapshot at order time
+  quantity_measure: number; // Snapshot at order time
+  image_url?: string; // Snapshot at order time
   quantity: number;
   base_price_at_order: number;
   tax_rate_at_order: number;
@@ -77,6 +82,11 @@ export interface OrderItem {
   item_id: number;
   order_id: string; // UUID
   item_ean: string;
+  item_title: string; // Snapshot at order time
+  item_description?: string; // Snapshot at order time
+  unit_of_measure: string; // Snapshot at order time
+  quantity_measure: number; // Snapshot at order time
+  image_url?: string; // Snapshot at order time
   quantity: number;
   base_price_at_order: number;
   tax_rate_at_order: number;

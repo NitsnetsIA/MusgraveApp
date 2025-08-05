@@ -143,14 +143,38 @@ export function useDatabase() {
       if (orders.length === 0) return null;
 
       const order = orders[0];
+      // Get items with product snapshot data (captured at order time)
       const items = query(`
-        SELECT poi.*, p.title, p.image_url 
+        SELECT poi.* 
         FROM purchase_order_items poi 
-        JOIN products p ON poi.item_ean = p.ean 
         WHERE poi.purchase_order_id = '${id}'
       `);
 
-      return { ...order, items };
+      // For items without snapshot data (legacy), fallback to current product data
+      const enhancedItems = items.map(item => {
+        if (!item.item_title) {
+          // Fallback to current product data for legacy items
+          const productData = query(`SELECT * FROM products WHERE ean = '${item.item_ean}'`);
+          const product = productData[0];
+          if (product) {
+            return {
+              ...item,
+              item_title: product.title,
+              item_description: product.description,
+              unit_of_measure: product.unit_of_measure,
+              quantity_measure: product.quantity_measure,
+              image_url: product.image_url,
+              title: product.title, // For backward compatibility
+            };
+          }
+        }
+        return {
+          ...item,
+          title: item.item_title, // For backward compatibility
+        };
+      });
+
+      return { ...order, items: enhancedItems };
     } catch (error) {
       console.error('Error getting purchase order:', error);
       return null;
@@ -185,12 +209,32 @@ export function useDatabase() {
         VALUES ('${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', '${randomStatus}', ${subtotal}, ${taxTotal}, ${finalTotal})
       `);
 
-      // Insert purchase order items
+      // Insert purchase order items with product snapshot
       for (const item of cartItems) {
-        execute(`
-          INSERT INTO purchase_order_items (purchase_order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
-          VALUES ('${purchaseOrderId}', '${item.ean}', ${item.quantity}, ${item.base_price}, ${item.tax_rate})
-        `);
+        // Get current product data for snapshot
+        const productData = query('SELECT * FROM products WHERE ean = ?', [item.ean]);
+        const product = productData[0];
+        
+        if (product) {
+          execute(`
+            INSERT INTO purchase_order_items (
+              purchase_order_id, item_ean, item_title, item_description, 
+              unit_of_measure, quantity_measure, image_url, quantity, 
+              base_price_at_order, tax_rate_at_order
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            purchaseOrderId, item.ean, product.title, product.description,
+            product.unit_of_measure, product.quantity_measure, product.image_url,
+            item.quantity, item.base_price, item.tax_rate
+          ]);
+        } else {
+          // Fallback if product not found
+          execute(`
+            INSERT INTO purchase_order_items (purchase_order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
+            VALUES (?, ?, ?, ?, ?)
+          `, [purchaseOrderId, item.ean, item.quantity, item.base_price, item.tax_rate]);
+        }
       }
 
       // If status is "completed", create a corresponding processed order
@@ -234,12 +278,32 @@ export function useDatabase() {
         VALUES ('${orderId}', '${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', ${observations ? `'${observations}'` : 'NULL'}, ${newSubtotal}, ${newTaxTotal}, ${newFinalTotal})
       `);
 
-      // Insert order items with modifications
+      // Insert order items with modifications and product snapshot
       for (const item of modifiedItems) {
-        execute(`
-          INSERT INTO order_items (order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
-          VALUES ('${orderId}', '${item.ean}', ${item.quantity}, ${item.base_price}, ${item.tax_rate})
-        `);
+        // Get current product data for snapshot
+        const productData = query('SELECT * FROM products WHERE ean = ?', [item.ean]);
+        const product = productData[0];
+        
+        if (product) {
+          execute(`
+            INSERT INTO order_items (
+              order_id, item_ean, item_title, item_description,
+              unit_of_measure, quantity_measure, image_url, quantity,
+              base_price_at_order, tax_rate_at_order
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            orderId, item.ean, product.title, product.description,
+            product.unit_of_measure, product.quantity_measure, product.image_url,
+            item.quantity, item.base_price, item.tax_rate
+          ]);
+        } else {
+          // Fallback if product not found
+          execute(`
+            INSERT INTO order_items (order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
+            VALUES (?, ?, ?, ?, ?)
+          `, [orderId, item.ean, item.quantity, item.base_price, item.tax_rate]);
+        }
       }
 
       console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}${hasModifications ? ' with modifications' : ''}`);
@@ -284,8 +348,7 @@ export function useDatabase() {
               quantity: item.quantity, // Same quantity as original
               base_price: randomProduct.base_price,
               tax_rate: taxRate,
-              image_url: randomProduct.image_url,
-              display_price: randomProduct.display_price
+              image_url: randomProduct.image_url
             });
           }
         } else if (modType < 0.9) {
@@ -356,14 +419,38 @@ export function useDatabase() {
       if (orders.length === 0) return null;
 
       const order = orders[0];
+      // Get items with product snapshot data (captured at order time)
       const items = query(`
-        SELECT oi.*, p.title, p.image_url 
+        SELECT oi.* 
         FROM order_items oi 
-        JOIN products p ON oi.item_ean = p.ean 
         WHERE oi.order_id = '${id}'
       `);
 
-      return { ...order, items };
+      // For items without snapshot data (legacy), fallback to current product data
+      const enhancedItems = items.map(item => {
+        if (!item.item_title) {
+          // Fallback to current product data for legacy items
+          const productData = query(`SELECT * FROM products WHERE ean = '${item.item_ean}'`);
+          const product = productData[0];
+          if (product) {
+            return {
+              ...item,
+              item_title: product.title,
+              item_description: product.description,
+              unit_of_measure: product.unit_of_measure,
+              quantity_measure: product.quantity_measure,
+              image_url: product.image_url,
+              title: product.title, // For backward compatibility
+            };
+          }
+        }
+        return {
+          ...item,
+          title: item.item_title, // For backward compatibility
+        };
+      });
+
+      return { ...order, items: enhancedItems };
     } catch (error) {
       console.error('Error getting order:', error);
       return null;

@@ -79,6 +79,62 @@ export async function migrateToNewSchema() {
       console.log('display_price column removed successfully');
     }
     
+    // Check if purchase_order_items table needs product snapshot columns
+    const poiColumns = query("PRAGMA table_info(purchase_order_items)");
+    const hasItemTitle = poiColumns.some(col => col.name === 'item_title');
+    
+    if (!hasItemTitle) {
+      console.log('Adding product snapshot columns to purchase_order_items...');
+      execute('ALTER TABLE purchase_order_items ADD COLUMN item_title TEXT');
+      execute('ALTER TABLE purchase_order_items ADD COLUMN item_description TEXT');  
+      execute('ALTER TABLE purchase_order_items ADD COLUMN unit_of_measure TEXT');
+      execute('ALTER TABLE purchase_order_items ADD COLUMN quantity_measure REAL');
+      execute('ALTER TABLE purchase_order_items ADD COLUMN image_url TEXT');
+      
+      // Update existing purchase_order_items with current product data
+      const existingItems = query('SELECT * FROM purchase_order_items');
+      for (const item of existingItems) {
+        const products = query('SELECT * FROM products WHERE ean = ?', [item.item_ean]);
+        if (products.length > 0) {
+          const product = products[0];
+          execute(`UPDATE purchase_order_items 
+                   SET item_title = ?, item_description = ?, unit_of_measure = ?, quantity_measure = ?, image_url = ?
+                   WHERE item_id = ?`, 
+                   [product.title, product.description, product.unit_of_measure, product.quantity_measure, product.image_url, item.item_id]);
+        }
+      }
+      
+      console.log('Purchase order items migration completed');
+    }
+    
+    // Check if order_items table needs product snapshot columns  
+    const oiColumns = query("PRAGMA table_info(order_items)");
+    const hasOrderItemTitle = oiColumns.some(col => col.name === 'item_title');
+    
+    if (!hasOrderItemTitle) {
+      console.log('Adding product snapshot columns to order_items...');
+      execute('ALTER TABLE order_items ADD COLUMN item_title TEXT');
+      execute('ALTER TABLE order_items ADD COLUMN item_description TEXT');
+      execute('ALTER TABLE order_items ADD COLUMN unit_of_measure TEXT');
+      execute('ALTER TABLE order_items ADD COLUMN quantity_measure REAL');
+      execute('ALTER TABLE order_items ADD COLUMN image_url TEXT');
+      
+      // Update existing order_items with current product data
+      const existingOrderItems = query('SELECT * FROM order_items');
+      for (const item of existingOrderItems) {
+        const products = query('SELECT * FROM products WHERE ean = ?', [item.item_ean]);
+        if (products.length > 0) {
+          const product = products[0];
+          execute(`UPDATE order_items 
+                   SET item_title = ?, item_description = ?, unit_of_measure = ?, quantity_measure = ?, image_url = ?
+                   WHERE item_id = ?`, 
+                   [product.title, product.description, product.unit_of_measure, product.quantity_measure, product.image_url, item.item_id]);
+        }
+      }
+      
+      console.log('Order items migration completed');
+    }
+    
   } catch (error) {
     console.error('Migration failed:', error);
     throw error;
