@@ -3,6 +3,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatSpanishCurrency, formatPricePerUnit } from '@/lib/utils/currency';
+import { calculateDisplayPrice } from '@/lib/schema-migrate';
 
 interface ProductCardProps {
   product: any;
@@ -133,7 +134,10 @@ function ProductCard({
             {formatSpanishCurrency(product.base_price)}
           </div>
           <div className="text-xs text-gray-500 leading-tight h-4">
-            {product.display_price || '\u00A0'}
+            {product.quantity_measure && product.unit_of_measure 
+              ? calculateDisplayPrice(product.base_price, product.quantity_measure, product.unit_of_measure)
+              : '\u00A0'
+            }
           </div>
         </div>
         {isInCart && (

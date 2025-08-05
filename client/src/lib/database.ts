@@ -1,4 +1,5 @@
 import initSqlJs from 'sql.js';
+import { migrateToNewSchema } from './schema-migrate';
 
 let SQL: any = null;
 let db: any = null;
@@ -17,6 +18,17 @@ export async function initDatabase() {
     if (savedDb) {
       const uint8Array = new Uint8Array(JSON.parse(savedDb));
       db = new SQL.Database(uint8Array);
+      // Try to migrate schema if needed
+      try {
+        await migrateToNewSchema();
+      } catch (error) {
+        console.log('Migration failed, recreating database...', error);
+        localStorage.removeItem('musgrave_db');
+        db = new SQL.Database();
+        await createTables();
+        const { seedDatabase } = await import('./seed-data');
+        await seedDatabase();
+      }
     } else {
       console.log('Creating new database...');
       db = new SQL.Database();
@@ -81,7 +93,7 @@ async function createTables() {
        base_price REAL NOT NULL,
        tax_code TEXT NOT NULL,
        unit_of_measure TEXT NOT NULL,
-       display_price TEXT,
+       quantity_measure REAL NOT NULL,
        image_url TEXT,
        is_active INTEGER NOT NULL DEFAULT 1,
        CONSTRAINT fk_tax FOREIGN KEY(tax_code) REFERENCES taxes(code)

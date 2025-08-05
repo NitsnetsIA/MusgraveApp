@@ -36,7 +36,7 @@ export interface Product {
   base_price: number;
   tax_code: string;
   unit_of_measure: string;
-  display_price?: string;
+  quantity_measure: number;
   image_url?: string;
   is_active: number; // 1 for true, 0 for false
 }
@@ -96,7 +96,6 @@ export interface CartItem {
   tax_rate: number;
   quantity: number;
   image_url?: string;
-  display_price?: string;
 }
 
 // Zod schemas for validation

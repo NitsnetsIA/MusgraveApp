@@ -118,8 +118,7 @@ function Router() {
             base_price: product.base_price,
             tax_rate: taxRate,
             quantity,
-            image_url: product.image_url,
-            display_price: product.display_price
+            image_url: product.image_url
           };
           
           // Add new item at the end to minimize DOM restructuring
