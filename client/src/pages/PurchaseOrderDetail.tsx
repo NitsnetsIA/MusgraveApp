@@ -87,9 +87,9 @@ export default function PurchaseOrderDetail() {
       case 'uncommunicated':
         return 'text-red-500';
       case 'processing':
-        return 'text-blue-500';
+        return 'text-yellow-600';
       case 'completed':
-        return 'text-green-500';
+        return 'text-green-600';
       default:
         return 'text-gray-500';
     }
