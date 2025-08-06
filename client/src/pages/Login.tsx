@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, Settings } from 'lucide-react';
 import { loginSchema, type LoginForm } from '@shared/schema';
 import { clearDatabaseCompletely, resetDatabaseToTestData } from '@/lib/database';
 
@@ -16,6 +18,7 @@ interface LoginProps {
 export default function Login({ onLogin, isLoading }: LoginProps) {
   const [error, setError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [isDevPanelOpen, setIsDevPanelOpen] = useState(false);
   const [syncEntities, setSyncEntities] = useState({
     taxes: true,
     products: true,
@@ -133,62 +136,112 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
               )}
             />
             
-            {/* Sync Entity Selection */}
-            <div className="space-y-3">
-              <FormLabel className="text-sm font-medium text-gray-700">
-                Entidades a sincronizar:
-              </FormLabel>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sync-taxes"
-                    checked={syncEntities.taxes}
-                    onCheckedChange={(checked) => 
-                      setSyncEntities(prev => ({ ...prev, taxes: !!checked }))
-                    }
+            {/* Development Panel */}
+            <Collapsible open={isDevPanelOpen} onOpenChange={setIsDevPanelOpen}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  className="w-full flex items-center justify-between text-sm text-gray-500 hover:text-gray-700 p-0 h-auto"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Settings size={16} />
+                    <span>Opciones de Desarrollo</span>
+                  </div>
+                  <ChevronDown 
+                    size={16} 
+                    className={`transition-transform ${isDevPanelOpen ? 'rotate-180' : ''}`}
                   />
-                  <label htmlFor="sync-taxes" className="text-sm text-gray-600 cursor-pointer">
-                    Impuestos (IVA)
-                  </label>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg border">
+                {/* Sync Entity Selection */}
+                <div className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Entidades a sincronizar:
+                  </FormLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="sync-taxes"
+                        checked={syncEntities.taxes}
+                        onCheckedChange={(checked) => 
+                          setSyncEntities(prev => ({ ...prev, taxes: !!checked }))
+                        }
+                      />
+                      <label htmlFor="sync-taxes" className="text-xs text-gray-600 cursor-pointer">
+                        Impuestos (IVA)
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="sync-products"
+                        checked={syncEntities.products}
+                        onCheckedChange={(checked) => 
+                          setSyncEntities(prev => ({ ...prev, products: !!checked }))
+                        }
+                      />
+                      <label htmlFor="sync-products" className="text-xs text-gray-600 cursor-pointer">
+                        Productos
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="sync-stores"
+                        checked={syncEntities.stores}
+                        onCheckedChange={(checked) => 
+                          setSyncEntities(prev => ({ ...prev, stores: !!checked }))
+                        }
+                      />
+                      <label htmlFor="sync-stores" className="text-xs text-gray-600 cursor-pointer">
+                        Tiendas
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="sync-delivery-centers"
+                        checked={syncEntities.deliveryCenters}
+                        onCheckedChange={(checked) => 
+                          setSyncEntities(prev => ({ ...prev, deliveryCenters: !!checked }))
+                        }
+                      />
+                      <label htmlFor="sync-delivery-centers" className="text-xs text-gray-600 cursor-pointer">
+                        Centros de Entrega
+                      </label>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sync-products"
-                    checked={syncEntities.products}
-                    onCheckedChange={(checked) => 
-                      setSyncEntities(prev => ({ ...prev, products: !!checked }))
-                    }
-                  />
-                  <label htmlFor="sync-products" className="text-sm text-gray-600 cursor-pointer">
-                    Productos
-                  </label>
+                
+                {/* Development Buttons */}
+                <div className="space-y-2">
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Herramientas de Desarrollo:
+                  </FormLabel>
+                  <div className="flex flex-col space-y-2">
+                    <Button
+                      type="button"
+                      onClick={handleResetToTestData}
+                      disabled={isResetting}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-8"
+                    >
+                      🧪 Test Sync Reset
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleClearDatabase}
+                      disabled={isResetting}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-8 text-red-600 hover:text-red-700"
+                    >
+                      🗑️ Clear Database
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sync-stores"
-                    checked={syncEntities.stores}
-                    onCheckedChange={(checked) => 
-                      setSyncEntities(prev => ({ ...prev, stores: !!checked }))
-                    }
-                  />
-                  <label htmlFor="sync-stores" className="text-sm text-gray-600 cursor-pointer">
-                    Tiendas
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="sync-delivery-centers"
-                    checked={syncEntities.deliveryCenters}
-                    onCheckedChange={(checked) => 
-                      setSyncEntities(prev => ({ ...prev, deliveryCenters: !!checked }))
-                    }
-                  />
-                  <label htmlFor="sync-delivery-centers" className="text-sm text-gray-600 cursor-pointer">
-                    Centros de Entrega
-                  </label>
-                </div>
-              </div>
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
             
             <div className="text-right">
               <a href="#" className="text-musgrave-600 text-sm">¿Olvidaste tu contraseña?</a>
@@ -208,62 +261,6 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
             </Button>
           </form>
         </Form>
-
-        {/* Test Database Buttons */}
-        <div className="mt-8 space-y-3">
-          <p className="text-xs text-gray-400 text-center font-medium">HERRAMIENTAS DE DESARROLLO</p>
-          
-          <Button
-            type="button"
-            disabled={isResetting}
-            onClick={handleClearDatabase}
-            className="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700"
-          >
-            {isResetting ? 'Procesando...' : '🗑️ Limpiar BD Completamente'}
-          </Button>
-          
-          <Button
-            type="button"
-            disabled={isResetting}
-            onClick={handleResetToTestData}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-          >
-            {isResetting ? 'Procesando...' : '🔄 Resetear a Datos de Prueba'}
-          </Button>
-          
-          <Button
-            type="button"
-            disabled={isResetting}
-            onClick={async () => {
-              try {
-                setIsResetting(true);
-                const { query } = await import('../lib/database');
-                
-                // Clear products and taxes data
-                query('DELETE FROM products');
-                query('DELETE FROM taxes');
-                
-                // Reset sync configuration for products and taxes
-                query('DELETE FROM sync_config WHERE entity_name IN ("products", "taxes")');
-                
-                // Save the database changes
-                const { saveDatabase } = await import('../lib/database');
-                saveDatabase();
-                
-                console.log('🧪 Test sync reset: Cleared products, taxes and sync config');
-                alert('Datos de productos y taxes borrados. Sync config resetado.');
-              } catch (error) {
-                console.error('Error in test sync reset:', error);
-                alert('Error al limpiar datos');
-              } finally {
-                setIsResetting(false);
-              }
-            }}
-            className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700"
-          >
-            🧪 Test Sync Reset
-          </Button>
-        </div>
             
         <p className="text-xs text-gray-500 text-center mt-6">
           Si tienes dificultades para entrar en la aplicación, envíanos<br />
