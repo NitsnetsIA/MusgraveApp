@@ -515,9 +515,11 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
       
       const values = batch.map(product => {
         const isActive = product.is_active ? 1 : 0;
-        const safeTitle = product.title.replace(/'/g, "''");
-        const safeDescription = product.description ? product.description.replace(/'/g, "''") : null;
-        const safeRef = product.ref ? product.ref.replace(/'/g, "''") : null;
+        // More robust escaping for all text fields
+        const safeTitle = product.title ? product.title.replace(/'/g, "''").replace(/\\/g, "\\\\") : '';
+        const safeDescription = product.description ? product.description.replace(/'/g, "''").replace(/\\/g, "\\\\") : null;
+        const safeRef = product.ref ? product.ref.replace(/'/g, "''").replace(/\\/g, "\\\\") : null;
+        const safeImageUrl = product.image_url ? product.image_url.replace(/'/g, "''").replace(/\\/g, "\\\\") : null;
         
         return `(
           '${product.ean}', 
@@ -528,7 +530,7 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
           '${product.tax_code}', 
           '${product.unit_of_measure}', 
           ${product.quantity_measure}, 
-          ${product.image_url ? `'${product.image_url}'` : 'NULL'}, 
+          ${safeImageUrl ? `'${safeImageUrl}'` : 'NULL'}, 
           ${isActive},
           '${product.created_at}', 
           '${product.updated_at}'
@@ -549,7 +551,53 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
       } catch (error) {
         console.error(`Error inserting batch starting at index ${i}:`, error);
         console.error('Failed SQL:', insertSQL.substring(0, 500) + '...');
-        throw error;
+        console.error('Problematic products in this batch:', batch.slice(0, 3).map(p => ({ ean: p.ean, title: p.title })));
+        
+        // Try inserting products individually to continue with sync
+        console.log('Attempting individual inserts for this batch...');
+        for (const product of batch) {
+          try {
+            const isActive = product.is_active ? 1 : 0;
+            const safeTitle = product.title ? product.title.replace(/'/g, "''").replace(/\\/g, "\\\\") : '';
+            const safeDescription = product.description ? product.description.replace(/'/g, "''").replace(/\\/g, "\\\\") : null;
+            const safeRef = product.ref ? product.ref.replace(/'/g, "''").replace(/\\/g, "\\\\") : null;
+            const safeImageUrl = product.image_url ? product.image_url.replace(/'/g, "''").replace(/\\/g, "\\\\") : null;
+            
+            const singleInsertSQL = `
+              INSERT INTO products (
+                ean, ref, title, description, base_price, tax_code, 
+                unit_of_measure, quantity_measure, image_url, is_active, 
+                created_at, updated_at
+              ) VALUES (
+                '${product.ean}', 
+                ${safeRef ? `'${safeRef}'` : 'NULL'}, 
+                '${safeTitle}', 
+                ${safeDescription ? `'${safeDescription}'` : 'NULL'},
+                ${product.base_price}, 
+                '${product.tax_code}', 
+                '${product.unit_of_measure}', 
+                ${product.quantity_measure}, 
+                ${safeImageUrl ? `'${safeImageUrl}'` : 'NULL'}, 
+                ${isActive},
+                '${product.created_at}', 
+                '${product.updated_at}'
+              )
+            `;
+            
+            dbQuery(singleInsertSQL);
+            insertedCount++;
+            
+          } catch (individualError) {
+            console.error(`Failed to insert individual product ${product.ean}:`, individualError);
+            // Continue with the rest - don't break the entire sync
+          }
+        }
+        
+        console.log(`Completed individual inserts, total inserted: ${insertedCount}/${allProducts.length}`);
+        
+        // Update progress after individual inserts
+        const insertProgress = (insertedCount / allProducts.length) * 5;
+        onProgress(`Insertando productos (${insertedCount}/${allProducts.length})`, 95 + insertProgress);
       }
     }
     
