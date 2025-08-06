@@ -321,23 +321,23 @@ export default function Cart({
           </div>
 
           
-          {/* Checkout Button or Loading Text */}
+          {/* Checkout Button */}
           {items.length > 0 && (
             <div className="p-4">
-              {isCreatingOrder ? (
+              <Button
+                onClick={() => {
+                  setIsCreatingOrder(true);
+                  onCheckout();
+                }}
+                className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600"
+                style={{ display: isCreatingOrder ? 'none' : 'block' }}
+              >
+                Confirmar orden ({formatSpanishCurrency(total)})
+              </Button>
+              {isCreatingOrder && (
                 <div className="w-full py-4 text-center text-lg font-medium text-gray-600">
                   Creando orden de compra...
                 </div>
-              ) : (
-                <Button
-                  onClick={() => {
-                    setIsCreatingOrder(true);
-                    onCheckout();
-                  }}
-                  className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600"
-                >
-                  Confirmar orden ({formatSpanishCurrency(total)})
-                </Button>
               )}
             </div>
           )}
