@@ -37,7 +37,12 @@ export default function Cart({
   const [barcodeMessage, setBarcodeMessage] = useState('');
   const [addedProduct, setAddedProduct] = useState<string | null>(null);
 
-  // Removed automatic cart validation on open for better performance
+  // Debug loading state
+  useEffect(() => {
+    if (isCheckingOut) {
+      console.log('🛒 Cart: isCheckingOut is TRUE - showing loading button');
+    }
+  }, [isCheckingOut]);
   
   const subtotal = items.reduce((sum, item) => {
     const price = Number(item.base_price) || 0;
@@ -326,9 +331,9 @@ export default function Cart({
                 className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600 disabled:bg-green-400 disabled:cursor-not-allowed"
               >
                 {isCheckingOut ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Creando orden de compra...
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white border-t-2"></div>
+                    <span className="font-medium">Creando orden de compra...</span>
                   </div>
                 ) : (
                   `Confirmar orden (${formatSpanishCurrency(total)})`

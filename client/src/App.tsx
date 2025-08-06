@@ -238,11 +238,20 @@ function Router() {
       return;
     }
 
+    console.log('🛒 Starting checkout process...');
     setIsLoading(true);
+    
     try {
+      console.log('🛒 Creating purchase order...');
       const orderId = await createPurchaseOrder(user.email, store.code, cartItems);
+      console.log('🛒 Purchase order created:', orderId);
+      
       setLastOrderId(orderId);
       clearCart();
+      
+      // Small delay to ensure the user sees the completion
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setCartOpen(false);
       
       // Navigate to order confirmation page
