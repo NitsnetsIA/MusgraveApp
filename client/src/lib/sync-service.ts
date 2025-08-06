@@ -51,7 +51,10 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
     console.log('Making GraphQL request to server...');
     const requestStart = Date.now();
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    const timeoutId = setTimeout(() => {
+      console.log('GraphQL request taking too long, aborting after 8 seconds');
+      controller.abort();
+    }, 8000); // 8 second timeout
 
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
@@ -63,6 +66,9 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
         variables: {}
       }),
       signal: controller.signal
+    }).catch(error => {
+      clearTimeout(timeoutId);
+      throw error;
     });
 
     clearTimeout(timeoutId);
@@ -83,7 +89,7 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
     return null;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Sync info request timed out after 10 seconds');
+      console.error('Sync info request timed out after 8 seconds');
     } else {
       console.error('Error fetching sync info:', error);
     }

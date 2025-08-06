@@ -134,6 +134,7 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
       } catch (error) {
         console.error('Sync error:', error);
         setCurrentMessage('Error en la sincronización');
+        setProgress(100);
         // Still complete after error to not block the user
         setTimeout(() => {
           onSyncComplete();
