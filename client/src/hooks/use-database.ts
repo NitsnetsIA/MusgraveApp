@@ -223,11 +223,11 @@ export function useDatabase() {
       const random = Math.random();
       const randomStatus = random < 0.9 ? 'completed' : (random < 0.95 ? 'processing' : 'uncommunicated');
 
-      // Insert purchase order with random status
+      // Insert purchase order with random status using parameterized query
       execute(`
         INSERT INTO purchase_orders (purchase_order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total)
-        VALUES ('${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', '${randomStatus}', ${subtotal}, ${taxTotal}, ${finalTotal})
-      `);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [purchaseOrderId, userEmail, storeId, now, randomStatus, subtotal, taxTotal, finalTotal]);
 
       // Insert purchase order items with product snapshot
       for (const item of cartItems) {
@@ -251,9 +251,12 @@ export function useDatabase() {
         } else {
           // Fallback if product not found
           execute(`
-            INSERT INTO purchase_order_items (purchase_order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
-            VALUES (?, ?, ?, ?, ?)
-          `, [purchaseOrderId, item.ean, item.quantity, item.base_price, item.tax_rate]);
+            INSERT INTO purchase_order_items (
+              purchase_order_id, item_ean, item_title, quantity, 
+              base_price_at_order, tax_rate_at_order
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+          `, [purchaseOrderId, item.ean, `Producto ${item.ean}`, item.quantity, item.base_price, item.tax_rate]);
         }
       }
 
@@ -292,11 +295,11 @@ export function useDatabase() {
         "Se han producido cambios sobre su orden de compra. Si tiene cualquier problema póngase en contacto con Musgrave" : 
         null;
 
-      // Insert processed order with potentially modified totals
+      // Insert processed order with potentially modified totals using parameterized query
       execute(`
         INSERT INTO orders (order_id, source_purchase_order_id, user_email, store_id, created_at, observations, subtotal, tax_total, final_total)
-        VALUES ('${orderId}', '${purchaseOrderId}', '${userEmail}', '${storeId}', '${now}', ${observations ? `'${observations}'` : 'NULL'}, ${newSubtotal}, ${newTaxTotal}, ${newFinalTotal})
-      `);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [orderId, purchaseOrderId, userEmail, storeId, now, observations, newSubtotal, newTaxTotal, newFinalTotal]);
 
       // Insert order items with modifications and product snapshot
       for (const item of modifiedItems) {

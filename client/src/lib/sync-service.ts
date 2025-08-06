@@ -459,8 +459,8 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
           
           success = true;
           
-          // Check if we've got all records
-          if (products.length < limit || totalProcessed >= totalRecords) {
+          // Continue only if we got a full page and haven't reached the total
+          if (products.length === 0 || totalProcessed >= totalRecords) {
             break;
           }
           
