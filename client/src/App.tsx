@@ -13,6 +13,7 @@ import type { User, CartItem } from "@shared/schema";
 // Import components and pages
 import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
+import SyncScreen from "@/pages/SyncScreen";
 import ProductCatalog from "@/pages/ProductCatalog";
 import PurchaseOrders from "@/pages/PurchaseOrders";
 import PurchaseOrderDetail from "@/pages/PurchaseOrderDetail";
@@ -40,6 +41,7 @@ function Router() {
   const [user, setUser] = useState<User | null>(null);
   const [store, setStore] = useState<any>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [showSyncScreen, setShowSyncScreen] = useState(false);
   
   // Cart state is managed here
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -68,30 +70,8 @@ function Router() {
       if (authenticatedUser) {
         setUser(authenticatedUser);
         
-        // Perform synchronization check after successful login
-        try {
-          const { checkSynchronizationNeeds } = await import('./lib/sync-service');
-          const syncResults = await checkSynchronizationNeeds();
-          
-          // Log sync results for debugging
-          const entitiesToSync = syncResults.filter(entity => entity.needs_sync);
-          if (entitiesToSync.length > 0) {
-            console.log('🔄 Entities requiring synchronization:', entitiesToSync.map(e => e.entity_name));
-            // TODO: Here we'll implement the actual data fetching calls
-            toast({
-              title: "Sincronización pendiente",
-              description: `${entitiesToSync.length} entidades requieren actualización`,
-              duration: 3000,
-            });
-          } else {
-            console.log('✅ All entities are synchronized');
-          }
-        } catch (syncError) {
-          console.error('Synchronization check failed:', syncError);
-          // Don't fail login if sync check fails
-        }
-        
-        setLocation('/');
+        // Show sync screen after successful login
+        setShowSyncScreen(true);
         return true;
       }
       return false;
@@ -109,8 +89,14 @@ function Router() {
     setCartItems([]);
     setSideMenuOpen(false);
     setCartOpen(false);
+    setShowSyncScreen(false);
     setLocation('/login');
     // Removed logout toast message
+  };
+
+  const handleSyncComplete = () => {
+    setShowSyncScreen(false);
+    setLocation('/');
   };
 
   // Cart management - simplified without debouncing
@@ -288,6 +274,15 @@ function Router() {
     return (
       <div className="min-h-screen">
         <Login onLogin={handleLogin} isLoading={isLoading} />
+      </div>
+    );
+  }
+
+  // Show sync screen after login
+  if (showSyncScreen) {
+    return (
+      <div className="min-h-screen">
+        <SyncScreen onSyncComplete={handleSyncComplete} />
       </div>
     );
   }

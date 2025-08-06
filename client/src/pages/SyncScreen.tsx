@@ -1,0 +1,177 @@
+import { useState, useEffect } from 'react';
+import { Progress } from '@/components/ui/progress';
+import { useLocation } from 'wouter';
+import { checkSynchronizationNeeds } from '../lib/sync-service';
+
+interface SyncStep {
+  id: string;
+  label: string;
+  completed: boolean;
+}
+
+interface SyncScreenProps {
+  onSyncComplete: () => void;
+}
+
+export default function SyncScreen({ onSyncComplete }: SyncScreenProps) {
+  const [, setLocation] = useLocation();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [syncSteps, setSyncSteps] = useState<SyncStep[]>([]);
+  const [currentMessage, setCurrentMessage] = useState('Iniciando sincronización...');
+
+  useEffect(() => {
+    async function performSync() {
+      try {
+        // Step 1: Check what needs to be synced
+        setCurrentMessage('Obteniendo fechas de actualización');
+        setProgress(10);
+        
+        // Simulate a small delay for UX
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        const syncResults = await checkSynchronizationNeeds();
+        const entitiesToSync = syncResults.filter(entity => entity.needs_sync);
+        
+        // Build steps based on what needs syncing
+        const steps: SyncStep[] = [];
+        
+        if (entitiesToSync.find(e => e.entity_name === 'products')) {
+          steps.push({ id: 'products', label: 'Sincronizando Productos', completed: false });
+        }
+        
+        if (entitiesToSync.find(e => e.entity_name === 'taxes')) {
+          steps.push({ id: 'taxes', label: 'Sincronizando Impuestos', completed: false });
+        }
+        
+        setSyncSteps(steps);
+        
+        if (steps.length === 0) {
+          // Nothing to sync
+          setProgress(100);
+          setCurrentMessage('Sincronización completada');
+          setTimeout(() => {
+            onSyncComplete();
+          }, 1000);
+          return;
+        }
+        
+        // Step 2: Sync each entity
+        const progressPerStep = 80 / steps.length; // Reserve 10% for initial check, 10% for completion
+        let currentProgress = 20;
+        
+        for (let i = 0; i < steps.length; i++) {
+          const step = steps[i];
+          setCurrentStep(i);
+          setCurrentMessage(step.label);
+          
+          // TODO: Here we'll implement the actual GraphQL sync calls
+          // For now, simulate the sync process
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Mark step as completed
+          setSyncSteps(prev => prev.map((s, idx) => 
+            idx === i ? { ...s, completed: true } : s
+          ));
+          
+          currentProgress += progressPerStep;
+          setProgress(Math.min(currentProgress, 90));
+        }
+        
+        // Step 3: Finalization
+        setProgress(100);
+        setCurrentMessage('Sincronización completada');
+        
+        setTimeout(() => {
+          onSyncComplete();
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Sync error:', error);
+        setCurrentMessage('Error en la sincronización');
+        // Still complete after error to not block the user
+        setTimeout(() => {
+          onSyncComplete();
+        }, 2000);
+      }
+    }
+    
+    performSync();
+  }, [onSyncComplete]);
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header with user info and logo */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-100">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-bold">LR</span>
+          </div>
+          <div className="text-sm">
+            <div className="font-medium text-gray-900">Luis Romero Pérez</div>
+            <div className="text-gray-500">(ES Gran VIA)</div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {/* Musgrave logo */}
+          <div className="bg-green-600 text-white px-2 py-1 rounded text-sm font-bold">
+            M
+          </div>
+          {/* Cart icon */}
+          <div className="relative">
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m.6 8l-1 5h12m-10-5v0m8 0v0m-8 5v0m8-5v0" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Main sync content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
+        {/* Musgrave branding area */}
+        <div className="w-80 h-80 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg flex items-center justify-center shadow-sm">
+          <div className="text-6xl font-script text-gray-800 transform -rotate-12">
+            Musgrave
+          </div>
+        </div>
+
+        {/* Progress section */}
+        <div className="w-full max-w-sm space-y-4">
+          {/* Progress bar */}
+          <div className="space-y-2">
+            <Progress 
+              value={progress} 
+              className="w-full h-3 bg-gray-200"
+              data-testid="sync-progress-bar"
+            />
+            <div className="text-center text-sm font-medium text-gray-700" data-testid="sync-status-message">
+              {currentMessage}
+            </div>
+          </div>
+
+          {/* Sync steps debug info (only show in development) */}
+          {process.env.NODE_ENV === 'development' && syncSteps.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <div className="text-xs text-gray-500 text-center">Debug - Pasos de sincronización:</div>
+              {syncSteps.map((step, index) => (
+                <div 
+                  key={step.id} 
+                  className={`text-xs px-2 py-1 rounded text-center ${
+                    step.completed 
+                      ? 'bg-green-100 text-green-700' 
+                      : index === currentStep 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {step.completed ? '✓' : index === currentStep ? '⏳' : '⏸'} {step.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

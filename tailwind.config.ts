@@ -62,6 +62,9 @@ export default {
           ring: "var(--sidebar-ring)",
         },
       },
+      fontFamily: {
+        'script': ['Dancing Script', 'cursive'],
+      },
       keyframes: {
         "accordion-down": {
           from: {
