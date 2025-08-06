@@ -34,7 +34,6 @@ export default function Cart({
   const [barcodeInput, setBarcodeInput] = useState('');
   const [barcodeMessage, setBarcodeMessage] = useState('');
   const [addedProduct, setAddedProduct] = useState<string | null>(null);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
   const subtotal = items.reduce((sum, item) => {
     const price = Number(item.base_price) || 0;
@@ -115,12 +114,7 @@ export default function Cart({
     }
   };
 
-  // Reset creating order state when cart closes
-  useEffect(() => {
-    if (!isOpen) {
-      setIsCreatingOrder(false);
-    }
-  }, [isOpen]);
+
 
   if (!isOpen) return null;
 
@@ -325,20 +319,11 @@ export default function Cart({
           {items.length > 0 && (
             <div className="p-4">
               <Button
-                onClick={() => {
-                  setIsCreatingOrder(true);
-                  onCheckout();
-                }}
+                onClick={onCheckout}
                 className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600"
-                style={{ display: isCreatingOrder ? 'none' : 'block' }}
               >
                 Confirmar orden ({formatSpanishCurrency(total)})
               </Button>
-              {isCreatingOrder && (
-                <div className="w-full py-4 text-center text-lg font-medium text-gray-600">
-                  Creando orden de compra...
-                </div>
-              )}
             </div>
           )}
         </div>
