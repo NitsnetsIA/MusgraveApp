@@ -65,17 +65,38 @@ export default function SyncScreen({ onSyncComplete }: SyncScreenProps) {
           setCurrentStep(i);
           setCurrentMessage(step.label);
           
-          // TODO: Here we'll implement the actual GraphQL sync calls
-          // For now, simulate the sync process
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          let syncSuccess = false;
           
-          // Mark step as completed
-          setSyncSteps(prev => prev.map((s, idx) => 
-            idx === i ? { ...s, completed: true } : s
-          ));
+          // Perform actual sync based on entity type
+          if (step.id === 'taxes') {
+            const { syncTaxes } = await import('../lib/sync-service');
+            syncSuccess = await syncTaxes((message, entityProgress) => {
+              setCurrentMessage(message);
+              // Map entity progress to overall progress within this step
+              const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
+              setProgress(Math.min(stepProgress, 90));
+            });
+          } else if (step.id === 'products') {
+            // TODO: Implement products sync when you provide the GraphQL call
+            // For now, simulate the sync process
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            syncSuccess = true;
+          }
           
-          currentProgress += progressPerStep;
-          setProgress(Math.min(currentProgress, 90));
+          if (syncSuccess) {
+            // Mark step as completed
+            setSyncSteps(prev => prev.map((s, idx) => 
+              idx === i ? { ...s, completed: true } : s
+            ));
+            
+            currentProgress += progressPerStep;
+            setProgress(Math.min(currentProgress, 90));
+          } else {
+            console.error(`Failed to sync ${step.id}`);
+            // Continue with other entities even if one fails
+            currentProgress += progressPerStep;
+            setProgress(Math.min(currentProgress, 90));
+          }
         }
         
         // Step 3: Finalization

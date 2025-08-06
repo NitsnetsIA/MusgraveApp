@@ -240,6 +240,128 @@ export function markSyncCompleted(entityName: string, serverLastUpdated: string)
 }
 
 /**
+ * Sync taxes from server using GraphQL with pagination
+ */
+export async function syncTaxes(onProgress: (message: string, progress: number) => void): Promise<boolean> {
+  try {
+    console.log('🔄 Starting taxes synchronization...');
+    onProgress('Sincronizando Impuestos', 0);
+    
+    const lastRequestTimestamp = getLastRequestTimestamp('taxes');
+    const timestampParam = lastRequestTimestamp ? new Date(lastRequestTimestamp).toISOString() : null;
+    
+    console.log(`Syncing taxes since: ${timestampParam || 'beginning of time'}`);
+    
+    const query = `
+      query Taxes($timestamp: String, $limit: Int, $offset: Int) {
+        taxes(timestamp: $timestamp, limit: $limit, offset: $offset) {
+          taxes {
+            code
+            name
+            tax_rate
+            created_at
+            updated_at
+          }
+          total
+          limit
+          offset
+        }
+      }
+    `;
+    
+    let offset = 0;
+    const limit = 1000;
+    let totalProcessed = 0;
+    let totalRecords = 0;
+    let allTaxes: any[] = [];
+    
+    // Fetch all pages
+    while (true) {
+      console.log(`Fetching taxes page: offset=${offset}, limit=${limit}`);
+      
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables: {
+            timestamp: timestampParam,
+            limit,
+            offset
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      }
+      
+      const taxesPage = data.data?.taxes;
+      
+      if (!taxesPage) {
+        throw new Error('Invalid response structure');
+      }
+      
+      totalRecords = taxesPage.total;
+      const taxes = taxesPage.taxes || [];
+      
+      allTaxes.push(...taxes);
+      totalProcessed += taxes.length;
+      
+      // Update progress
+      const progressPercent = totalRecords > 0 ? (totalProcessed / totalRecords) * 100 : 100;
+      onProgress(`Sincronizando Impuestos (${totalProcessed}/${totalRecords})`, progressPercent);
+      
+      console.log(`Received ${taxes.length} taxes, total processed: ${totalProcessed}/${totalRecords}`);
+      
+      // Check if we've got all records
+      if (taxes.length < limit || totalProcessed >= totalRecords) {
+        break;
+      }
+      
+      offset += limit;
+    }
+    
+    // Update database with all taxes
+    console.log(`Updating database with ${allTaxes.length} taxes...`);
+    
+    const { query: dbQuery } = await import('./database');
+    
+    // Clear existing taxes and insert new ones (slave mode - server is master)
+    dbQuery('DELETE FROM taxes');
+    
+    for (const tax of allTaxes) {
+      const insertQuery = `
+        INSERT INTO taxes (code, name, tax_rate) 
+        VALUES ('${tax.code}', '${tax.name.replace(/'/g, "''")}', ${tax.tax_rate})
+      `;
+      dbQuery(insertQuery);
+    }
+    
+    console.log(`✅ Successfully synced ${allTaxes.length} taxes`);
+    
+    // Update sync timestamp only if everything succeeded
+    markSyncCompleted('taxes', new Date().toISOString());
+    
+    onProgress('Impuestos sincronizados', 100);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error syncing taxes:', error);
+    onProgress('Error sincronizando impuestos', 0);
+    return false;
+  }
+}
+
+/**
  * Test function to manually trigger sync check (for development)
  */
 export async function testSyncCheck(): Promise<void> {
