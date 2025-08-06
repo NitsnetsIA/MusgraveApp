@@ -15,6 +15,7 @@ interface CartProps {
   onAddToCart: (ean: string, quantity: number) => void;
   onCreateTestCart?: () => void;
   store?: any;
+  isCheckingOut?: boolean;
 }
 
 export default function Cart({
@@ -26,7 +27,8 @@ export default function Cart({
   onCheckout,
   onAddToCart,
   onCreateTestCart,
-  store
+  store,
+  isCheckingOut = false
 }: CartProps) {
   const { getProductByEan } = useDatabase();
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
@@ -320,9 +322,17 @@ export default function Cart({
             <div className="p-4">
               <Button
                 onClick={onCheckout}
-                className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600"
+                disabled={isCheckingOut}
+                className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600 disabled:bg-green-400 disabled:cursor-not-allowed"
               >
-                Confirmar orden ({formatSpanishCurrency(total)})
+                {isCheckingOut ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Creando orden de compra...
+                  </div>
+                ) : (
+                  `Confirmar orden (${formatSpanishCurrency(total)})`
+                )}
               </Button>
             </div>
           )}

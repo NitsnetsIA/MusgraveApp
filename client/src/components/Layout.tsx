@@ -20,6 +20,7 @@ interface LayoutProps {
   clearCart: () => void;
   onCheckout: () => void;
   onCreateTestCart?: () => void;
+  isCheckingOut?: boolean;
 }
 
 export default function Layout({
@@ -37,7 +38,8 @@ export default function Layout({
   addToCart,
   clearCart,
   onCheckout,
-  onCreateTestCart
+  onCreateTestCart,
+  isCheckingOut = false
 }: LayoutProps) {
   const { isOffline } = useDatabase();
 
@@ -78,6 +80,7 @@ export default function Layout({
         onCheckout={onCheckout}
         onCreateTestCart={onCreateTestCart}
         store={store}
+        isCheckingOut={isCheckingOut}
       />
 
       <main>{children}</main>

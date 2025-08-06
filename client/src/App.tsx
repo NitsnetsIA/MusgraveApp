@@ -196,9 +196,9 @@ function Router() {
       // Clear current cart
       setCartItems([]);
 
-      // Select 10 random ACTIVE products only
+      // Select exactly 30 random ACTIVE products
       const shuffled = [...activeProducts].sort(() => 0.5 - Math.random());
-      const selectedProducts = shuffled.slice(0, Math.min(10, activeProducts.length));
+      const selectedProducts = shuffled.slice(0, Math.min(30, activeProducts.length));
 
       // Create cart items with random quantities (1-3)
       const testCartItems: CartItem[] = selectedProducts.map(product => {
@@ -214,7 +214,7 @@ function Router() {
         };
       });
 
-      console.log(`Test cart created with ${testCartItems.length} ACTIVE products - no invalid EANs possible`);
+      console.log(`Test cart created with ${testCartItems.length} ACTIVE products (target: 30) - no invalid EANs possible`);
       setCartItems(testCartItems);
       
     } catch (error) {
@@ -312,6 +312,7 @@ function Router() {
       clearCart={clearCart}
       onCheckout={handleCheckout}
       onCreateTestCart={createTestCart}
+      isCheckingOut={isLoading}
     >
       <Switch>
         <Route path="/" component={() => (
