@@ -236,7 +236,7 @@ export function markSyncCompleted(entityName: string, serverLastUpdated: string)
   const serverTimestamp = isoToTimestamp(serverLastUpdated);
   
   updateLocalSyncConfig(entityName, now, serverTimestamp);
-  console.log(`✅ Sync completed for ${entityName}`);
+  console.log(`✅ Sync completed for ${entityName}: last_request=${now}, server_updated=${serverTimestamp}`);
 }
 
 /**
@@ -472,31 +472,39 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
     dbQuery('DELETE FROM products');
     
     for (const product of allProducts) {
-      // Convert boolean to integer for SQLite
-      const isActive = product.is_active ? 1 : 0;
-      
-      const insertQuery = `
-        INSERT INTO products (
-          ean, ref, title, description, base_price, tax_code, 
-          unit_of_measure, quantity_measure, image_url, is_active, 
-          created_at, updated_at
-        ) 
-        VALUES (
-          '${product.ean}', 
-          ${product.ref ? `'${product.ref.replace(/'/g, "''")}'` : 'NULL'}, 
-          '${product.title.replace(/'/g, "''")}', 
-          ${product.description ? `'${product.description.replace(/'/g, "''")}'` : 'NULL'},
-          ${product.base_price}, 
-          '${product.tax_code}', 
-          '${product.unit_of_measure}', 
-          ${product.quantity_measure}, 
-          ${product.image_url ? `'${product.image_url}'` : 'NULL'}, 
-          ${isActive},
-          '${product.created_at}', 
-          '${product.updated_at}'
-        )
-      `;
-      dbQuery(insertQuery);
+      try {
+        // Convert boolean to integer for SQLite
+        const isActive = product.is_active ? 1 : 0;
+        
+        // Use proper parameterized query to avoid SQL injection and escape issues
+        const insertQuery = `
+          INSERT INTO products (
+            ean, ref, title, description, base_price, tax_code, 
+            unit_of_measure, quantity_measure, image_url, is_active, 
+            created_at, updated_at
+          ) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        const { execute } = await import('./database');
+        execute(insertQuery, [
+          product.ean,
+          product.ref || null,
+          product.title,
+          product.description || null,
+          product.base_price,
+          product.tax_code,
+          product.unit_of_measure,
+          product.quantity_measure,
+          product.image_url || null,
+          isActive,
+          product.created_at,
+          product.updated_at
+        ]);
+      } catch (error) {
+        console.error(`Error inserting product ${product.ean}:`, error);
+        throw error; // Re-throw to trigger the main catch block
+      }
     }
     
     console.log(`✅ Successfully synced ${allProducts.length} products`);
