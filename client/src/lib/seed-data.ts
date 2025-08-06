@@ -216,6 +216,7 @@ export async function seedDatabase() {
   const syncConfig = [
     { entity_name: 'users', last_request_timestamp: Date.now() - 86400000, last_updated_timestamp: Date.now() - 86400000 },
     { entity_name: 'products', last_request_timestamp: Date.now() - 86400000, last_updated_timestamp: Date.now() - 86400000 },
+    { entity_name: 'taxes', last_request_timestamp: Date.now() - 86400000, last_updated_timestamp: Date.now() - 86400000 },
     { entity_name: 'stores', last_request_timestamp: Date.now() - 86400000, last_updated_timestamp: Date.now() - 86400000 },
     { entity_name: 'delivery_centers', last_request_timestamp: Date.now() - 86400000, last_updated_timestamp: Date.now() - 86400000 },
     { entity_name: 'purchase_orders', last_request_timestamp: Date.now() - 86400000, last_updated_timestamp: Date.now() - 86400000 }

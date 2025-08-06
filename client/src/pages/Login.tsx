@@ -161,6 +161,22 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
           >
             {isResetting ? 'Procesando...' : '🔄 Resetear a Datos de Prueba'}
           </Button>
+          
+          <Button
+            type="button"
+            disabled={isResetting}
+            onClick={async () => {
+              try {
+                const { testSyncCheck } = await import('../lib/sync-service');
+                await testSyncCheck();
+              } catch (error) {
+                console.error('Error testing sync:', error);
+              }
+            }}
+            className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700"
+          >
+            🔄 Test Sync Check
+          </Button>
         </div>
             
         <p className="text-xs text-gray-500 text-center mt-6">
