@@ -36,12 +36,13 @@ export default function SyncScreen({ onSyncComplete }: SyncScreenProps) {
         // Build steps based on what needs syncing
         const steps: SyncStep[] = [];
         
-        if (entitiesToSync.find(e => e.entity_name === 'products')) {
-          steps.push({ id: 'products', label: 'Sincronizando Productos', completed: false });
-        }
-        
+        // Order matters: taxes first (products reference taxes)
         if (entitiesToSync.find(e => e.entity_name === 'taxes')) {
           steps.push({ id: 'taxes', label: 'Sincronizando Impuestos', completed: false });
+        }
+        
+        if (entitiesToSync.find(e => e.entity_name === 'products')) {
+          steps.push({ id: 'products', label: 'Sincronizando Productos', completed: false });
         }
         
         setSyncSteps(steps);

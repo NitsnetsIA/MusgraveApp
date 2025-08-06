@@ -605,18 +605,28 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
     console.log('Saving database to localStorage...');
     saveDatabase();
     
-    console.log(`✅ Successfully synced ${allProducts.length} products`);
+    console.log(`✅ Successfully synced ${insertedCount}/${allProducts.length} products`);
     
-    // Update sync timestamp with current time (when we completed the sync)
-    const now = new Date().toISOString();
-    markSyncCompleted('products', now);
-    
-    console.log(`Sync completed at: ${now}`);
+    // Only mark as completed if we got ALL products
+    if (insertedCount === allProducts.length) {
+      // Update sync timestamp with current time (when we completed the sync)
+      const now = new Date().toISOString();
+      markSyncCompleted('products', now);
+      console.log(`Sync completed successfully at: ${now}`);
+    } else {
+      console.warn(`Partial sync: ${insertedCount}/${allProducts.length} products synced`);
+      // Don't update timestamp - force resync next time
+    }
     
     // Database already saved after batch inserts
     
-    onProgress('Productos sincronizados', 100);
-    return true;
+    if (insertedCount === allProducts.length) {
+      onProgress('Productos sincronizados', 100);
+      return true;
+    } else {
+      onProgress(`Sincronización parcial (${insertedCount}/${allProducts.length})`, 100);
+      return false; // Force retry next time
+    }
     
   } catch (error) {
     console.error('❌ Error syncing products:', error);
