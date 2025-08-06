@@ -33,50 +33,52 @@ const GRAPHQL_ENDPOINT = 'https://pim-grocery-ia64.replit.app/graphql';
  * Get sync information from the server
  */
 export async function getSyncInfo(): Promise<SyncInfo | null> {
-  try {
-    const query_text = `
-      query ExampleQuery {
-        sync_info {
-          entities {
-            entity_name
-            last_updated
-            total_records
+  // Wrap entire function in try-catch to prevent any unhandled rejections
+  return new Promise(async (resolve) => {
+    try {
+      const query_text = `
+        query ExampleQuery {
+          sync_info {
+            entities {
+              entity_name
+              last_updated
+              total_records
+            }
+            generated_at
           }
-          generated_at
         }
-      }
-    `;
+      `;
 
-    // Add timeout to avoid long waits and measure time
-    console.log('Making GraphQL request to server...');
-    const requestStart = Date.now();
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.log('GraphQL request taking too long, aborting after 30 seconds');
-      controller.abort();
-    }, 30000); // 30 second timeout
+      // Add timeout to avoid long waits and measure time
+      console.log('Making GraphQL request to server...');
+      const requestStart = Date.now();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('GraphQL request taking too long, aborting after 30 seconds');
+        controller.abort();
+      }, 30000); // 30 second timeout
 
-    const response = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: query_text,
-        variables: {}
-      }),
-      signal: controller.signal
-    }).catch(error => {
-      clearTimeout(timeoutId);
-      console.error('Fetch failed:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: query_text,
+          variables: {}
+        }),
+        signal: controller.signal
+      }).catch(error => {
+        clearTimeout(timeoutId);
+        console.error('Fetch failed:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        throw error;
       });
-      throw error;
-    });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
     const requestTime = Date.now() - requestStart;
     console.log(`GraphQL request completed in ${requestTime}ms`);
 
@@ -88,26 +90,28 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
     
     if (data.data?.sync_info) {
       console.log('Sync info received:', data.data.sync_info);
-      return data.data.sync_info;
+      resolve(data.data.sync_info);
+      return;
     }
     
-    return null;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Sync info request timed out after 30 seconds');
-    } else {
-      console.error('Error fetching sync info:', error);
-      // Log more details about the error
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
+    resolve(null);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('Sync info request timed out after 30 seconds');
+      } else {
+        console.error('Error fetching sync info:', error);
+        // Log more details about the error
+        if (error instanceof Error) {
+          console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          });
+        }
       }
+      resolve(null);
     }
-    return null;
-  }
+  });
 }
 
 /**
