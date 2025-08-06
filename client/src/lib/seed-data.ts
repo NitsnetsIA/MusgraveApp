@@ -10,8 +10,8 @@ function generateUUID(): string {
 }
 
 export async function seedDatabase() {
-  // Import database functions
-  const { execute, query } = await import('./database');
+  // Import database functions  
+  const { query, execute } = await import('./database');
   
   // Check if data already exists with better control
   try {

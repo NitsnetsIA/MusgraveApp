@@ -15,6 +15,26 @@ export function useDatabase() {
         setIsInitialized(true);
       } catch (error) {
         console.error('Failed to initialize database:', error);
+        // Try to recover by clearing localStorage and reinitializing
+        try {
+          console.log('Attempting database recovery...');
+          localStorage.removeItem('musgrave_database');
+          await initDatabase();
+          await seedDatabase();
+          console.log('Database recovery successful');
+          setIsInitialized(true);
+        } catch (resetError) {
+          console.error('Failed to recover database:', resetError);
+          // Force initialization without seed data to allow sync to work
+          try {
+            await initDatabase();
+            console.log('Basic database initialized, skipping seed data');
+            setIsInitialized(true);
+          } catch (finalError) {
+            console.error('Complete database initialization failure:', finalError);
+            setIsInitialized(true); // Allow app to start anyway
+          }
+        }
       }
     }
 

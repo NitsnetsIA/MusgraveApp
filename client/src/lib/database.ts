@@ -268,6 +268,8 @@ export function execute(sql: string, params: any[] = []) {
     saveDatabase();
   } catch (error) {
     console.error('Execute error:', error);
+    console.error('Failed SQL:', sql);
+    console.error('SQL params:', params);
     throw error;
   }
 }
