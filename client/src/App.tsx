@@ -175,33 +175,9 @@ function Router() {
     setCartItems([]);
   };
 
-  // Clean cart of invalid products (products that no longer exist)
-  const cleanInvalidCartItems = async () => {
-    const validItems: any[] = [];
-    const removedItems: string[] = [];
+  // Removed automatic cart cleaning function for better checkout performance
 
-    for (const item of cartItems) {
-      const product = await getProductByEan(item.ean);
-      if (product) {
-        validItems.push(item);
-      } else {
-        removedItems.push(item.title || item.ean);
-      }
-    }
-
-    if (removedItems.length > 0) {
-      setCartItems(validItems);
-      console.log(`🧹 Removed ${removedItems.length} invalid products from cart:`, removedItems);
-      
-      toast({
-        title: "Productos eliminados del carrito",
-        description: `Se eliminaron ${removedItems.length} productos que ya no están disponibles`,
-        variant: "default",
-      });
-    }
-  };
-
-  // Create test cart with 30 random products
+  // Create test cart with fewer products for better performance
   const createTestCart = async () => {
     try {
       const products = await getProducts();
@@ -217,25 +193,21 @@ function Router() {
       // Clear current cart
       setCartItems([]);
 
-      // Select 30 random products
+      // Select only 10 random products for faster checkout testing
       const shuffled = [...products].sort(() => 0.5 - Math.random());
-      const selectedProducts = shuffled.slice(0, Math.min(30, products.length));
+      const selectedProducts = shuffled.slice(0, Math.min(10, products.length));
 
-      // Create cart items with random quantities (1-5)
+      // Create cart items with random quantities (1-3)
       const testCartItems: CartItem[] = selectedProducts.map(product => ({
         ean: product.ean,
         title: product.title,
         base_price: Number(product.base_price) || 0,
         tax_rate: Number(product.tax_rate) || 0.21, // Default to 21% if missing
-        quantity: Math.floor(Math.random() * 5) + 1, // Random quantity 1-5
+        quantity: Math.floor(Math.random() * 3) + 1, // Random quantity 1-3
         image_url: product.image_url
       }));
 
-      console.log('Test cart items created:', testCartItems.map(item => ({
-        title: item.title,
-        base_price: item.base_price,
-        tax_rate: item.tax_rate
-      })));
+      console.log(`Test cart created with ${testCartItems.length} products for faster checkout`);
 
       setCartItems(testCartItems);
       

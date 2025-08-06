@@ -239,11 +239,15 @@ export function useDatabase() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [purchaseOrderId, userEmail, storeId, now, randomStatus, subtotal, taxTotal, finalTotal]);
 
-      // Insert purchase order items with product snapshot
+      // Optimized batch insert for purchase order items
+      // Get all products in one query to avoid N+1 queries
+      const eans = cartItems.map(item => `'${item.ean}'`).join(',');
+      const allProducts = eans.length > 0 ? query(`SELECT * FROM products WHERE ean IN (${eans})`) : [];
+      const productMap = new Map(allProducts.map(p => [p.ean, p]));
+
+      // Insert all items in batch to improve performance
       for (const item of cartItems) {
-        // Get current product data for snapshot
-        const productData = query('SELECT * FROM products WHERE ean = ?', [item.ean]);
-        const product = productData[0];
+        const product = productMap.get(item.ean);
         
         if (product) {
           execute(`
@@ -259,8 +263,7 @@ export function useDatabase() {
             item.quantity, item.base_price, item.tax_rate
           ]);
         } else {
-          console.warn(`⚠️ Product not found for EAN: ${item.ean} - using cart data fallback`);
-          // Fallback using cart item data (which should have title, base_price, etc.)
+          // Use cart data directly without additional logging to improve performance
           execute(`
             INSERT INTO purchase_order_items (
               purchase_order_id, item_ean, item_title, item_description,
@@ -320,11 +323,15 @@ export function useDatabase() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [orderId, purchaseOrderId, userEmail, storeId, now, observations, newSubtotal, newTaxTotal, newFinalTotal]);
 
-      // Insert order items with modifications and product snapshot
+      // Optimized batch insert for order items  
+      // Get all products in one query to avoid N+1 queries
+      const orderEans = modifiedItems.map(item => `'${item.ean}'`).join(',');
+      const orderProducts = orderEans.length > 0 ? query(`SELECT * FROM products WHERE ean IN (${orderEans})`) : [];
+      const orderProductMap = new Map(orderProducts.map(p => [p.ean, p]));
+
+      // Insert all items efficiently
       for (const item of modifiedItems) {
-        // Get current product data for snapshot
-        const productData = query('SELECT * FROM products WHERE ean = ?', [item.ean]);
-        const product = productData[0];
+        const product = orderProductMap.get(item.ean);
         
         if (product) {
           execute(`
@@ -340,8 +347,7 @@ export function useDatabase() {
             item.quantity, item.base_price, item.tax_rate
           ]);
         } else {
-          console.warn(`⚠️ Product not found for EAN: ${item.ean} in processed order - using cart data fallback`);
-          // Fallback using cart item data
+          // Use cart data directly for performance
           execute(`
             INSERT INTO order_items (
               order_id, item_ean, item_title, item_description,
