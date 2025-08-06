@@ -15,7 +15,6 @@ interface CartProps {
   onAddToCart: (ean: string, quantity: number) => void;
   onCreateTestCart?: () => void;
   store?: any;
-  isCheckingOut?: boolean;
 }
 
 export default function Cart({
@@ -27,8 +26,7 @@ export default function Cart({
   onCheckout,
   onAddToCart,
   onCreateTestCart,
-  store,
-  isCheckingOut = false
+  store
 }: CartProps) {
   const { getProductByEan } = useDatabase();
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
@@ -37,13 +35,6 @@ export default function Cart({
   const [barcodeMessage, setBarcodeMessage] = useState('');
   const [addedProduct, setAddedProduct] = useState<string | null>(null);
 
-  // Debug loading state
-  useEffect(() => {
-    if (isCheckingOut) {
-      console.log('🛒 Cart: isCheckingOut is TRUE - showing loading button');
-    }
-  }, [isCheckingOut]);
-  
   const subtotal = items.reduce((sum, item) => {
     const price = Number(item.base_price) || 0;
     const qty = Number(item.quantity) || 0;
@@ -327,17 +318,9 @@ export default function Cart({
             <div className="p-4">
               <Button
                 onClick={onCheckout}
-                disabled={isCheckingOut}
-                className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600 disabled:bg-green-400 disabled:cursor-not-allowed"
+                className="w-full bg-green-500 text-white py-4 rounded-lg font-medium text-lg hover:bg-green-600"
               >
-                {isCheckingOut ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white border-t-2"></div>
-                    <span className="font-medium">Creando orden de compra...</span>
-                  </div>
-                ) : (
-                  `Confirmar orden (${formatSpanishCurrency(total)})`
-                )}
+                Confirmar orden ({formatSpanishCurrency(total)})
               </Button>
             </div>
           )}

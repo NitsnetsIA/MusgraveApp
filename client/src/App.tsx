@@ -229,43 +229,11 @@ function Router() {
 
   // Checkout handler
   const handleCheckout = async () => {
-    if (!user || !store || cartItems.length === 0) {
-      toast({
-        title: "Error",
-        description: "No se puede procesar el pedido",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log('🛒 Starting checkout process...');
-    setIsLoading(true);
-    
-    try {
-      console.log('🛒 Creating purchase order...');
-      const orderId = await createPurchaseOrder(user.email, store.code, cartItems);
-      console.log('🛒 Purchase order created:', orderId);
-      
-      setLastOrderId(orderId);
-      clearCart();
-      
-      // Small delay to ensure the user sees the completion
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setCartOpen(false);
-      
-      // Navigate to order confirmation page
-      setLocation(`/order-confirmation/${orderId}`);
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo procesar el pedido",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    const orderId = await createPurchaseOrder(user.email, store.code, cartItems);
+    setLastOrderId(orderId);
+    clearCart();
+    setCartOpen(false);
+    setLocation(`/order-confirmation/${orderId}`);
   };
 
   // Show loading screen while database initializes
@@ -321,7 +289,6 @@ function Router() {
       clearCart={clearCart}
       onCheckout={handleCheckout}
       onCreateTestCart={createTestCart}
-      isCheckingOut={isLoading}
     >
       <Switch>
         <Route path="/" component={() => (
