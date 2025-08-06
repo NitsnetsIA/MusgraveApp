@@ -340,8 +340,8 @@ export async function syncTaxes(onProgress: (message: string, progress: number) 
     
     for (const tax of allTaxes) {
       const insertQuery = `
-        INSERT INTO taxes (code, name, tax_rate) 
-        VALUES ('${tax.code}', '${tax.name.replace(/'/g, "''")}', ${tax.tax_rate})
+        INSERT INTO taxes (code, name, tax_rate, created_at, updated_at) 
+        VALUES ('${tax.code}', '${tax.name.replace(/'/g, "''")}', ${tax.tax_rate}, '${tax.created_at}', '${tax.updated_at}')
       `;
       dbQuery(insertQuery);
     }

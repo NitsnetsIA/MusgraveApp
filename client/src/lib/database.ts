@@ -15,7 +15,7 @@ export async function initDatabase() {
 
     // Check schema version and force recreation if needed
     const schemaVersion = localStorage.getItem('musgrave_schema_version');
-    const currentVersion = '2.1'; // Updated for product snapshots
+    const currentVersion = '2.2'; // Updated to include created_at/updated_at for sync
     
     if (schemaVersion !== currentVersion) {
       console.log('Schema version mismatch, recreating database...');
@@ -65,7 +65,9 @@ async function createTables() {
     CREATE TABLE taxes (
        code TEXT PRIMARY KEY,
        name TEXT NOT NULL,
-       tax_rate REAL NOT NULL
+       tax_rate REAL NOT NULL,
+       created_at TEXT,
+       updated_at TEXT
     );
 
     -- Tabla de Puntos de Entrega
@@ -106,6 +108,8 @@ async function createTables() {
        quantity_measure REAL NOT NULL,
        image_url TEXT,
        is_active INTEGER NOT NULL DEFAULT 1,
+       created_at TEXT,
+       updated_at TEXT,
        CONSTRAINT fk_tax FOREIGN KEY(tax_code) REFERENCES taxes(code)
     );
 

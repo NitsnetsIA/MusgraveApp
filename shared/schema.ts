@@ -5,6 +5,8 @@ export interface Tax {
   code: string;
   name: string;
   tax_rate: number;
+  created_at?: string; // ISO string
+  updated_at?: string; // ISO string
 }
 
 export interface DeliveryCenter {
@@ -39,6 +41,8 @@ export interface Product {
   quantity_measure: number;
   image_url?: string;
   is_active: number; // 1 for true, 0 for false
+  created_at?: string; // ISO string
+  updated_at?: string; // ISO string
 }
 
 export interface PurchaseOrder {
