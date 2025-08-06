@@ -177,14 +177,17 @@ function Router() {
 
   // Removed automatic cart cleaning function for better checkout performance
 
-  // Create test cart with fewer products for better performance
+  // Create test cart with only ACTIVE products
   const createTestCart = async () => {
     try {
-      const products = await getProducts();
-      if (products.length === 0) {
+      // Get only ACTIVE products to avoid any invalid EANs
+      const { query } = await import('./lib/database');
+      const activeProducts = query(`SELECT * FROM products WHERE is_active = 1`);
+      
+      if (activeProducts.length === 0) {
         toast({
           title: "Error",
-          description: "No hay productos disponibles",
+          description: "No hay productos activos disponibles",
           variant: "destructive",
         });
         return;
@@ -193,25 +196,27 @@ function Router() {
       // Clear current cart
       setCartItems([]);
 
-      // Select only 10 random products for faster checkout testing
-      const shuffled = [...products].sort(() => 0.5 - Math.random());
-      const selectedProducts = shuffled.slice(0, Math.min(10, products.length));
+      // Select 10 random ACTIVE products only
+      const shuffled = [...activeProducts].sort(() => 0.5 - Math.random());
+      const selectedProducts = shuffled.slice(0, Math.min(10, activeProducts.length));
 
       // Create cart items with random quantities (1-3)
-      const testCartItems: CartItem[] = selectedProducts.map(product => ({
-        ean: product.ean,
-        title: product.title,
-        base_price: Number(product.base_price) || 0,
-        tax_rate: Number(product.tax_rate) || 0.21, // Default to 21% if missing
-        quantity: Math.floor(Math.random() * 3) + 1, // Random quantity 1-3
-        image_url: product.image_url
-      }));
+      const testCartItems: CartItem[] = selectedProducts.map(product => {
+        const taxRate = Number(product.tax_rate) || 0.21;
+        return {
+          ean: product.ean,
+          title: product.title,
+          description: product.description,
+          base_price: Number(product.base_price) || 0,
+          tax_rate: taxRate,
+          quantity: Math.floor(Math.random() * 3) + 1, // Random quantity 1-3
+          image_url: product.image_url
+        };
+      });
 
-      console.log(`Test cart created with ${testCartItems.length} products for faster checkout`);
-
+      console.log(`Test cart created with ${testCartItems.length} ACTIVE products - no invalid EANs possible`);
       setCartItems(testCartItems);
       
-      // Test cart created - no notification needed
     } catch (error) {
       console.error('Error creating test cart:', error);
       toast({

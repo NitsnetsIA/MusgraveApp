@@ -239,47 +239,23 @@ export function useDatabase() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [purchaseOrderId, userEmail, storeId, now, randomStatus, subtotal, taxTotal, finalTotal]);
 
-      // Optimized batch insert for purchase order items
-      // Get all products in one query to avoid N+1 queries
-      const eans = cartItems.map(item => `'${item.ean}'`).join(',');
-      const allProducts = eans.length > 0 ? query(`SELECT * FROM products WHERE ean IN (${eans})`) : [];
-      const productMap = new Map(allProducts.map(p => [p.ean, p]));
-
-      // Insert all items in batch to improve performance
+      // Direct insert using cart data - no database lookups needed since all data is local
       for (const item of cartItems) {
-        const product = productMap.get(item.ean);
-        
-        if (product) {
-          execute(`
-            INSERT INTO purchase_order_items (
-              purchase_order_id, item_ean, item_title, item_description, 
-              unit_of_measure, quantity_measure, image_url, quantity, 
-              base_price_at_order, tax_rate_at_order
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [
-            purchaseOrderId, item.ean, product.title, product.description,
-            product.unit_of_measure, product.quantity_measure, product.image_url,
-            item.quantity, item.base_price, item.tax_rate
-          ]);
-        } else {
-          // Use cart data directly without additional logging to improve performance
-          execute(`
-            INSERT INTO purchase_order_items (
-              purchase_order_id, item_ean, item_title, item_description,
-              quantity, base_price_at_order, tax_rate_at_order
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `, [
-            purchaseOrderId, 
-            item.ean, 
-            item.title || `Producto ${item.ean}`, 
-            item.description || 'Producto no disponible',
-            item.quantity, 
-            item.base_price, 
-            item.tax_rate
-          ]);
-        }
+        execute(`
+          INSERT INTO purchase_order_items (
+            purchase_order_id, item_ean, item_title, item_description,
+            quantity, base_price_at_order, tax_rate_at_order
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+          purchaseOrderId, 
+          item.ean, 
+          item.title, 
+          item.description || 'Producto',
+          item.quantity, 
+          item.base_price, 
+          item.tax_rate
+        ]);
       }
 
       // If status is "completed", create a corresponding processed order
@@ -323,47 +299,23 @@ export function useDatabase() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [orderId, purchaseOrderId, userEmail, storeId, now, observations, newSubtotal, newTaxTotal, newFinalTotal]);
 
-      // Optimized batch insert for order items  
-      // Get all products in one query to avoid N+1 queries
-      const orderEans = modifiedItems.map(item => `'${item.ean}'`).join(',');
-      const orderProducts = orderEans.length > 0 ? query(`SELECT * FROM products WHERE ean IN (${orderEans})`) : [];
-      const orderProductMap = new Map(orderProducts.map(p => [p.ean, p]));
-
-      // Insert all items efficiently
+      // Direct insert using cart data - no lookups needed since all data is local
       for (const item of modifiedItems) {
-        const product = orderProductMap.get(item.ean);
-        
-        if (product) {
-          execute(`
-            INSERT INTO order_items (
-              order_id, item_ean, item_title, item_description,
-              unit_of_measure, quantity_measure, image_url, quantity,
-              base_price_at_order, tax_rate_at_order
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [
-            orderId, item.ean, product.title, product.description,
-            product.unit_of_measure, product.quantity_measure, product.image_url,
-            item.quantity, item.base_price, item.tax_rate
-          ]);
-        } else {
-          // Use cart data directly for performance
-          execute(`
-            INSERT INTO order_items (
-              order_id, item_ean, item_title, item_description,
-              quantity, base_price_at_order, tax_rate_at_order
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `, [
-            orderId, 
-            item.ean, 
-            item.title || `Producto ${item.ean}`,
-            item.description || 'Producto no disponible',
-            item.quantity, 
-            item.base_price, 
-            item.tax_rate
-          ]);
-        }
+        execute(`
+          INSERT INTO order_items (
+            order_id, item_ean, item_title, item_description,
+            quantity, base_price_at_order, tax_rate_at_order
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+          orderId, 
+          item.ean, 
+          item.title,
+          item.description || 'Producto',
+          item.quantity, 
+          item.base_price, 
+          item.tax_rate
+        ]);
       }
 
       console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}${hasModifications ? ' with modifications' : ''}`);
