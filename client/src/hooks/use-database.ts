@@ -299,15 +299,10 @@ export function useDatabase() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [orderId, purchaseOrderId, userEmail, storeId, now, observations, newSubtotal, newTaxTotal, newFinalTotal]);
 
-      // Direct insert using cart data - no lookups needed since all data is local
-      for (const item of modifiedItems) {
-        execute(`
-          INSERT INTO order_items (
-            order_id, item_ean, item_title, item_description,
-            quantity, base_price_at_order, tax_rate_at_order
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [
+      // Batch insert for maximum performance - single statement for all items
+      if (modifiedItems.length > 0) {
+        const placeholders = modifiedItems.map(() => '(?, ?, ?, ?, ?, ?, ?)').join(', ');
+        const values = modifiedItems.flatMap(item => [
           orderId, 
           item.ean, 
           item.title,
@@ -316,6 +311,14 @@ export function useDatabase() {
           item.base_price, 
           item.tax_rate
         ]);
+        
+        execute(`
+          INSERT INTO order_items (
+            order_id, item_ean, item_title, item_description,
+            quantity, base_price_at_order, tax_rate_at_order
+          )
+          VALUES ${placeholders}
+        `, values);
       }
 
       console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}${hasModifications ? ' with modifications' : ''}`);
@@ -326,64 +329,41 @@ export function useDatabase() {
     }
   };
 
-  // Simulate modifications for processed orders
+  // Simulate modifications for processed orders - ULTRA OPTIMIZED
   const simulateOrderModifications = (originalItems: CartItem[]) => {
+    // Quick simulation without database queries for maximum speed
     let modifiedItems: CartItem[] = [];
     let hasModifications = false;
     
-    // Get all available products for potential replacements
-    const allProducts = query(`SELECT * FROM products WHERE is_active = 1`);
-    
     for (const item of originalItems) {
       let modifiedItem = { ...item };
-      let shouldSkipItem = false;
       
       // 10% chance of quantity modification per item
       if (Math.random() < 0.1) {
         hasModifications = true;
         const modType = Math.random();
         
-        if (modType < 0.5) {
-          // 50% chance: Delete item (quantity = 0)
-          shouldSkipItem = true;
-          
-          // 50% chance to add replacement product
-          if (Math.random() < 0.5 && allProducts.length > 0) {
-            const randomProduct = allProducts[Math.floor(Math.random() * allProducts.length)];
-            // Get tax rate for the replacement product
-            const taxResults = query(`SELECT tax_rate FROM taxes WHERE code = '${randomProduct.tax_code}'`);
-            const taxRate = taxResults.length > 0 ? taxResults[0].tax_rate : 0.21;
-            
-            modifiedItems.push({
-              ean: randomProduct.ean,
-              title: randomProduct.title,
-              quantity: item.quantity, // Same quantity as original
-              base_price: randomProduct.base_price,
-              tax_rate: taxRate,
-              image_url: randomProduct.image_url
-            });
-          }
-        } else if (modType < 0.9) {
-          // 40% chance: Decrease quantity (10-50% reduction)
-          const reductionFactor = 0.1 + Math.random() * 0.4; // 10-50% reduction
+        if (modType < 0.3) {
+          // 30% chance: Delete item completely (skip it)
+          continue;
+        } else if (modType < 0.8) {
+          // 50% chance: Decrease quantity (10-30% reduction)
+          const reductionFactor = 0.1 + Math.random() * 0.2; // 10-30% reduction
           const newQuantity = Math.max(1, Math.floor(item.quantity * (1 - reductionFactor)));
           modifiedItem.quantity = newQuantity;
         } else {
-          // 10% chance: Increase quantity (10-30% increase)
-          const increaseFactor = 0.1 + Math.random() * 0.2; // 10-30% increase
+          // 20% chance: Increase quantity (10-20% increase)
+          const increaseFactor = 0.1 + Math.random() * 0.1; // 10-20% increase
           const newQuantity = Math.ceil(item.quantity * (1 + increaseFactor));
           modifiedItem.quantity = newQuantity;
         }
       }
       
-      // Skip if item was deleted
-      if (shouldSkipItem) continue;
-      
-      // 10% chance of price modification per item (independent of quantity modification)
-      if (Math.random() < 0.1) {
+      // 5% chance of price modification per item (reduced probability)
+      if (Math.random() < 0.05) {
         hasModifications = true;
         // Random ±10% price change
-        const priceChangeFactor = Math.random() < 0.5 ? 0.9 : 1.1; // -10% or +10%
+        const priceChangeFactor = Math.random() < 0.5 ? 0.95 : 1.05; // -5% or +5%
         modifiedItem.base_price = Number((item.base_price * priceChangeFactor).toFixed(2));
       }
       
