@@ -175,6 +175,32 @@ function Router() {
     setCartItems([]);
   };
 
+  // Clean cart of invalid products (products that no longer exist)
+  const cleanInvalidCartItems = async () => {
+    const validItems: any[] = [];
+    const removedItems: string[] = [];
+
+    for (const item of cartItems) {
+      const product = await getProductByEan(item.ean);
+      if (product) {
+        validItems.push(item);
+      } else {
+        removedItems.push(item.title || item.ean);
+      }
+    }
+
+    if (removedItems.length > 0) {
+      setCartItems(validItems);
+      console.log(`🧹 Removed ${removedItems.length} invalid products from cart:`, removedItems);
+      
+      toast({
+        title: "Productos eliminados del carrito",
+        description: `Se eliminaron ${removedItems.length} productos que ya no están disponibles`,
+        variant: "default",
+      });
+    }
+  };
+
   // Create test cart with 30 random products
   const createTestCart = async () => {
     try {

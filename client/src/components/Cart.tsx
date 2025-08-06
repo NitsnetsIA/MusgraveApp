@@ -34,6 +34,31 @@ export default function Cart({
   const [barcodeInput, setBarcodeInput] = useState('');
   const [barcodeMessage, setBarcodeMessage] = useState('');
   const [addedProduct, setAddedProduct] = useState<string | null>(null);
+
+  // Clean invalid cart items when cart opens
+  useEffect(() => {
+    if (isOpen && items.length > 0) {
+      const cleanCart = async () => {
+        const validItems: any[] = [];
+        const removedItems: string[] = [];
+
+        for (const item of items) {
+          const product = await getProductByEan(item.ean);
+          if (!product) {
+            removedItems.push(item.title || item.ean);
+            console.warn(`⚠️ Removing invalid cart item: ${item.ean} - ${item.title}`);
+          }
+        }
+
+        if (removedItems.length > 0) {
+          console.log(`🧹 Found ${removedItems.length} invalid products in cart, but cart component cannot remove them directly`);
+          // The parent component should handle this cleanup
+        }
+      };
+      
+      cleanCart();
+    }
+  }, [isOpen, items.length]);
   
   const subtotal = items.reduce((sum, item) => {
     const price = Number(item.base_price) || 0;

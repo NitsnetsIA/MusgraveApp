@@ -259,15 +259,23 @@ export function useDatabase() {
             item.quantity, item.base_price, item.tax_rate
           ]);
         } else {
-          console.warn(`Product not found for EAN: ${item.ean}`);
-          // Fallback if product not found - use minimal required fields
+          console.warn(`⚠️ Product not found for EAN: ${item.ean} - using cart data fallback`);
+          // Fallback using cart item data (which should have title, base_price, etc.)
           execute(`
             INSERT INTO purchase_order_items (
-              purchase_order_id, item_ean, item_title, quantity, 
-              base_price_at_order, tax_rate_at_order
+              purchase_order_id, item_ean, item_title, item_description,
+              quantity, base_price_at_order, tax_rate_at_order
             )
-            VALUES (?, ?, ?, ?, ?, ?)
-          `, [purchaseOrderId, item.ean, `Producto ${item.ean}`, item.quantity, item.base_price, item.tax_rate]);
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [
+            purchaseOrderId, 
+            item.ean, 
+            item.title || `Producto ${item.ean}`, 
+            item.description || 'Producto no disponible',
+            item.quantity, 
+            item.base_price, 
+            item.tax_rate
+          ]);
         }
       }
 
@@ -332,11 +340,23 @@ export function useDatabase() {
             item.quantity, item.base_price, item.tax_rate
           ]);
         } else {
-          // Fallback if product not found
+          console.warn(`⚠️ Product not found for EAN: ${item.ean} in processed order - using cart data fallback`);
+          // Fallback using cart item data
           execute(`
-            INSERT INTO order_items (order_id, item_ean, quantity, base_price_at_order, tax_rate_at_order)
-            VALUES (?, ?, ?, ?, ?)
-          `, [orderId, item.ean, item.quantity, item.base_price, item.tax_rate]);
+            INSERT INTO order_items (
+              order_id, item_ean, item_title, item_description,
+              quantity, base_price_at_order, tax_rate_at_order
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [
+            orderId, 
+            item.ean, 
+            item.title || `Producto ${item.ean}`,
+            item.description || 'Producto no disponible',
+            item.quantity, 
+            item.base_price, 
+            item.tax_rate
+          ]);
         }
       }
 
