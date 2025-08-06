@@ -77,10 +77,13 @@ export default function SyncScreen({ onSyncComplete }: SyncScreenProps) {
               setProgress(Math.min(stepProgress, 90));
             });
           } else if (step.id === 'products') {
-            // TODO: Implement products sync when you provide the GraphQL call
-            // For now, simulate the sync process
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            syncSuccess = true;
+            const { syncProducts } = await import('../lib/sync-service');
+            syncSuccess = await syncProducts((message, entityProgress) => {
+              setCurrentMessage(message);
+              // Map entity progress to overall progress within this step
+              const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
+              setProgress(Math.min(stepProgress, 90));
+            });
           }
           
           if (syncSuccess) {

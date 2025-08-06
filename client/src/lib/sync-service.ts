@@ -362,6 +362,159 @@ export async function syncTaxes(onProgress: (message: string, progress: number) 
 }
 
 /**
+ * Sync products from server using GraphQL with pagination
+ */
+export async function syncProducts(onProgress: (message: string, progress: number) => void): Promise<boolean> {
+  try {
+    console.log('🔄 Starting products synchronization...');
+    onProgress('Sincronizando Productos', 0);
+    
+    const lastRequestTimestamp = getLastRequestTimestamp('products');
+    const timestampParam = lastRequestTimestamp ? new Date(lastRequestTimestamp).toISOString() : null;
+    
+    console.log(`Syncing products since: ${timestampParam || 'beginning of time'}`);
+    
+    const query = `
+      query Product($timestamp: String, $limit: Int, $offset: Int) {
+        products(timestamp: $timestamp, limit: $limit, offset: $offset) {
+          products {
+            ean
+            ref
+            title
+            description
+            base_price
+            tax_code
+            unit_of_measure
+            quantity_measure
+            image_url
+            is_active
+            created_at
+            updated_at
+          }
+          total
+          limit
+          offset
+        }
+      }
+    `;
+    
+    let offset = 0;
+    const limit = 1000;
+    let totalProcessed = 0;
+    let totalRecords = 0;
+    let allProducts: any[] = [];
+    
+    // Fetch all pages
+    while (true) {
+      console.log(`Fetching products page: offset=${offset}, limit=${limit}`);
+      
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables: {
+            timestamp: timestampParam,
+            limit,
+            offset
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      }
+      
+      const productsPage = data.data?.products;
+      
+      if (!productsPage) {
+        throw new Error('Invalid response structure');
+      }
+      
+      totalRecords = productsPage.total;
+      const products = productsPage.products || [];
+      
+      allProducts.push(...products);
+      totalProcessed += products.length;
+      
+      // Update progress with detailed info
+      const progressPercent = totalRecords > 0 ? (totalProcessed / totalRecords) * 100 : 100;
+      onProgress(`Sincronizando Productos (${totalProcessed}/${totalRecords})`, progressPercent);
+      
+      console.log(`Received ${products.length} products, total processed: ${totalProcessed}/${totalRecords}`);
+      
+      // Check if we've got all records
+      if (products.length < limit || totalProcessed >= totalRecords) {
+        break;
+      }
+      
+      offset += limit;
+      
+      // Small delay between requests to avoid overwhelming the server
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Update database with all products
+    console.log(`Updating database with ${allProducts.length} products...`);
+    onProgress(`Actualizando base de datos (${allProducts.length} productos)`, 95);
+    
+    const { query: dbQuery } = await import('./database');
+    
+    // Clear existing products and insert new ones (slave mode - server is master)
+    dbQuery('DELETE FROM products');
+    
+    for (const product of allProducts) {
+      // Convert boolean to integer for SQLite
+      const isActive = product.is_active ? 1 : 0;
+      
+      const insertQuery = `
+        INSERT INTO products (
+          ean, ref, title, description, base_price, tax_code, 
+          unit_of_measure, quantity_measure, image_url, is_active, 
+          created_at, updated_at
+        ) 
+        VALUES (
+          '${product.ean}', 
+          ${product.ref ? `'${product.ref.replace(/'/g, "''")}'` : 'NULL'}, 
+          '${product.title.replace(/'/g, "''")}', 
+          ${product.description ? `'${product.description.replace(/'/g, "''")}'` : 'NULL'},
+          ${product.base_price}, 
+          '${product.tax_code}', 
+          '${product.unit_of_measure}', 
+          ${product.quantity_measure}, 
+          ${product.image_url ? `'${product.image_url}'` : 'NULL'}, 
+          ${isActive},
+          '${product.created_at}', 
+          '${product.updated_at}'
+        )
+      `;
+      dbQuery(insertQuery);
+    }
+    
+    console.log(`✅ Successfully synced ${allProducts.length} products`);
+    
+    // Update sync timestamp only if everything succeeded
+    markSyncCompleted('products', new Date().toISOString());
+    
+    onProgress('Productos sincronizados', 100);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error syncing products:', error);
+    onProgress('Error sincronizando productos', 0);
+    return false;
+  }
+}
+
+/**
  * Test function to manually trigger sync check (for development)
  */
 export async function testSyncCheck(): Promise<void> {
