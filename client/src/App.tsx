@@ -42,6 +42,7 @@ function Router() {
   const [store, setStore] = useState<any>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showSyncScreen, setShowSyncScreen] = useState(false);
+  const [selectedSyncEntities, setSelectedSyncEntities] = useState<string[]>(['taxes', 'products', 'stores', 'deliveryCenters']);
   
   // Cart state is managed here
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -61,14 +62,15 @@ function Router() {
   }, [user]); // Remove getStoreByCode from dependencies to prevent infinite loop
 
   // Authentication handlers
-  const handleLogin = async (email: string, password: string): Promise<boolean> => {
-    console.log('handleLogin called with:', { email, password });
+  const handleLogin = async (email: string, password: string, syncEntities: string[] = ['taxes', 'products', 'stores', 'deliveryCenters']): Promise<boolean> => {
+    console.log('handleLogin called with:', { email, password, syncEntities });
     setIsLoading(true);
     try {
       const authenticatedUser = await authenticateUser(email, password);
       console.log('authenticatedUser result:', authenticatedUser);
       if (authenticatedUser) {
         setUser(authenticatedUser);
+        setSelectedSyncEntities(syncEntities);
         
         // Show sync screen after successful login
         setShowSyncScreen(true);
@@ -282,7 +284,10 @@ function Router() {
   if (showSyncScreen) {
     return (
       <div className="min-h-screen">
-        <SyncScreen onSyncComplete={handleSyncComplete} />
+        <SyncScreen 
+          onSyncComplete={handleSyncComplete} 
+          selectedEntities={selectedSyncEntities}
+        />
       </div>
     );
   }

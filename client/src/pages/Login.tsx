@@ -3,18 +3,25 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { loginSchema, type LoginForm } from '@shared/schema';
 import { clearDatabaseCompletely, resetDatabaseToTestData } from '@/lib/database';
 
 interface LoginProps {
-  onLogin: (email: string, password: string) => Promise<boolean>;
+  onLogin: (email: string, password: string, syncEntities?: string[]) => Promise<boolean>;
   isLoading?: boolean;
 }
 
 export default function Login({ onLogin, isLoading }: LoginProps) {
   const [error, setError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [syncEntities, setSyncEntities] = useState({
+    taxes: true,
+    products: true,
+    stores: true,
+    deliveryCenters: true
+  });
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -28,7 +35,12 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
     console.log('Form submitted with data:', data);
     setError('');
     try {
-      const success = await onLogin(data.email, data.password);
+      const selectedEntities = Object.entries(syncEntities)
+        .filter(([_, enabled]) => enabled)
+        .map(([entity, _]) => entity);
+      
+      console.log('Selected sync entities:', selectedEntities);
+      const success = await onLogin(data.email, data.password, selectedEntities);
       console.log('Login result:', success);
       if (!success) {
         setError('Credenciales inválidas');
@@ -120,6 +132,63 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                 </FormItem>
               )}
             />
+            
+            {/* Sync Entity Selection */}
+            <div className="space-y-3">
+              <FormLabel className="text-sm font-medium text-gray-700">
+                Entidades a sincronizar:
+              </FormLabel>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sync-taxes"
+                    checked={syncEntities.taxes}
+                    onCheckedChange={(checked) => 
+                      setSyncEntities(prev => ({ ...prev, taxes: !!checked }))
+                    }
+                  />
+                  <label htmlFor="sync-taxes" className="text-sm text-gray-600 cursor-pointer">
+                    Impuestos (IVA)
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sync-products"
+                    checked={syncEntities.products}
+                    onCheckedChange={(checked) => 
+                      setSyncEntities(prev => ({ ...prev, products: !!checked }))
+                    }
+                  />
+                  <label htmlFor="sync-products" className="text-sm text-gray-600 cursor-pointer">
+                    Productos
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sync-stores"
+                    checked={syncEntities.stores}
+                    onCheckedChange={(checked) => 
+                      setSyncEntities(prev => ({ ...prev, stores: !!checked }))
+                    }
+                  />
+                  <label htmlFor="sync-stores" className="text-sm text-gray-600 cursor-pointer">
+                    Tiendas
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sync-delivery-centers"
+                    checked={syncEntities.deliveryCenters}
+                    onCheckedChange={(checked) => 
+                      setSyncEntities(prev => ({ ...prev, deliveryCenters: !!checked }))
+                    }
+                  />
+                  <label htmlFor="sync-delivery-centers" className="text-sm text-gray-600 cursor-pointer">
+                    Centros de Entrega
+                  </label>
+                </div>
+              </div>
+            </div>
             
             <div className="text-right">
               <a href="#" className="text-musgrave-600 text-sm">¿Olvidaste tu contraseña?</a>

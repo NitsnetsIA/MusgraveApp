@@ -11,9 +11,10 @@ interface SyncStep {
 
 interface SyncScreenProps {
   onSyncComplete: () => void;
+  selectedEntities?: string[];
 }
 
-export default function SyncScreen({ onSyncComplete }: SyncScreenProps) {
+export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes', 'products', 'stores', 'deliveryCenters'] }: SyncScreenProps) {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -31,18 +32,36 @@ export default function SyncScreen({ onSyncComplete }: SyncScreenProps) {
         await new Promise(resolve => setTimeout(resolve, 800));
         
         const syncResults = await checkSynchronizationNeeds();
-        const entitiesToSync = syncResults.filter(entity => entity.needs_sync);
+        
+        // Filter by selected entities and needs_sync
+        const entitiesToSync = syncResults.filter(entity => 
+          entity.needs_sync && 
+          (selectedEntities.includes(entity.entity_name) ||
+           (entity.entity_name === 'deliveryCenters' && selectedEntities.includes('deliveryCenters')) ||
+           (entity.entity_name === 'delivery_centers' && selectedEntities.includes('deliveryCenters')))
+        );
+        
+        console.log('Selected entities:', selectedEntities);
+        console.log('Entities that need sync:', entitiesToSync.map(e => e.entity_name));
         
         // Build steps based on what needs syncing
         const steps: SyncStep[] = [];
         
         // Order matters: taxes first (products reference taxes)
-        if (entitiesToSync.find(e => e.entity_name === 'taxes')) {
+        if (entitiesToSync.find(e => e.entity_name === 'taxes') && selectedEntities.includes('taxes')) {
           steps.push({ id: 'taxes', label: 'Sincronizando Impuestos', completed: false });
         }
         
-        if (entitiesToSync.find(e => e.entity_name === 'products')) {
+        if (entitiesToSync.find(e => e.entity_name === 'products') && selectedEntities.includes('products')) {
           steps.push({ id: 'products', label: 'Sincronizando Productos', completed: false });
+        }
+        
+        if (entitiesToSync.find(e => e.entity_name === 'stores') && selectedEntities.includes('stores')) {
+          steps.push({ id: 'stores', label: 'Sincronizando Tiendas', completed: false });
+        }
+        
+        if ((entitiesToSync.find(e => e.entity_name === 'delivery_centers') || entitiesToSync.find(e => e.entity_name === 'deliveryCenters')) && selectedEntities.includes('deliveryCenters')) {
+          steps.push({ id: 'deliveryCenters', label: 'Sincronizando Centros de Entrega', completed: false });
         }
         
         setSyncSteps(steps);
