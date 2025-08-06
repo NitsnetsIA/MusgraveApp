@@ -466,51 +466,72 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
     console.log(`Updating database with ${allProducts.length} products...`);
     onProgress(`Actualizando base de datos (${allProducts.length} productos)`, 95);
     
-    const { query: dbQuery } = await import('./database');
+    const { query: dbQuery, saveDatabase } = await import('./database');
     
     // Clear existing products and insert new ones (slave mode - server is master)
     dbQuery('DELETE FROM products');
     
-    for (const product of allProducts) {
-      try {
-        // Convert boolean to integer for SQLite
+    // Insert products in batches for better performance
+    const batchSize = 100;
+    let insertedCount = 0;
+    
+    for (let i = 0; i < allProducts.length; i += batchSize) {
+      const batch = allProducts.slice(i, i + batchSize);
+      
+      // Build multi-insert query for better performance
+      let insertSQL = `
+        INSERT INTO products (
+          ean, ref, title, description, base_price, tax_code, 
+          unit_of_measure, quantity_measure, image_url, is_active, 
+          created_at, updated_at
+        ) VALUES 
+      `;
+      
+      const values = batch.map(product => {
         const isActive = product.is_active ? 1 : 0;
+        const safeTitle = product.title.replace(/'/g, "''");
+        const safeDescription = product.description ? product.description.replace(/'/g, "''") : null;
+        const safeRef = product.ref ? product.ref.replace(/'/g, "''") : null;
         
-        // Use proper parameterized query to avoid SQL injection and escape issues
-        const insertQuery = `
-          INSERT INTO products (
-            ean, ref, title, description, base_price, tax_code, 
-            unit_of_measure, quantity_measure, image_url, is_active, 
-            created_at, updated_at
-          ) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        
-        const { execute } = await import('./database');
-        execute(insertQuery, [
-          product.ean,
-          product.ref || null,
-          product.title,
-          product.description || null,
-          product.base_price,
-          product.tax_code,
-          product.unit_of_measure,
-          product.quantity_measure,
-          product.image_url || null,
-          isActive,
-          product.created_at,
-          product.updated_at
-        ]);
+        return `(
+          '${product.ean}', 
+          ${safeRef ? `'${safeRef}'` : 'NULL'}, 
+          '${safeTitle}', 
+          ${safeDescription ? `'${safeDescription}'` : 'NULL'},
+          ${product.base_price}, 
+          '${product.tax_code}', 
+          '${product.unit_of_measure}', 
+          ${product.quantity_measure}, 
+          ${product.image_url ? `'${product.image_url}'` : 'NULL'}, 
+          ${isActive},
+          '${product.created_at}', 
+          '${product.updated_at}'
+        )`;
+      }).join(', ');
+      
+      insertSQL += values;
+      
+      try {
+        dbQuery(insertSQL);
+        insertedCount += batch.length;
+        console.log(`Inserted batch ${Math.ceil((i + batchSize) / batchSize)} - ${insertedCount}/${allProducts.length} products`);
       } catch (error) {
-        console.error(`Error inserting product ${product.ean}:`, error);
-        throw error; // Re-throw to trigger the main catch block
+        console.error(`Error inserting batch starting at index ${i}:`, error);
+        throw error;
       }
     }
+    
+    // Save database after all inserts
+    saveDatabase();
     
     console.log(`✅ Successfully synced ${allProducts.length} products`);
     
     // Update sync timestamp only if everything succeeded
-    markSyncCompleted('products', new Date().toISOString());
+    // Use the server's last_updated timestamp, not current time
+    const serverLastUpdated = new Date().toISOString(); // For now, use current time
+    markSyncCompleted('products', serverLastUpdated);
+    
+    // Database already saved after batch inserts
     
     onProgress('Productos sincronizados', 100);
     return true;
