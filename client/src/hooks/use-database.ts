@@ -108,7 +108,17 @@ export function useDatabase() {
       }
 
       sql += ' ORDER BY p.title';
-      return query(sql);
+      
+      const products = query(sql);
+      
+      // Debug: Count active vs inactive products
+      const totalCount = query('SELECT COUNT(*) as total FROM products')[0]?.total || 0;
+      const activeCount = query('SELECT COUNT(*) as active FROM products WHERE is_active = 1')[0]?.active || 0;
+      const inactiveCount = query('SELECT COUNT(*) as inactive FROM products WHERE is_active = 0 OR is_active IS NULL')[0]?.inactive || 0;
+      
+      console.log(`Product counts: Total=${totalCount}, Active=${activeCount}, Inactive=${inactiveCount}`);
+      
+      return products;
     } catch (error) {
       console.error('Error getting products:', error);
       return [];

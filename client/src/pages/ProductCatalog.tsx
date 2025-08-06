@@ -33,6 +33,7 @@ function ProductCatalog({
     async function loadProducts() {
       setIsLoading(true);
       const productList = await getProducts(searchTerm);
+      console.log(`ProductCatalog: Loaded ${productList.length} products${searchTerm ? ` (filtered by "${searchTerm}")` : ' (all products)'}`);
       setAllProducts(productList);
       
       // Reset to page 1 only when searching (not when clearing search via barcode)
