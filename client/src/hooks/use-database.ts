@@ -249,7 +249,8 @@ export function useDatabase() {
             item.quantity, item.base_price, item.tax_rate
           ]);
         } else {
-          // Fallback if product not found
+          console.warn(`Product not found for EAN: ${item.ean}`);
+          // Fallback if product not found - use minimal required fields
           execute(`
             INSERT INTO purchase_order_items (
               purchase_order_id, item_ean, item_title, quantity, 

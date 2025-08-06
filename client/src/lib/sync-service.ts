@@ -477,12 +477,17 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
         }
       }
       
+      // Log current pagination status
+      console.log(`Pagination status: totalProcessed=${totalProcessed}, totalRecords=${totalRecords}, offset=${offset}, limit=${limit}`);
+      
       // If we got all records, break the main loop
       if (totalProcessed >= totalRecords) {
+        console.log(`All records fetched. Breaking pagination loop.`);
         break;
       }
       
       offset += limit;
+      console.log(`Moving to next page: offset=${offset}`);
       
       // Small delay between successful requests
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -501,8 +506,13 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
     const batchSize = 100;
     let insertedCount = 0;
     
+    console.log(`Starting batch insertion of ${allProducts.length} products...`);
+    
     for (let i = 0; i < allProducts.length; i += batchSize) {
       const batch = allProducts.slice(i, i + batchSize);
+      const batchNum = Math.ceil((i + batchSize) / batchSize);
+      
+      console.log(`Processing batch ${batchNum}: products ${i + 1} to ${Math.min(i + batchSize, allProducts.length)}`);
       
       // Build multi-insert query for better performance
       let insertSQL = `
