@@ -404,62 +404,88 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
     let totalRecords = 0;
     let allProducts: any[] = [];
     
-    // Fetch all pages
+    // Fetch all pages with retry logic
     while (true) {
       console.log(`Fetching products page: offset=${offset}, limit=${limit}`);
       
-      const response = await fetch(GRAPHQL_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          variables: {
-            timestamp: timestampParam,
-            limit,
-            offset
+      let retryCount = 0;
+      const maxRetries = 3;
+      let success = false;
+      
+      while (retryCount < maxRetries && !success) {
+        try {
+          const response = await fetch(GRAPHQL_ENDPOINT, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              query,
+              variables: {
+                timestamp: timestampParam,
+                limit,
+                offset
+              }
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+          
+          const data = await response.json();
+          
+          if (data.errors) {
+            throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+          }
+          
+          const productsPage = data.data?.products;
+          
+          if (!productsPage) {
+            throw new Error('Invalid response structure');
+          }
+          
+          totalRecords = productsPage.total;
+          const products = productsPage.products || [];
+          
+          allProducts.push(...products);
+          totalProcessed += products.length;
+          
+          // Update progress with detailed info
+          const progressPercent = totalRecords > 0 ? (totalProcessed / totalRecords) * 90 : 90; // Leave 10% for DB operations
+          onProgress(`Sincronizando Productos (${totalProcessed}/${totalRecords})`, progressPercent);
+          
+          console.log(`Received ${products.length} products, total processed: ${totalProcessed}/${totalRecords}`);
+          
+          success = true;
+          
+          // Check if we've got all records
+          if (products.length < limit || totalProcessed >= totalRecords) {
+            break;
+          }
+          
+        } catch (error) {
+          retryCount++;
+          console.error(`Error fetching page (attempt ${retryCount}/${maxRetries}):`, error);
+          
+          if (retryCount >= maxRetries) {
+            throw error;
+          }
+          
+          // Wait longer before retry
+          await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+        }
       }
       
-      const data = await response.json();
-      
-      if (data.errors) {
-        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
-      }
-      
-      const productsPage = data.data?.products;
-      
-      if (!productsPage) {
-        throw new Error('Invalid response structure');
-      }
-      
-      totalRecords = productsPage.total;
-      const products = productsPage.products || [];
-      
-      allProducts.push(...products);
-      totalProcessed += products.length;
-      
-      // Update progress with detailed info
-      const progressPercent = totalRecords > 0 ? (totalProcessed / totalRecords) * 100 : 100;
-      onProgress(`Sincronizando Productos (${totalProcessed}/${totalRecords})`, progressPercent);
-      
-      console.log(`Received ${products.length} products, total processed: ${totalProcessed}/${totalRecords}`);
-      
-      // Check if we've got all records
-      if (products.length < limit || totalProcessed >= totalRecords) {
+      // If we got all records, break the main loop
+      if (totalProcessed >= totalRecords) {
         break;
       }
       
       offset += limit;
       
-      // Small delay between requests to avoid overwhelming the server
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Small delay between successful requests
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
     
     // Update database with all products
@@ -515,21 +541,29 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
         dbQuery(insertSQL);
         insertedCount += batch.length;
         console.log(`Inserted batch ${Math.ceil((i + batchSize) / batchSize)} - ${insertedCount}/${allProducts.length} products`);
+        
+        // Update progress during batch insertion
+        const insertProgress = (insertedCount / allProducts.length) * 5; // 5% of total progress for DB insertion
+        onProgress(`Insertando productos (${insertedCount}/${allProducts.length})`, 95 + insertProgress);
+        
       } catch (error) {
         console.error(`Error inserting batch starting at index ${i}:`, error);
+        console.error('Failed SQL:', insertSQL.substring(0, 500) + '...');
         throw error;
       }
     }
     
     // Save database after all inserts
+    console.log('Saving database to localStorage...');
     saveDatabase();
     
     console.log(`✅ Successfully synced ${allProducts.length} products`);
     
-    // Update sync timestamp only if everything succeeded
-    // Use the server's last_updated timestamp, not current time
-    const serverLastUpdated = new Date().toISOString(); // For now, use current time
-    markSyncCompleted('products', serverLastUpdated);
+    // Update sync timestamp with current time (when we completed the sync)
+    const now = new Date().toISOString();
+    markSyncCompleted('products', now);
+    
+    console.log(`Sync completed at: ${now}`);
     
     // Database already saved after batch inserts
     

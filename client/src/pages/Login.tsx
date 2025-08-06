@@ -175,7 +175,11 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                 query('DELETE FROM taxes');
                 
                 // Reset sync configuration for products and taxes
-                query('DELETE FROM sync_config WHERE entity_name IN (\"products\", \"taxes\")');
+                query('DELETE FROM sync_config WHERE entity_name IN ("products", "taxes")');
+                
+                // Save the database changes
+                const { saveDatabase } = await import('../lib/database');
+                saveDatabase();
                 
                 console.log('🧪 Test sync reset: Cleared products, taxes and sync config');
                 alert('Datos de productos y taxes borrados. Sync config resetado.');
