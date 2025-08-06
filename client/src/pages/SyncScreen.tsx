@@ -25,13 +25,14 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
     async function performSync() {
       try {
         // Step 1: Check what needs to be synced
-        setCurrentMessage('Obteniendo fechas de actualización');
-        setProgress(10);
+        setCurrentMessage('Conectando con servidor...');
+        setProgress(5);
         
-        // Simulate a small delay for UX
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
+        const startTime = Date.now();
         const syncResults = await checkSynchronizationNeeds();
+        const elapsedTime = Date.now() - startTime;
+        
+        console.log(`Sync check completed in ${elapsedTime}ms`);
         
         // Filter by selected entities and needs_sync
         const entitiesToSync = syncResults.filter(entity => 

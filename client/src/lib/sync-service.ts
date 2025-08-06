@@ -47,6 +47,12 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
       }
     `;
 
+    // Add timeout to avoid long waits and measure time
+    console.log('Making GraphQL request to server...');
+    const requestStart = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -55,8 +61,13 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
       body: JSON.stringify({
         query: query_text,
         variables: {}
-      })
+      }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
+    const requestTime = Date.now() - requestStart;
+    console.log(`GraphQL request completed in ${requestTime}ms`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -71,7 +82,11 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
     
     return null;
   } catch (error) {
-    console.error('Error fetching sync info:', error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Sync info request timed out after 10 seconds');
+    } else {
+      console.error('Error fetching sync info:', error);
+    }
     return null;
   }
 }
@@ -197,9 +212,12 @@ export async function determineEntitiesToSync(): Promise<EntityToSync[]> {
  */
 export async function checkSynchronizationNeeds(): Promise<EntityToSync[]> {
   console.log('Checking synchronization needs...');
+  const startTime = Date.now();
   
   try {
     const entitiesToSync = await determineEntitiesToSync();
+    const elapsedTime = Date.now() - startTime;
+    console.log(`Sync check completed in ${elapsedTime}ms`);
     
     const entitiesToUpdate = entitiesToSync.filter(entity => entity.needs_sync);
     
