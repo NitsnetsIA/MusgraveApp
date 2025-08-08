@@ -143,10 +143,11 @@ export async function getSyncInfo(storeId?: string): Promise<SyncInfo | null> {
   // Wrap entire function in try-catch to prevent any unhandled rejections
   return new Promise(async (resolve) => {
     try {
-      // Build query with optional store filter for entities that need it
+      // WORKAROUND: Server has a bug with store_id parameter, so we always request without it
+      // and filter the results locally if needed
       const query_text = `
-        query ExampleQuery${storeId ? '($storeId: String!)' : ''} {
-          sync_info${storeId ? '(store_id: $storeId)' : ''} {
+        query ExampleQuery {
+          sync_info {
             entities {
               entity_name
               last_updated
@@ -156,6 +157,11 @@ export async function getSyncInfo(storeId?: string): Promise<SyncInfo | null> {
           }
         }
       `;
+
+      console.log('🔧 getSyncInfo() Debug Info:');
+      console.log('- storeId (ignored due to server bug):', storeId);
+      console.log('- query_text:', query_text);
+      console.log('- endpoint:', GRAPHQL_ENDPOINT);
 
       // Add timeout to avoid long waits and measure time
       console.log('Making GraphQL request to server...');
@@ -172,8 +178,7 @@ export async function getSyncInfo(storeId?: string): Promise<SyncInfo | null> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          query: query_text,
-          variables: storeId ? { storeId } : {}
+          query: query_text
         }),
         signal: controller.signal
       }).catch(error => {
@@ -191,10 +196,16 @@ export async function getSyncInfo(storeId?: string): Promise<SyncInfo | null> {
     console.log(`GraphQL request completed in ${requestTime}ms`);
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.error('❌ HTTP Error Response:');
+      console.error('- Status:', response.status);
+      console.error('- Status Text:', response.statusText);
+      const errorText = await response.text();
+      console.error('- Response Body:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
     }
 
     const data: SyncResponse = await response.json();
+    console.log('📥 Raw GraphQL Response:', JSON.stringify(data, null, 2));
     
     if (data.data?.sync_info) {
       console.log('Sync info received:', data.data.sync_info);
