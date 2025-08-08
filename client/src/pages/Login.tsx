@@ -20,6 +20,7 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
   const [isResetting, setIsResetting] = useState(false);
   const [isDevPanelOpen, setIsDevPanelOpen] = useState(false);
   const [syncEntities, setSyncEntities] = useState({
+    users: true,
     taxes: true,
     products: true,
     stores: true,
@@ -161,6 +162,18 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                     Entidades a sincronizar:
                   </FormLabel>
                   <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="sync-users"
+                        checked={syncEntities.users}
+                        onCheckedChange={(checked) => 
+                          setSyncEntities(prev => ({ ...prev, users: !!checked }))
+                        }
+                      />
+                      <label htmlFor="sync-users" className="text-xs text-gray-600 cursor-pointer">
+                        Usuarios
+                      </label>
+                    </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="sync-taxes"

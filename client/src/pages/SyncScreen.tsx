@@ -52,6 +52,10 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
         const steps: SyncStep[] = [];
         
         // Order matters: taxes first (products reference taxes)
+        if (entitiesToSync.find(e => e.entity_name === 'users') && selectedEntities.includes('users')) {
+          steps.push({ id: 'users', label: 'Sincronizando Usuarios', completed: false });
+        }
+        
         if (entitiesToSync.find(e => e.entity_name === 'taxes') && selectedEntities.includes('taxes')) {
           steps.push({ id: 'taxes', label: 'Sincronizando Impuestos', completed: false });
         }
@@ -92,7 +96,15 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
           let syncSuccess = false;
           
           // Perform actual sync based on entity type
-          if (step.id === 'taxes') {
+          if (step.id === 'users') {
+            const { syncUsers } = await import('../lib/sync-service');
+            syncSuccess = await syncUsers((message, entityProgress) => {
+              setCurrentMessage(message);
+              // Map entity progress to overall progress within this step
+              const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
+              setProgress(Math.min(stepProgress, 90));
+            }, user?.store_id);
+          } else if (step.id === 'taxes') {
             const { syncTaxes } = await import('../lib/sync-service');
             syncSuccess = await syncTaxes((message, entityProgress) => {
               setCurrentMessage(message);

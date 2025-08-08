@@ -418,6 +418,138 @@ export function markSyncCompleted(entityName: string, serverLastUpdated: string)
 }
 
 /**
+ * Sync users from server using GraphQL with pagination
+ */
+export async function syncUsers(onProgress: (message: string, progress: number) => void, storeId?: string): Promise<boolean> {
+  try {
+    console.log('🔄 Starting users synchronization...');
+    onProgress('Sincronizando Usuarios', 0);
+    
+    const lastRequestTimestamp = getLastRequestTimestamp('users');
+    const timestampParam = lastRequestTimestamp ? new Date(lastRequestTimestamp).toISOString() : null;
+    
+    console.log(`Syncing users since: ${timestampParam || 'beginning of time'}`);
+    
+    const query = `
+      query Users($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
+        users(timestamp: $timestamp, limit: $limit, offset: $offset, store_id: $storeId) {
+          limit
+          offset
+          total
+          users {
+            email
+            store_id
+            name
+            password_hash
+            is_active
+            last_login
+            created_at
+            updated_at
+          }
+        }
+      }
+    `;
+    
+    let offset = 0;
+    const limit = 1000;
+    let totalProcessed = 0;
+    let totalRecords = 0;
+    let allUsers: any[] = [];
+    
+    // Fetch all pages
+    while (true) {
+      console.log(`Fetching users page: offset=${offset}, limit=${limit}`);
+      
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables: {
+            timestamp: timestampParam,
+            limit,
+            offset,
+            storeId
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      }
+      
+      const usersPage = data.data?.users;
+      
+      if (!usersPage) {
+        throw new Error('Invalid response structure');
+      }
+      
+      totalRecords = usersPage.total;
+      const users = usersPage.users || [];
+      
+      allUsers.push(...users);
+      totalProcessed += users.length;
+      
+      // Update progress
+      const progressPercent = totalRecords > 0 ? (totalProcessed / totalRecords) * 100 : 100;
+      onProgress(`Sincronizando Usuarios (${totalProcessed}/${totalRecords})`, progressPercent);
+      
+      console.log(`Received ${users.length} users, total processed: ${totalProcessed}/${totalRecords}`);
+      
+      // Check if we've got all records
+      if (users.length < limit || totalProcessed >= totalRecords) {
+        break;
+      }
+      
+      offset += limit;
+    }
+    
+    // Update database with all users
+    console.log(`Updating database with ${allUsers.length} users...`);
+    
+    const { execute } = await import('./database');
+    
+    // Clear existing users from this store and insert new ones
+    if (storeId) {
+      execute('DELETE FROM users WHERE store_id = ?', [storeId]);
+    } else {
+      execute('DELETE FROM users');
+    }
+    
+    for (const user of allUsers) {
+      execute(`
+        INSERT INTO users (email, store_id, name, password_hash, is_active) 
+        VALUES (?, ?, ?, ?, ?)
+      `, [user.email, user.store_id, user.name || '', user.password_hash, user.is_active ? 1 : 0]);
+    }
+    
+    console.log(`✅ Successfully synced ${allUsers.length} users`);
+    
+    // Update sync info
+    const serverInfo = await checkSynchronizationNeeds(storeId);
+    const usersInfo = serverInfo.find((entity: any) => entity.entity_name === 'users');
+    if (usersInfo) {
+      markSyncCompleted('users', usersInfo.server_last_updated);
+    }
+    
+    onProgress('Usuarios sincronizados correctamente', 100);
+    return true;
+  } catch (error) {
+    console.error('❌ Error syncing users:', error);
+    onProgress('Error sincronizando usuarios', 0);
+    return false;
+  }
+}
+
+/**
  * Sync taxes from server using GraphQL with pagination
  */
 export async function syncTaxes(onProgress: (message: string, progress: number) => void, storeId?: string): Promise<boolean> {
@@ -431,8 +563,8 @@ export async function syncTaxes(onProgress: (message: string, progress: number) 
     console.log(`Syncing taxes since: ${timestampParam || 'beginning of time'}`);
     
     const query = `
-      query Taxes($timestamp: String, $limit: Int, $offset: Int${storeId ? ', $storeId: String!' : ''}) {
-        taxes(timestamp: $timestamp, limit: $limit, offset: $offset${storeId ? ', store_id: $storeId' : ''}) {
+      query Taxes($timestamp: String, $limit: Int, $offset: Int) {
+        taxes(timestamp: $timestamp, limit: $limit, offset: $offset) {
           taxes {
             code
             name
@@ -467,8 +599,7 @@ export async function syncTaxes(onProgress: (message: string, progress: number) 
           variables: {
             timestamp: timestampParam,
             limit,
-            offset,
-            ...(storeId && { storeId })
+            offset
           }
         })
       });
@@ -554,8 +685,8 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
     console.log(`Syncing products since: ${timestampParam || 'beginning of time'}`);
     
     const query = `
-      query Product($timestamp: String, $limit: Int, $offset: Int${storeId ? ', $storeId: String!' : ''}) {
-        products(timestamp: $timestamp, limit: $limit, offset: $offset${storeId ? ', store_id: $storeId' : ''}) {
+      query Products($timestamp: String, $limit: Int, $offset: Int) {
+        products(timestamp: $timestamp, limit: $limit, offset: $offset) {
           products {
             ean
             ref
@@ -603,8 +734,7 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
               variables: {
                 timestamp: timestampParam,
                 limit,
-                offset,
-                ...(storeId && { storeId })
+                offset
               }
             })
           });
