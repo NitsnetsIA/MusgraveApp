@@ -36,19 +36,14 @@ export async function initDatabase() {
         localStorage.removeItem('musgrave_db');
         db = new SQL.Database();
         await createTables();
-        const { seedDatabase } = await import('./seed-data');
-        await seedDatabase();
+        console.log('Empty database created - data will come from GraphQL synchronization');
       }
     } else {
       console.log('Creating new database...');
       db = new SQL.Database();
       console.log('Creating tables...');
       await createTables();
-      console.log('Tables created, now seeding...');
-      // Dynamically import to avoid circular dependency
-      const { seedDatabase } = await import('./seed-data');
-      await seedDatabase();
-      console.log('Database initialization complete');
+      console.log('Empty database created - ready for GraphQL synchronization');
     }
 
     return db;
@@ -223,16 +218,16 @@ export async function clearDatabaseCompletely() {
   return db;
 }
 
-// Reset database to initial test data
-export async function resetDatabaseToTestData() {
+// Reset database to empty state for GraphQL sync
+export async function resetDatabaseToEmpty() {
   localStorage.removeItem('musgrave_db');
   localStorage.removeItem('musgrave_schema_version');
   db = null;
   SQL = null;
   
-  // Reinitialize with test data
+  // Reinitialize with empty tables
   const freshDb = await initDatabase();
-  console.log('Database reset to initial test data');
+  console.log('Database reset to empty state - ready for GraphQL sync');
   return freshDb;
 }
 

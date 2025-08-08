@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { initDatabase, query, execute, saveDatabase, generateUUID, generatePurchaseOrderId, generateProcessedOrderId } from '@/lib/database';
-import { seedDatabase } from '@/lib/seed-data';
+
 import { loginUserOnline } from '@/lib/sync-service';
 import type { User, Product, PurchaseOrder, Order, CartItem } from '@shared/schema';
 
@@ -12,7 +12,6 @@ export function useDatabase() {
     async function init() {
       try {
         await initDatabase();
-        await seedDatabase();
         setIsInitialized(true);
       } catch (error) {
         console.error('Failed to initialize database:', error);
@@ -21,15 +20,14 @@ export function useDatabase() {
           console.log('Attempting database recovery...');
           localStorage.removeItem('musgrave_database');
           await initDatabase();
-          await seedDatabase();
-          console.log('Database recovery successful');
+          console.log('Database recovery successful - empty database ready for GraphQL sync');
           setIsInitialized(true);
         } catch (resetError) {
           console.error('Failed to recover database:', resetError);
-          // Force initialization without seed data to allow sync to work
+          // Force initialization to allow sync to work
           try {
             await initDatabase();
-            console.log('Basic database initialized, skipping seed data');
+            console.log('Basic database initialized - ready for GraphQL sync');
             setIsInitialized(true);
           } catch (finalError) {
             console.error('Complete database initialization failure:', finalError);

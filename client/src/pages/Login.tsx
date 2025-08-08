@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Settings } from 'lucide-react';
 import { loginSchema, type LoginForm } from '@shared/schema';
-import { clearDatabaseCompletely, resetDatabaseToTestData, query } from '@/lib/database';
+import { clearDatabaseCompletely, resetDatabaseToEmpty, query } from '@/lib/database';
 
 interface LoginProps {
   onLogin: (email: string, password: string, syncEntities?: string[]) => Promise<boolean>;
@@ -71,9 +71,9 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
   const handleResetToTestData = async () => {
     setIsResetting(true);
     try {
-      await resetDatabaseToTestData();
+      await resetDatabaseToEmpty();
       setError('');
-      alert('Base de datos reiniciada con datos de prueba. Recarga la página para continuar.');
+      alert('Base de datos vaciada. Ahora inicia sesión para sincronizar con el servidor GraphQL.');
     } catch (error) {
       console.error('Error resetting database:', error);
       setError('Error al reiniciar la base de datos');
