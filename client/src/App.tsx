@@ -96,7 +96,18 @@ function Router() {
     // Removed logout toast message
   };
 
-  const handleSyncComplete = () => {
+  const handleSyncComplete = async () => {
+    // After sync is complete, reload store data
+    if (user?.store_id) {
+      try {
+        const storeData = await getStoreByCode(user.store_id);
+        setStore(storeData);
+        console.log('Store data loaded after sync:', storeData);
+      } catch (error) {
+        console.error('Error loading store data after sync:', error);
+      }
+    }
+    
     setShowSyncScreen(false);
     setLocation('/');
   };
@@ -229,6 +240,16 @@ function Router() {
 
   // Checkout handler
   const handleCheckout = async () => {
+    if (!store) {
+      console.error('No store information available');
+      toast({
+        title: "Error",
+        description: "Información de tienda no disponible",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const orderId = await createPurchaseOrder(user.email, store.code, cartItems);
     setLastOrderId(orderId);
     clearCart();
