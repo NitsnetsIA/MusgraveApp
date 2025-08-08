@@ -263,11 +263,15 @@ export function execute(sql: string, params: any[] = []) {
   
   try {
     const stmt = db.prepare(sql);
+    
+    // SQL.js requires different syntax for parameters
     if (params && params.length > 0) {
-      stmt.run(params);
+      stmt.bind(params);
+      stmt.step();
     } else {
-      stmt.run();
+      stmt.step();
     }
+    
     stmt.free();
     saveDatabase();
   } catch (error) {
@@ -276,9 +280,13 @@ export function execute(sql: string, params: any[] = []) {
     console.error('SQL params:', params);
     
     // More detailed error for debugging
-    if (error.message && error.message.includes('no such table')) {
+    if (error instanceof Error && error.message && error.message.includes('no such table')) {
       console.error('Table does not exist. Database may not be properly initialized.');
-      console.error('Available tables:', query("SELECT name FROM sqlite_master WHERE type='table'"));
+      try {
+        console.error('Available tables:', query("SELECT name FROM sqlite_master WHERE type='table'"));
+      } catch (e) {
+        console.error('Could not query available tables:', e);
+      }
     }
     throw error;
   }

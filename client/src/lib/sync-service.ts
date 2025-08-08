@@ -127,9 +127,9 @@ export async function loginUserOnline(email: string, password: string): Promise<
 
     } catch (error) {
       console.error('Error during online login:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       });
       resolve({ success: false, user: null, message: 'Login failed due to network error' });
     }
@@ -184,9 +184,9 @@ export async function getSyncInfo(storeId?: string): Promise<SyncInfo | null> {
       }).catch(error => {
         clearTimeout(timeoutId);
         console.error('Fetch failed:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
         });
         throw error;
       });
@@ -222,9 +222,9 @@ export async function getSyncInfo(storeId?: string): Promise<SyncInfo | null> {
         // Log more details about the error
         if (error instanceof Error) {
           console.error('Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
           });
         }
       }
