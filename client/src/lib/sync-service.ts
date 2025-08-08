@@ -34,36 +34,36 @@ interface LoginUser {
   email: string;
   store_id: string;
   name: string;
+  password_hash: string;
   is_active: boolean;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface LoginResponse {
   data: {
-    loginUser: {
-      success: boolean;
-      user: LoginUser | null;
-      message: string;
-    };
+    loginUser: LoginUser;
   };
 }
 
 /**
  * Login user against GraphQL server
  */
-export async function loginUserOnline(email: string, password: string): Promise<{ success: boolean; user: LoginUser | null; message: string }> {
+export async function loginUserOnline(email: string, password: string): Promise<{ success: boolean; user: { email: string; store_id: string; name: string; is_active: boolean; } | null; message: string }> {
   return new Promise(async (resolve) => {
     try {
       const mutation = `
-        mutation LoginUser($email: String!, $password: String!) {
-          loginUser(email: $email, password: $password) {
-            success
-            user {
-              email
-              store_id
-              name
-              is_active
-            }
-            message
+        mutation LoginUser($input: LoginInput!) {
+          loginUser(input: $input) {
+            email
+            store_id
+            name
+            password_hash
+            is_active
+            last_login
+            created_at
+            updated_at
           }
         }
       `;
@@ -83,7 +83,7 @@ export async function loginUserOnline(email: string, password: string): Promise<
         },
         body: JSON.stringify({
           query: mutation,
-          variables: { email, password }
+          variables: { input: { email, password } }
         }),
         signal: controller.signal
       }).catch(error => {
@@ -110,7 +110,17 @@ export async function loginUserOnline(email: string, password: string): Promise<
       console.log('Login response received:', data);
 
       if (data.data?.loginUser) {
-        resolve(data.data.loginUser);
+        // Convert the direct user data to the expected format
+        resolve({ 
+          success: true, 
+          user: {
+            email: data.data.loginUser.email,
+            store_id: data.data.loginUser.store_id,
+            name: data.data.loginUser.name,
+            is_active: data.data.loginUser.is_active
+          }, 
+          message: 'Login successful' 
+        });
       } else {
         resolve({ success: false, user: null, message: 'Invalid response format' });
       }
