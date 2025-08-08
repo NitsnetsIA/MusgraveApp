@@ -99,7 +99,7 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
               // Map entity progress to overall progress within this step
               const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
               setProgress(Math.min(stepProgress, 90));
-            });
+            }, user?.store_id);
           } else if (step.id === 'products') {
             const { syncProducts } = await import('../lib/sync-service');
             syncSuccess = await syncProducts((message, entityProgress) => {
@@ -107,7 +107,7 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
               // Map entity progress to overall progress within this step
               const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
               setProgress(Math.min(stepProgress, 90));
-            });
+            }, user?.store_id);
           }
           
           if (syncSuccess) {

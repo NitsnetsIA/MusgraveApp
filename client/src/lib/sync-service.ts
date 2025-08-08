@@ -286,13 +286,31 @@ function isoToTimestamp(isoString: string): number {
  * Currently only handles 'products' and 'taxes' entities
  */
 export async function determineEntitiesToSync(storeId?: string): Promise<EntityToSync[]> {
+  console.log('🔍 Determining entities to sync with store_id:', storeId);
   const syncInfo = await getSyncInfo(storeId);
   
   if (!syncInfo) {
-    console.log('Could not fetch sync info from server, skipping sync');
-    return [];
+    console.log('❌ Could not fetch sync info from server, forcing sync of all entities');
+    // If we can't get server info, force sync of core entities
+    return [
+      {
+        entity_name: 'taxes',
+        needs_sync: true,
+        last_local_request: null,
+        server_last_updated: new Date().toISOString(),
+        total_records: 0
+      },
+      {
+        entity_name: 'products', 
+        needs_sync: true,
+        last_local_request: null,
+        server_last_updated: new Date().toISOString(),
+        total_records: 0
+      }
+    ];
   }
   
+  console.log('✅ Sync info received from server:', JSON.stringify(syncInfo, null, 2));
   const entitiesToCheck = ['products', 'taxes'];
   const entitiesToSync: EntityToSync[] = [];
   
@@ -391,7 +409,7 @@ export function markSyncCompleted(entityName: string, serverLastUpdated: string)
 /**
  * Sync taxes from server using GraphQL with pagination
  */
-export async function syncTaxes(onProgress: (message: string, progress: number) => void): Promise<boolean> {
+export async function syncTaxes(onProgress: (message: string, progress: number) => void, storeId?: string): Promise<boolean> {
   try {
     console.log('🔄 Starting taxes synchronization...');
     onProgress('Sincronizando Impuestos', 0);
@@ -402,8 +420,8 @@ export async function syncTaxes(onProgress: (message: string, progress: number) 
     console.log(`Syncing taxes since: ${timestampParam || 'beginning of time'}`);
     
     const query = `
-      query Taxes($timestamp: String, $limit: Int, $offset: Int) {
-        taxes(timestamp: $timestamp, limit: $limit, offset: $offset) {
+      query Taxes($timestamp: String, $limit: Int, $offset: Int${storeId ? ', $storeId: String!' : ''}) {
+        taxes(timestamp: $timestamp, limit: $limit, offset: $offset${storeId ? ', store_id: $storeId' : ''}) {
           taxes {
             code
             name
@@ -438,7 +456,8 @@ export async function syncTaxes(onProgress: (message: string, progress: number) 
           variables: {
             timestamp: timestampParam,
             limit,
-            offset
+            offset,
+            ...(storeId && { storeId })
           }
         })
       });
@@ -513,7 +532,7 @@ export async function syncTaxes(onProgress: (message: string, progress: number) 
 /**
  * Sync products from server using GraphQL with pagination
  */
-export async function syncProducts(onProgress: (message: string, progress: number) => void): Promise<boolean> {
+export async function syncProducts(onProgress: (message: string, progress: number) => void, storeId?: string): Promise<boolean> {
   try {
     console.log('🔄 Starting products synchronization...');
     onProgress('Sincronizando Productos', 0);
@@ -524,8 +543,8 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
     console.log(`Syncing products since: ${timestampParam || 'beginning of time'}`);
     
     const query = `
-      query Product($timestamp: String, $limit: Int, $offset: Int) {
-        products(timestamp: $timestamp, limit: $limit, offset: $offset) {
+      query Product($timestamp: String, $limit: Int, $offset: Int${storeId ? ', $storeId: String!' : ''}) {
+        products(timestamp: $timestamp, limit: $limit, offset: $offset${storeId ? ', store_id: $storeId' : ''}) {
           products {
             ean
             ref
@@ -573,7 +592,8 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
               variables: {
                 timestamp: timestampParam,
                 limit,
-                offset
+                offset,
+                ...(storeId && { storeId })
               }
             })
           });

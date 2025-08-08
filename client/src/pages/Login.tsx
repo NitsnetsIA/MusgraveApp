@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Settings } from 'lucide-react';
 import { loginSchema, type LoginForm } from '@shared/schema';
-import { clearDatabaseCompletely, resetDatabaseToTestData } from '@/lib/database';
+import { clearDatabaseCompletely, resetDatabaseToTestData, query } from '@/lib/database';
 
 interface LoginProps {
   onLogin: (email: string, password: string, syncEntities?: string[]) => Promise<boolean>;
@@ -237,6 +237,29 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                       className="text-xs h-8 text-red-600 hover:text-red-700"
                     >
                       🗑️ Clear Database
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          const syncData = query(`SELECT entity_name, last_request_timestamp, last_updated_timestamp FROM sync_config ORDER BY entity_name`);
+                          console.log('=== TABLA SYNC ===');
+                          console.table(syncData.map(row => ({
+                            entity: row.entity_name,
+                            last_request: row.last_request_timestamp ? new Date(row.last_request_timestamp).toLocaleString() : 'Never',
+                            last_updated: row.last_updated_timestamp ? new Date(row.last_updated_timestamp).toLocaleString() : 'Never'
+                          })));
+                          alert(`Tabla sync mostrada en consola. ${syncData.length} registros encontrados.`);
+                        } catch (error) {
+                          console.error('Error reading sync table:', error);
+                          alert('Error leyendo tabla sync - ver consola');
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-8 text-blue-600 hover:text-blue-700"
+                    >
+                      📊 Ver Sync Table
                     </Button>
                   </div>
                 </div>
