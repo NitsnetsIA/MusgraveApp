@@ -12,9 +12,10 @@ interface SyncStep {
 interface SyncScreenProps {
   onSyncComplete: () => void;
   selectedEntities?: string[];
+  user?: any; // The authenticated user object with store_id
 }
 
-export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes', 'products', 'stores', 'deliveryCenters'] }: SyncScreenProps) {
+export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes', 'products', 'stores', 'deliveryCenters'], user }: SyncScreenProps) {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -29,8 +30,10 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
         setProgress(5);
         
         const startTime = Date.now();
-        const syncResults = await checkSynchronizationNeeds();
+        const syncResults = await checkSynchronizationNeeds(user?.store_id);
         const elapsedTime = Date.now() - startTime;
+        
+        console.log('Using store_id for sync:', user?.store_id);
         
         console.log(`Sync check completed in ${elapsedTime}ms`);
         

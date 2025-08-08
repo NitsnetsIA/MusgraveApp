@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { initDatabase, query, execute, saveDatabase, generateUUID, generatePurchaseOrderId, generateProcessedOrderId } from '@/lib/database';
 import { seedDatabase } from '@/lib/seed-data';
+import { loginUserOnline } from '@/lib/sync-service';
 import type { User, Product, PurchaseOrder, Order, CartItem } from '@shared/schema';
 
 export function useDatabase() {
@@ -66,11 +67,60 @@ export function useDatabase() {
 
   const authenticateUser = async (email: string, password: string): Promise<User | null> => {
     try {
-      // Note: Direct SQL string substitution works due to SQLite parameter binding issue
+      console.log('Starting authentication process for:', email);
+      
+      // First, try online authentication against GraphQL server
+      console.log('Attempting online authentication...');
+      const onlineResult = await loginUserOnline(email, password);
+      
+      if (onlineResult.success && onlineResult.user) {
+        console.log('Online authentication successful:', onlineResult.user);
+        
+        // Check if user exists locally, if not create/update it
+        const localResults = query(`SELECT * FROM users WHERE email = '${email}'`);
+        const localUser = localResults[0];
+        
+        if (!localUser) {
+          // Create new local user from online data
+          console.log('Creating new local user from online data');
+          execute(`
+            INSERT INTO users (email, store_id, name, is_active, password_hash)
+            VALUES (?, ?, ?, ?, ?)
+          `, [
+            onlineResult.user.email,
+            onlineResult.user.store_id,
+            onlineResult.user.name,
+            onlineResult.user.is_active ? 1 : 0,
+            'online_verified' // Placeholder since we verified online
+          ]);
+        } else {
+          // Update existing local user with online data
+          console.log('Updating existing local user with online data');
+          execute(`
+            UPDATE users 
+            SET store_id = ?, name = ?, is_active = ?
+            WHERE email = ?
+          `, [
+            onlineResult.user.store_id,
+            onlineResult.user.name,
+            onlineResult.user.is_active ? 1 : 0,
+            onlineResult.user.email
+          ]);
+        }
+        
+        // Return the updated user data
+        const updatedResults = query(`SELECT * FROM users WHERE email = '${email}' AND is_active = 1`);
+        return updatedResults[0] || null;
+      }
+      
+      console.log('Online authentication failed, falling back to local authentication');
+      
+      // Fallback to local authentication if online fails
       const results = query(`SELECT * FROM users WHERE email = '${email}' AND is_active = 1`);
       
       const user = results[0];
       if (!user) {
+        console.log('User not found locally');
         return null;
       }
       
@@ -81,9 +131,11 @@ export function useDatabase() {
       const isValidPassword = verifyPassword(password, email, user.password_hash);
       
       if (isValidPassword) {
+        console.log('Local authentication successful');
         return user;
       }
       
+      console.log('Local authentication failed - invalid password');
       return null;
     } catch (error) {
       console.error('Error authenticating user:', error);

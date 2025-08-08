@@ -267,6 +267,7 @@ function Router() {
         <SyncScreen 
           onSyncComplete={handleSyncComplete} 
           selectedEntities={selectedSyncEntities}
+          user={user}
         />
       </div>
     );

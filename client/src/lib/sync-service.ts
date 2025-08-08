@@ -29,16 +29,114 @@ interface EntityToSync {
 // GraphQL endpoint
 const GRAPHQL_ENDPOINT = 'https://pim-grocery-ia64.replit.app/graphql';
 
+// Types for login response
+interface LoginUser {
+  email: string;
+  store_id: string;
+  name: string;
+  is_active: boolean;
+}
+
+interface LoginResponse {
+  data: {
+    loginUser: {
+      success: boolean;
+      user: LoginUser | null;
+      message: string;
+    };
+  };
+}
+
 /**
- * Get sync information from the server
+ * Login user against GraphQL server
  */
-export async function getSyncInfo(): Promise<SyncInfo | null> {
+export async function loginUserOnline(email: string, password: string): Promise<{ success: boolean; user: LoginUser | null; message: string }> {
+  return new Promise(async (resolve) => {
+    try {
+      const mutation = `
+        mutation LoginUser($email: String!, $password: String!) {
+          loginUser(email: $email, password: $password) {
+            success
+            user {
+              email
+              store_id
+              name
+              is_active
+            }
+            message
+          }
+        }
+      `;
+
+      console.log('Attempting online login for:', email);
+      const requestStart = Date.now();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('Login request taking too long, aborting after 30 seconds');
+        controller.abort();
+      }, 30000); // 30 second timeout
+
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: { email, password }
+        }),
+        signal: controller.signal
+      }).catch(error => {
+        clearTimeout(timeoutId);
+        console.error('Login fetch failed:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        return null;
+      });
+
+      clearTimeout(timeoutId);
+      const requestTime = Date.now() - requestStart;
+      console.log(`Login request completed in ${requestTime}ms`);
+
+      if (!response || !response.ok) {
+        console.error('Login request failed with status:', response?.status);
+        resolve({ success: false, user: null, message: 'Network error during login' });
+        return;
+      }
+
+      const data: LoginResponse = await response.json();
+      console.log('Login response received:', data);
+
+      if (data.data?.loginUser) {
+        resolve(data.data.loginUser);
+      } else {
+        resolve({ success: false, user: null, message: 'Invalid response format' });
+      }
+
+    } catch (error) {
+      console.error('Error during online login:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      resolve({ success: false, user: null, message: 'Login failed due to network error' });
+    }
+  });
+}
+
+/**
+ * Get sync information from the server, optionally filtered by store
+ */
+export async function getSyncInfo(storeId?: string): Promise<SyncInfo | null> {
   // Wrap entire function in try-catch to prevent any unhandled rejections
   return new Promise(async (resolve) => {
     try {
+      // Build query with optional store filter for entities that need it
       const query_text = `
-        query ExampleQuery {
-          sync_info {
+        query ExampleQuery${storeId ? '($storeId: String!)' : ''} {
+          sync_info${storeId ? '(store_id: $storeId)' : ''} {
             entities {
               entity_name
               last_updated
@@ -65,7 +163,7 @@ export async function getSyncInfo(): Promise<SyncInfo | null> {
         },
         body: JSON.stringify({
           query: query_text,
-          variables: {}
+          variables: storeId ? { storeId } : {}
         }),
         signal: controller.signal
       }).catch(error => {
@@ -177,8 +275,8 @@ function isoToTimestamp(isoString: string): number {
  * Determine which entities need synchronization
  * Currently only handles 'products' and 'taxes' entities
  */
-export async function determineEntitiesToSync(): Promise<EntityToSync[]> {
-  const syncInfo = await getSyncInfo();
+export async function determineEntitiesToSync(storeId?: string): Promise<EntityToSync[]> {
+  const syncInfo = await getSyncInfo(storeId);
   
   if (!syncInfo) {
     console.log('Could not fetch sync info from server, skipping sync');
@@ -233,12 +331,12 @@ export async function determineEntitiesToSync(): Promise<EntityToSync[]> {
  * Perform synchronization check and determine what needs to be synced
  * This function should be called during login
  */
-export async function checkSynchronizationNeeds(): Promise<EntityToSync[]> {
+export async function checkSynchronizationNeeds(storeId?: string): Promise<EntityToSync[]> {
   console.log('Checking synchronization needs...');
   const startTime = Date.now();
   
   try {
-    const entitiesToSync = await determineEntitiesToSync();
+    const entitiesToSync = await determineEntitiesToSync(storeId);
     const elapsedTime = Date.now() - startTime;
     console.log(`Sync check completed in ${elapsedTime}ms`);
     
