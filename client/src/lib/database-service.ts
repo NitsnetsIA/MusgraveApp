@@ -150,6 +150,42 @@ export class UnifiedDatabaseService {
     }
   }
 
+  // Create order
+  static async createOrder(order: any): Promise<void> {
+    if (currentStorageType === 'indexeddb') {
+      await IndexedDBService.addOrder(order);
+    } else {
+      UnifiedDatabaseService.createOrderSQL(order);
+    }
+  }
+
+  // Add order item
+  static async addOrderItem(item: any): Promise<void> {
+    if (currentStorageType === 'indexeddb') {
+      await IndexedDBService.addOrderItem(item);
+    } else {
+      UnifiedDatabaseService.addOrderItemSQL(item);
+    }
+  }
+
+  // Get orders for user
+  static async getOrdersForUser(userEmail: string): Promise<any[]> {
+    if (currentStorageType === 'indexeddb') {
+      return await IndexedDBService.getOrders(userEmail);
+    } else {
+      return UnifiedDatabaseService.getOrdersForUserSQL(userEmail);
+    }
+  }
+
+  // Get order items
+  static async getOrderItems(orderId: string): Promise<any[]> {
+    if (currentStorageType === 'indexeddb') {
+      return await IndexedDBService.getOrderItems(orderId);
+    } else {
+      return UnifiedDatabaseService.getOrderItemsSQL(orderId);
+    }
+  }
+
   // Get purchase orders for user
   static async getPurchaseOrdersForUser(userEmail: string): Promise<any[]> {
     if (currentStorageType === 'indexeddb') {
@@ -436,5 +472,30 @@ export class UnifiedDatabaseService {
 
   static async getPurchaseOrderItemsSQL(purchaseOrderId: string): Promise<any[]> {
     return query('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?', [purchaseOrderId]);
+  }
+
+  static createOrderSQL(order: any): void {
+    query(`INSERT INTO orders 
+      (order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total, observations) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [order.order_id, order.user_email, order.store_id, order.created_at, order.status, 
+       order.subtotal, order.tax_total, order.final_total, order.observations]);
+  }
+
+  static addOrderItemSQL(item: any): void {
+    query(`INSERT INTO order_items 
+      (order_id, item_ean, item_title, item_description, unit_of_measure, quantity_measure, 
+       image_url, quantity, base_price_at_order, tax_rate_at_order) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [item.order_id, item.item_ean, item.item_title, item.item_description, item.unit_of_measure, 
+       item.quantity_measure, item.image_url, item.quantity, item.base_price_at_order, item.tax_rate_at_order]);
+  }
+
+  static async getOrdersForUserSQL(userEmail: string): Promise<any[]> {
+    return query('SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC', [userEmail]);
+  }
+
+  static async getOrderItemsSQL(orderId: string): Promise<any[]> {
+    return query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
   }
 }

@@ -201,6 +201,24 @@ export class DatabaseService {
     await db.users.put(user);
   }
 
+  // Purchase order data insertion methods
+  static async addPurchaseOrder(order: any): Promise<void> {
+    await db.purchase_orders.put(order);
+  }
+
+  static async addPurchaseOrderItem(item: any): Promise<void> {
+    await db.purchase_order_items.put(item);
+  }
+
+  // Order data insertion methods  
+  static async addOrder(order: any): Promise<void> {
+    await db.orders.put(order);
+  }
+
+  static async addOrderItem(item: any): Promise<void> {
+    await db.order_items.put(item);
+  }
+
   // User operations
   static async getUser(email: string): Promise<User | undefined> {
     return await db.users.where('email').equals(email).first();

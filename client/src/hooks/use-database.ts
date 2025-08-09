@@ -251,23 +251,20 @@ export function useDatabase() {
         final_total: finalTotal
       });
 
-      // Direct insert using cart data - no database lookups needed since all data is local
+      // Add purchase order items using unified service
       for (const item of cartItems) {
-        execute(`
-          INSERT INTO purchase_order_items (
-            purchase_order_id, item_ean, item_title, item_description,
-            quantity, base_price_at_order, tax_rate_at_order
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [
-          purchaseOrderId, 
-          item.ean, 
-          item.title, 
-          item.description || 'Producto',
-          item.quantity, 
-          item.base_price, 
-          item.tax_rate
-        ]);
+        await UnifiedDatabaseService.addPurchaseOrderItem({
+          purchase_order_id: purchaseOrderId,
+          item_ean: item.ean,
+          item_title: item.title,
+          item_description: item.description || 'Producto',
+          unit_of_measure: item.unit_of_measure || 'unidad',
+          quantity_measure: item.quantity_measure || 1,
+          image_url: item.image_url || '',
+          quantity: item.quantity,
+          base_price_at_order: item.base_price,
+          tax_rate_at_order: item.tax_rate
+        });
       }
 
       // If status is "completed", create a corresponding processed order
@@ -305,32 +302,35 @@ export function useDatabase() {
         "Se han producido cambios sobre su orden de compra. Si tiene cualquier problema póngase en contacto con Musgrave" : 
         null;
 
-      // Insert processed order with potentially modified totals using parameterized query
-      execute(`
-        INSERT INTO orders (order_id, source_purchase_order_id, user_email, store_id, created_at, observations, subtotal, tax_total, final_total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [orderId, purchaseOrderId, userEmail, storeId, now, observations, newSubtotal, newTaxTotal, newFinalTotal]);
+      // Create processed order using unified service
+      const { UnifiedDatabaseService } = await import('@/lib/database-service');
+      await UnifiedDatabaseService.createOrder({
+        order_id: orderId,
+        source_purchase_order_id: purchaseOrderId,
+        user_email: userEmail,
+        store_id: storeId,
+        created_at: now,
+        observations: observations,
+        subtotal: newSubtotal,
+        tax_total: newTaxTotal,
+        final_total: newFinalTotal,
+        status: 'completed'
+      });
 
-      // Batch insert for maximum performance - single statement for all items
-      if (modifiedItems.length > 0) {
-        const placeholders = modifiedItems.map(() => '(?, ?, ?, ?, ?, ?, ?)').join(', ');
-        const values = modifiedItems.flatMap(item => [
-          orderId, 
-          item.ean, 
-          item.title,
-          item.description || 'Producto',
-          item.quantity, 
-          item.base_price, 
-          item.tax_rate
-        ]);
-        
-        execute(`
-          INSERT INTO order_items (
-            order_id, item_ean, item_title, item_description,
-            quantity, base_price_at_order, tax_rate_at_order
-          )
-          VALUES ${placeholders}
-        `, values);
+      // Add order items using unified service
+      for (const item of modifiedItems) {
+        await UnifiedDatabaseService.addOrderItem({
+          order_id: orderId,
+          item_ean: item.ean,
+          item_title: item.title,
+          item_description: item.description || 'Producto',
+          unit_of_measure: item.unit_of_measure || 'unidad',
+          quantity_measure: item.quantity_measure || 1,
+          image_url: item.image_url || '',
+          quantity: item.quantity,
+          base_price_at_order: item.base_price,
+          tax_rate_at_order: item.tax_rate
+        });
       }
 
       console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}${hasModifications ? ' with modifications' : ''}`);
