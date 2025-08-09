@@ -17,7 +17,7 @@ async function updateSyncTimestamp(entity: string, lastRequest: number, serverUp
   });
 }
 
-// Check which entities need synchronization
+// Check which entities need synchronization (reuse working sync service)
 export async function checkSyncStatus(): Promise<{
   syncInfo: any;
   entitiesToSync: Array<{
@@ -27,52 +27,29 @@ export async function checkSyncStatus(): Promise<{
   }>;
 }> {
   console.log('🔍 Checking sync status with GraphQL server...');
-  const startTime = Date.now();
-
+  
   try {
-    // Get sync info from server
-    const query = `
-      query GetSyncInfo {
-        getSyncInfo {
-          entities {
-            entity_name
-            last_updated
-            total_records
-          }
-          generated_at
-        }
-      }
-    `;
-
-    const response = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    if (data.errors) {
-      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
-    }
-
-    const syncInfo = data.data.getSyncInfo;
-    console.log('✅ Sync info received from server:', JSON.stringify(syncInfo, null, 2));
-
-    // Check each entity
-    const entitiesToSync = [];
+    // Use the working sync service from the original implementation
+    const { checkSynchronizationNeeds } = await import('./sync-service');
+    const syncResults = await checkSynchronizationNeeds('ES001'); // Use store_id
     
-    for (const entityInfo of syncInfo.entities) {
-      const entityName = entityInfo.entity_name;
-      const serverUpdated = new Date(entityInfo.last_updated).getTime();
-      const lastSyncTime = await getLastSyncTimestamp(entityName);
-      
-      if (!lastSyncTime || lastSyncTime < serverUpdated) {
+    console.log('✅ Sync check completed:', syncResults);
+    
+    // Convert to expected format
+    const entitiesToSync = syncResults
+      .filter(entity => entity.needs_sync)
+      .map(entity => ({
+        entity: entity.entity_name,
+        totalRecords: entity.total_records,
+        lastUpdated: entity.server_last_updated
+      }));
+
+    return {
+      syncInfo: { entities: syncResults },
+      entitiesToSync
+    };
+
+
         console.log(`Entity ${entityName} needs sync - server updated: ${entityInfo.last_updated}, last sync: ${lastSyncTime ? new Date(lastSyncTime).toISOString() : 'never'}`);
         entitiesToSync.push({
           entity: entityName,
