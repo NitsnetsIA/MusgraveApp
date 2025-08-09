@@ -170,6 +170,37 @@ export class DatabaseService {
     await db.sync_config.put(config);
   }
 
+  // Clear all data
+  static async clearAllData(): Promise<void> {
+    await db.transaction('rw', db.tables, async () => {
+      for (const table of db.tables) {
+        await table.clear();
+      }
+    });
+    console.log('All IndexedDB data cleared');
+  }
+
+  // Add methods to insert data
+  static async addTax(tax: any): Promise<void> {
+    await db.taxes.put(tax);
+  }
+
+  static async addProduct(product: any): Promise<void> {
+    await db.products.put(product);
+  }
+
+  static async addDeliveryCenter(center: any): Promise<void> {
+    await db.delivery_centers.put(center);
+  }
+
+  static async addStore(store: any): Promise<void> {
+    await db.stores.put(store);
+  }
+
+  static async addUser(user: any): Promise<void> {
+    await db.users.put(user);
+  }
+
   // User operations
   static async getUser(email: string): Promise<User | undefined> {
     return await db.users.where('email').equals(email).first();

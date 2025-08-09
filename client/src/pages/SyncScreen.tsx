@@ -3,7 +3,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import { checkSynchronizationNeeds } from '../lib/sync-service';
-import { performFullSync as performIndexedDBSync } from '../lib/sync-service-indexeddb-simple';
+import { performPureIndexedDBSync as performIndexedDBSync } from '../lib/sync-service-pure-indexeddb';
 import { DatabaseService } from '../lib/indexeddb';
 
 interface SyncStep {
