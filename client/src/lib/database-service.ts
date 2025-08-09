@@ -4,7 +4,7 @@ import { query } from './database';
 
 export type StorageType = 'sql' | 'indexeddb';
 
-let currentStorageType: StorageType = 'sql';
+let currentStorageType: StorageType = 'indexeddb'; // Default to IndexedDB
 
 export function setStorageType(type: StorageType) {
   currentStorageType = type;

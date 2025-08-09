@@ -41,7 +41,7 @@ export interface Product {
   unit_of_measure: string;
   quantity_measure: number;
   image_url?: string;
-  is_active: number;
+  is_active: boolean | number; // Allow both boolean and number to handle different data sources
   created_at?: string;
   updated_at?: string;
 }
@@ -224,23 +224,22 @@ export class DatabaseService {
 
   // Product operations
   static async getProducts(activeOnly: boolean = true): Promise<Product[]> {
-    if (activeOnly) {
-      // Check for both 1 and true values for is_active
-      const products1 = await db.products.where('is_active').equals(1).toArray();
-      const productsTrue = await db.products.where('is_active').equals(true).toArray();
-      
-      // Combine and deduplicate
-      const allProducts = [...products1, ...productsTrue];
-      const uniqueProducts = allProducts.filter((product, index, self) => 
-        index === self.findIndex(p => p.ean === product.ean)
-      );
-      
-      console.log(`IndexedDB products found: ${products1.length} with is_active=1, ${productsTrue.length} with is_active=true`);
-      console.log(`Total unique active products: ${uniqueProducts.length}`);
-      
-      return uniqueProducts;
+    try {
+      if (activeOnly) {
+        // Filter by is_active using toArray() and filter() since is_active is not indexed
+        const allProducts = await db.products.toArray();
+        const activeProducts = allProducts.filter(product => 
+          product.is_active === true || product.is_active === 1
+        );
+        
+        console.log(`IndexedDB getProducts returned ${activeProducts.length} active products from ${allProducts.length} total`);
+        return activeProducts;
+      }
+      return await db.products.toArray();
+    } catch (error) {
+      console.error('Error getting products from IndexedDB:', error);
+      return [];
     }
-    return await db.products.toArray();
   }
 
   static async getProduct(ean: string): Promise<Product | undefined> {
@@ -248,15 +247,20 @@ export class DatabaseService {
   }
 
   static async searchProducts(query: string): Promise<Product[]> {
-    const lowerQuery = query.toLowerCase();
-    return await db.products
-      .where('is_active').equals(1)
-      .filter(product => 
-        product.title.toLowerCase().includes(lowerQuery) ||
-        product.ean.includes(query) ||
-        (product.ref?.toLowerCase().includes(lowerQuery) || false)
-      )
-      .toArray();
+    try {
+      const lowerQuery = query.toLowerCase();
+      const allProducts = await db.products.toArray();
+      
+      return allProducts.filter(product => 
+        (product.is_active === true || product.is_active === 1) &&
+        (product.title.toLowerCase().includes(lowerQuery) ||
+         product.ean.includes(query) ||
+         (product.ref?.toLowerCase().includes(lowerQuery) || false))
+      );
+    } catch (error) {
+      console.error('Error searching products in IndexedDB:', error);
+      return [];
+    }
   }
 
   // Tax operations
