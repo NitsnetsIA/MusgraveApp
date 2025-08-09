@@ -225,7 +225,20 @@ export class DatabaseService {
   // Product operations
   static async getProducts(activeOnly: boolean = true): Promise<Product[]> {
     if (activeOnly) {
-      return await db.products.where('is_active').equals(1).toArray();
+      // Check for both 1 and true values for is_active
+      const products1 = await db.products.where('is_active').equals(1).toArray();
+      const productsTrue = await db.products.where('is_active').equals(true).toArray();
+      
+      // Combine and deduplicate
+      const allProducts = [...products1, ...productsTrue];
+      const uniqueProducts = allProducts.filter((product, index, self) => 
+        index === self.findIndex(p => p.ean === product.ean)
+      );
+      
+      console.log(`IndexedDB products found: ${products1.length} with is_active=1, ${productsTrue.length} with is_active=true`);
+      console.log(`Total unique active products: ${uniqueProducts.length}`);
+      
+      return uniqueProducts;
     }
     return await db.products.toArray();
   }

@@ -4,21 +4,32 @@ const GRAPHQL_ENDPOINT = '/api/graphql'; // Use server proxy to avoid CORS
 const STORE_ID = 'ES001';
 
 // Pure IndexedDB sync - no SQL.js dependency
-export async function performPureIndexedDBSync(): Promise<void> {
+export async function performPureIndexedDBSync(onProgress?: (message: string, progress: number) => void): Promise<void> {
   console.log('🚀 Starting pure IndexedDB synchronization...');
   
   try {
+    onProgress?.('🗑️ Limpiando datos existentes...', 10);
     // Clear existing data first
     await DatabaseService.clearAllData();
     console.log('🗑️ Cleared existing IndexedDB data');
     
-    // Sync in correct order
+    // Sync in correct order with progress updates
+    onProgress?.('📊 Sincronizando impuestos (IVA)...', 20);
     await syncTaxesDirectly();
-    await syncProductsDirectly();
+    
+    onProgress?.('📦 Sincronizando productos (esto puede tardar un momento)...', 30);
+    await syncProductsDirectly(onProgress);
+    
+    onProgress?.('🏢 Sincronizando centros de entrega...', 70);
     await syncDeliveryCentersDirectly();
+    
+    onProgress?.('🏪 Sincronizando tiendas...', 80);
     await syncStoresDirectly();
+    
+    onProgress?.('👥 Sincronizando usuarios...', 90);
     await syncUsersDirectly();
     
+    onProgress?.('✅ Sincronización completada exitosamente', 100);
     console.log('✅ Pure IndexedDB synchronization completed successfully');
     
   } catch (error) {
@@ -73,12 +84,13 @@ async function syncTaxesDirectly(): Promise<void> {
   console.log('✅ Taxes synced to IndexedDB');
 }
 
-async function syncProductsDirectly(): Promise<void> {
+async function syncProductsDirectly(onProgress?: (message: string, progress: number) => void): Promise<void> {
   console.log('🔄 Syncing products directly to IndexedDB...');
   
   let offset = 0;
   const limit = 1000;
   let totalProcessed = 0;
+  let totalProducts = 0; // We'll get this from the first response
   
   while (true) {
     const query = `
@@ -118,21 +130,34 @@ async function syncProductsDirectly(): Promise<void> {
     if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
     
     const products = data.data.products.products;
+    totalProducts = data.data.products.total; // Get total from response
+    
     console.log(`📦 Received ${products.length} products (offset: ${offset})`);
     
     if (products.length === 0) break;
     
-    // Batch insert to IndexedDB
+    // Batch insert to IndexedDB - ensure is_active is handled correctly
     for (const product of products) {
+      // Debug: Log first few products to see what is_active looks like
+      if (totalProcessed < 5) {
+        console.log(`Product ${product.ean}: is_active = ${product.is_active} (type: ${typeof product.is_active})`);
+      }
       await DatabaseService.addProduct(product);
     }
     
     totalProcessed += products.length;
     console.log(`📦 Processed ${totalProcessed} products so far...`);
     
+    // Update progress based on how many products we've processed
+    if (totalProducts > 0 && onProgress) {
+      const productProgress = Math.floor((totalProcessed / totalProducts) * 40); // Products take 40% of progress (30-70)
+      onProgress(`📦 Sincronizando productos... ${totalProcessed}/${totalProducts}`, 30 + productProgress);
+    }
+    
     offset += limit;
     
-    if (products.length < limit) break;
+    // Continue until we've processed all products
+    if (totalProcessed >= totalProducts) break;
   }
   
   console.log(`✅ ${totalProcessed} products synced to IndexedDB`);

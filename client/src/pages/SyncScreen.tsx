@@ -34,7 +34,13 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
       setCurrentMessage('🚀 Iniciando sincronización con IndexedDB...');
       setProgress(10);
 
-      await performIndexedDBSync();
+      // Set up progress tracking with messages for each entity
+      const onProgress = (message: string, progress: number) => {
+        setCurrentMessage(message);
+        setProgress(progress);
+      };
+
+      await performIndexedDBSync(onProgress);
       
       setProgress(100);
       setCurrentMessage('✅ Sincronización IndexedDB completada exitosamente');
