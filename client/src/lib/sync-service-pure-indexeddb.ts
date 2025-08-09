@@ -32,13 +32,10 @@ async function syncTaxesDirectly(): Promise<void> {
   
   const query = `
     query GetTaxes {
-      getTaxes {
+      taxes {
         code
-        rate
-        description
-        is_active
-        created_at
-        updated_at
+        name
+        tax_rate
       }
     }
   `;
@@ -50,9 +47,14 @@ async function syncTaxesDirectly(): Promise<void> {
   });
   
   const data = await response.json();
-  if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+  console.log('GraphQL response for taxes:', JSON.stringify(data, null, 2));
   
-  const taxes = data.data.getTaxes;
+  if (data.errors) {
+    console.error('GraphQL errors:', data.errors);
+    throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+  }
+  
+  const taxes = data.data.taxes;
   console.log(`📊 Received ${taxes.length} taxes`);
   
   for (const tax of taxes) {
@@ -72,18 +74,16 @@ async function syncProductsDirectly(): Promise<void> {
   while (true) {
     const query = `
       query GetProducts($offset: Int!, $limit: Int!) {
-        getProducts(offset: $offset, limit: $limit) {
-          id
-          name
+        products(offset: $offset, limit: $limit) {
+          ean
+          ref
+          title
           description
           price
           tax_code
           is_active
-          barcode
-          category
-          brand
-          unit
-          weight
+          unit_of_measure
+          image_url
           created_at
           updated_at
         }
@@ -102,7 +102,7 @@ async function syncProductsDirectly(): Promise<void> {
     const data = await response.json();
     if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
     
-    const products = data.data.getProducts;
+    const products = data.data.products;
     console.log(`📦 Received ${products.length} products (offset: ${offset})`);
     
     if (products.length === 0) break;
@@ -203,7 +203,7 @@ async function syncUsersDirectly(): Promise<void> {
   
   const query = `
     query GetUsers($storeId: String!) {
-      getUsersByStore(store_id: $storeId) {
+      usersByStore(store_id: $storeId) {
         email
         name
         store_id
@@ -228,7 +228,7 @@ async function syncUsersDirectly(): Promise<void> {
   const data = await response.json();
   if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
   
-  const users = data.data.getUsersByStore;
+  const users = data.data.usersByStore;
   console.log(`👥 Received ${users.length} users`);
   
   for (const user of users) {
