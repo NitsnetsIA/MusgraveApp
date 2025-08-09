@@ -129,6 +129,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   let totalProcessed = 0;
   let totalProducts = 0; // We'll get this from the first response
   let serverLastUpdated = 0;
+  let allProducts: any[] = []; // Collect all products for bulk insert
   
   while (true) {
     const query = `
@@ -171,14 +172,8 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     
     if (products.length === 0) break;
     
-    // Batch insert to IndexedDB - ensure is_active is handled correctly
-    for (const product of products) {
-      // Debug: Log first few products to see what is_active looks like
-      if (totalProcessed < 5) {
-        console.log(`Product ${product.ean}: is_active = ${product.is_active} (type: ${typeof product.is_active})`);
-      }
-      await DatabaseService.addProduct(product);
-    }
+    // OPTIMIZED: Collect products for bulk insert instead of individual inserts
+    allProducts.push(...products);
     
     totalProcessed += products.length;
     console.log(`📦 Processed ${totalProcessed} products so far...`);
@@ -195,10 +190,14 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     if (totalProcessed >= totalProducts) break;
   }
   
+  // MASSIVE PERFORMANCE BOOST: Use bulk insert instead of individual inserts
+  console.log(`🚀 OPTIMIZED BULK INSERT: Inserting ${allProducts.length} products at once...`);
+  await DatabaseService.syncProducts(allProducts);
+  
   // Update sync config
   await DatabaseService.updateSyncConfig('products', Date.now());
   
-  console.log(`✅ ${totalProcessed} products synced to IndexedDB`);
+  console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
 }
 
 async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Promise<void> {
