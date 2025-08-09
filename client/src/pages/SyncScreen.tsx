@@ -15,7 +15,7 @@ interface SyncScreenProps {
   user?: any; // The authenticated user object with store_id
 }
 
-export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes', 'products', 'stores', 'deliveryCenters'], user }: SyncScreenProps) {
+export default function SyncScreen({ onSyncComplete, selectedEntities = ['users', 'taxes', 'products', 'stores', 'deliveryCenters'], user }: SyncScreenProps) {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
