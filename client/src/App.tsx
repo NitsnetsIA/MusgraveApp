@@ -35,7 +35,7 @@ function Router() {
     getTaxRate,
     createPurchaseOrder,
     getProducts,
-    saveDatabase
+
   } = useDatabase();
 
   // Application state

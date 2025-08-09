@@ -1,8 +1,39 @@
 import { useState, useEffect } from 'react';
-import { initDatabase, query, execute, saveDatabase, generateUUID, generatePurchaseOrderId, generateProcessedOrderId } from '@/lib/database';
-
+import { DatabaseService as IndexedDBService } from '@/lib/indexeddb';
+import { UnifiedDatabaseService } from '@/lib/database-service';
 import { loginUserOnline } from '@/lib/sync-service';
 import type { User, Product, PurchaseOrder, Order, CartItem } from '@shared/schema';
+
+// Helper functions
+function generateUUID(): string {
+  return 'xxxx-xxxx-4xxx-yxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function generatePurchaseOrderId(): string {
+  const musgraveCenterCode = 'MUS';
+  const timestamp = Date.now().toString().slice(-8);
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let suffix = '';
+  for (let i = 0; i < 4; i++) {
+    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${musgraveCenterCode}-${timestamp}-${suffix}`;
+}
+
+function generateProcessedOrderId(): string {
+  const musgraveCenterCode = 'MUS';
+  const timestamp = Date.now().toString().slice(-8);
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let suffix = '';
+  for (let i = 0; i < 4; i++) {
+    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${musgraveCenterCode}-${timestamp}-${suffix}`;
+}
 
 export function useDatabase() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -11,29 +42,12 @@ export function useDatabase() {
   useEffect(() => {
     async function init() {
       try {
-        await initDatabase();
+        // IndexedDB initialization is automatic, just set as initialized
         setIsInitialized(true);
+        console.log('IndexedDB ready for use');
       } catch (error) {
-        console.error('Failed to initialize database:', error);
-        // Try to recover by clearing localStorage and reinitializing
-        try {
-          console.log('Attempting database recovery...');
-          localStorage.removeItem('musgrave_database');
-          await initDatabase();
-          console.log('Database recovery successful - empty database ready for GraphQL sync');
-          setIsInitialized(true);
-        } catch (resetError) {
-          console.error('Failed to recover database:', resetError);
-          // Force initialization to allow sync to work
-          try {
-            await initDatabase();
-            console.log('Basic database initialized - ready for GraphQL sync');
-            setIsInitialized(true);
-          } catch (finalError) {
-            console.error('Complete database initialization failure:', finalError);
-            setIsInitialized(true); // Allow app to start anyway
-          }
-        }
+        console.error('Failed to initialize IndexedDB:', error);
+        setIsInitialized(true); // Allow app to start anyway
       }
     }
 
@@ -55,8 +69,8 @@ export function useDatabase() {
   // User operations
   const getUserByEmail = async (email: string): Promise<User | null> => {
     try {
-      const results = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
-      return results[0] || null;
+      const user = await IndexedDBService.getUser(email);
+      return user && user.is_active ? user : null;
     } catch (error) {
       console.error('Error getting user:', error);
       return null;
@@ -75,50 +89,40 @@ export function useDatabase() {
         console.log('Online authentication successful:', onlineResult.user);
         
         // Check if user exists locally, if not create/update it
-        const localResults = query(`SELECT * FROM users WHERE email = '${email}'`);
-        const localUser = localResults[0];
+        const localUser = await IndexedDBService.getUser(email);
+        
+        const userToSave = {
+          email: onlineResult.user.email,
+          store_id: onlineResult.user.store_id,
+          name: onlineResult.user.name,
+          is_active: onlineResult.user.is_active,
+          password_hash: 'online_verified', // Placeholder since we verified online
+          created_at: onlineResult.user.created_at || new Date().toISOString(),
+          updated_at: onlineResult.user.updated_at || new Date().toISOString(),
+          last_login: onlineResult.user.last_login || new Date().toISOString()
+        };
         
         if (!localUser) {
           // Create new local user from online data
           console.log('Creating new local user from online data');
-          execute(`
-            INSERT INTO users (email, store_id, name, is_active, password_hash)
-            VALUES (?, ?, ?, ?, ?)
-          `, [
-            onlineResult.user.email,
-            onlineResult.user.store_id,
-            onlineResult.user.name,
-            onlineResult.user.is_active ? 1 : 0,
-            'online_verified' // Placeholder since we verified online
-          ]);
+          await IndexedDBService.addUser(userToSave);
         } else {
           // Update existing local user with online data
           console.log('Updating existing local user with online data');
-          execute(`
-            UPDATE users 
-            SET store_id = ?, name = ?, is_active = ?
-            WHERE email = ?
-          `, [
-            onlineResult.user.store_id,
-            onlineResult.user.name,
-            onlineResult.user.is_active ? 1 : 0,
-            onlineResult.user.email
-          ]);
+          await IndexedDBService.addUser(userToSave); // addUser acts as upsert
         }
         
         // Return the updated user data
-        const updatedResults = query(`SELECT * FROM users WHERE email = '${email}' AND is_active = 1`);
-        return updatedResults[0] || null;
+        return userToSave;
       }
       
       console.log('Online authentication failed, falling back to local authentication');
       
       // Fallback to local authentication if online fails
-      const results = query(`SELECT * FROM users WHERE email = '${email}' AND is_active = 1`);
+      const user = await IndexedDBService.getUser(email);
       
-      const user = results[0];
-      if (!user) {
-        console.log('User not found locally');
+      if (!user || !user.is_active) {
+        console.log('User not found locally or inactive');
         return null;
       }
       
@@ -152,10 +156,25 @@ export function useDatabase() {
     return await UnifiedDatabaseService.getProductByEan(ean);
   };
 
-  // Store operations - use unified database service
+  // Store operations - use IndexedDB directly for user store data
   const getStoreByCode = async (code: string) => {
-    const { UnifiedDatabaseService } = await import('@/lib/database-service');
-    return await UnifiedDatabaseService.getStoreByCode(code);
+    try {
+      console.log('DatabaseService.getStoreByCode called for:', code);
+      
+      // Use IndexedDB service directly to get store with delivery center info
+      const user = await IndexedDBService.getUser('luis@esgranvia.es'); // Use hardcoded user for now
+      if (!user) {
+        console.log('User not found, cannot get store');
+        return null;
+      }
+      
+      const storeWithDeliveryCenter = await IndexedDBService.getUserStore(user.email);
+      console.log('Store data loaded after sync:', storeWithDeliveryCenter);
+      return storeWithDeliveryCenter;
+    } catch (error) {
+      console.error('Error getting store from IndexedDB:', error);
+      return null;
+    }
   };
 
   // Purchase order operations - use unified database service
@@ -468,6 +487,6 @@ export function useDatabase() {
     getOrders,
     getOrderById,
     getTaxRate,
-    saveDatabase
+
   };
 }

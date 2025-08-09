@@ -388,6 +388,11 @@ export class DatabaseService {
     await db.users.bulkAdd(users);
   }
 
+  // Store operations
+  static async getStore(code: string): Promise<Store | undefined> {
+    return await db.stores.where('code').equals(code).first();
+  }
+
   static async syncProducts(products: Product[]): Promise<void> {
     await db.products.clear();
     
