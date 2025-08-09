@@ -1020,6 +1020,8 @@ export async function syncStores(onProgress: (message: string, progress: number)
     // Fetch all pages
     while (true) {
       console.log(`Fetching stores page: offset=${offset}, limit=${limit}`);
+      console.log(`Making GraphQL request to: ${GRAPHQL_ENDPOINT}`);
+      console.log(`Request variables:`, { timestamp: timestampParam, limit, offset, storeId: storeId || null });
       
       const response = await fetch(GRAPHQL_ENDPOINT, {
         method: 'POST',
@@ -1103,6 +1105,13 @@ export async function syncStores(onProgress: (message: string, progress: number)
     return true;
   } catch (error) {
     console.error('❌ Error syncing stores:', error);
+    if (error instanceof Error) {
+      console.error('❌ Full error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
     onProgress('Error sincronizando tiendas', 0);
     return false;
   }
@@ -1151,6 +1160,8 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
     // Fetch all pages
     while (true) {
       console.log(`Fetching delivery centers page: offset=${offset}, limit=${limit}`);
+      console.log(`Making GraphQL request to: ${GRAPHQL_ENDPOINT}`);
+      console.log(`Request variables:`, { timestamp: timestampParam, limit, offset });
       
       const response = await fetch(GRAPHQL_ENDPOINT, {
         method: 'POST',
@@ -1233,6 +1244,13 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
     return true;
   } catch (error) {
     console.error('❌ Error syncing delivery centers:', error);
+    if (error instanceof Error) {
+      console.error('❌ Full error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
     onProgress('Error sincronizando centros de entrega', 0);
     return false;
   }
