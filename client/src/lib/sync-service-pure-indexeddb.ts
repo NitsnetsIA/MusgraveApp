@@ -3,31 +3,36 @@ import { DatabaseService } from './indexeddb';
 const GRAPHQL_ENDPOINT = '/api/graphql'; // Use server proxy to avoid CORS
 const STORE_ID = 'ES001';
 
-// Pure IndexedDB sync - no SQL.js dependency
-export async function performPureIndexedDBSync(onProgress?: (message: string, progress: number) => void): Promise<void> {
+// Pure IndexedDB sync with incremental sync support
+export async function performPureIndexedDBSync(onProgress?: (message: string, progress: number) => void, forceFullSync: boolean = false): Promise<void> {
   console.log('🚀 Starting pure IndexedDB synchronization...');
   
   try {
-    onProgress?.('🗑️ Limpiando datos existentes...', 10);
-    // Clear existing data first
-    await DatabaseService.clearAllData();
-    console.log('🗑️ Cleared existing IndexedDB data');
+    if (forceFullSync) {
+      onProgress?.('🗑️ Sincronización completa: Limpiando datos existentes...', 10);
+      // Clear existing data first
+      await DatabaseService.clearAllData();
+      console.log('🗑️ Force full sync: Cleared existing IndexedDB data');
+    } else {
+      onProgress?.('🔍 Verificando qué datos necesitan actualizarse...', 10);
+      console.log('🔍 Checking for incremental updates...');
+    }
     
     // Sync in correct order with progress updates
     onProgress?.('📊 Sincronizando impuestos (IVA)...', 20);
-    await syncTaxesDirectly();
+    await syncTaxesDirectly(forceFullSync);
     
-    onProgress?.('📦 Sincronizando productos (esto puede tardar un momento)...', 30);
-    await syncProductsDirectly(onProgress);
+    onProgress?.('📦 Sincronizando productos...', 30);
+    await syncProductsDirectly(onProgress, forceFullSync);
     
     onProgress?.('🏢 Sincronizando centros de entrega...', 70);
-    await syncDeliveryCentersDirectly();
+    await syncDeliveryCentersDirectly(forceFullSync);
     
     onProgress?.('🏪 Sincronizando tiendas...', 80);
-    await syncStoresDirectly();
+    await syncStoresDirectly(forceFullSync);
     
     onProgress?.('👥 Sincronizando usuarios...', 90);
-    await syncUsersDirectly();
+    await syncUsersDirectly(forceFullSync);
     
     onProgress?.('✅ Sincronización completada exitosamente', 100);
     console.log('✅ Pure IndexedDB synchronization completed successfully');
@@ -38,8 +43,36 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
   }
 }
 
-async function syncTaxesDirectly(): Promise<void> {
+async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing taxes directly to IndexedDB...');
+  
+  // Check if we need to sync
+  if (!forceFullSync) {
+    // Get server info first to check if sync is needed
+    const infoQuery = `
+      query TaxesInfo {
+        taxes(limit: 1, offset: 0) {
+          total
+          last_updated
+        }
+      }
+    `;
+    
+    const infoResponse = await fetch(GRAPHQL_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: infoQuery })
+    });
+    
+    const infoData = await infoResponse.json();
+    const serverLastUpdated = new Date(infoData.data.taxes.last_updated || '1970-01-01').getTime();
+    
+    const needsSync = await DatabaseService.needsSync('taxes', serverLastUpdated);
+    if (!needsSync) {
+      console.log('⏭️ Taxes: No updates needed, skipping sync');
+      return;
+    }
+  }
   
   const query = `
     query Taxes($timestamp: String, $limit: Int, $offset: Int) {
@@ -54,6 +87,7 @@ async function syncTaxesDirectly(): Promise<void> {
         total
         limit
         offset
+        last_updated
       }
     }
   `;
@@ -75,22 +109,56 @@ async function syncTaxesDirectly(): Promise<void> {
   }
   
   const taxes = data.data.taxes.taxes;
+  const serverLastUpdated = new Date(data.data.taxes.last_updated || '1970-01-01').getTime();
   console.log(`📊 Received ${taxes.length} taxes`);
   
-  for (const tax of taxes) {
-    await DatabaseService.addTax(tax);
+  // Clear and resync if this is full sync or incremental sync with data
+  if (forceFullSync || taxes.length > 0) {
+    await DatabaseService.syncTaxes(taxes);
+    await DatabaseService.updateSyncConfig('taxes', serverLastUpdated);
   }
   
   console.log('✅ Taxes synced to IndexedDB');
 }
 
-async function syncProductsDirectly(onProgress?: (message: string, progress: number) => void): Promise<void> {
+async function syncProductsDirectly(onProgress?: (message: string, progress: number) => void, forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing products directly to IndexedDB...');
+  
+  // Check if we need to sync
+  if (!forceFullSync) {
+    // Get server info first to check if sync is needed
+    const infoQuery = `
+      query ProductsInfo {
+        products(limit: 1, offset: 0) {
+          total
+          last_updated
+        }
+      }
+    `;
+    
+    const infoResponse = await fetch(GRAPHQL_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: infoQuery })
+    });
+    
+    const infoData = await infoResponse.json();
+    const serverLastUpdated = new Date(infoData.data.products.last_updated || '1970-01-01').getTime();
+    
+    const needsSync = await DatabaseService.needsSync('products', serverLastUpdated);
+    if (!needsSync) {
+      console.log('⏭️ Products: No updates needed, skipping sync');
+      // Update progress even if we skip
+      onProgress?.('⏭️ Productos: No necesitan actualización', 60);
+      return;
+    }
+  }
   
   let offset = 0;
   const limit = 1000;
   let totalProcessed = 0;
   let totalProducts = 0; // We'll get this from the first response
+  let serverLastUpdated = 0;
   
   while (true) {
     const query = `
@@ -158,6 +226,11 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     
     // Continue until we've processed all products
     if (totalProcessed >= totalProducts) break;
+  }
+  
+  // Update sync config with server timestamp
+  if (serverLastUpdated > 0) {
+    await DatabaseService.updateSyncConfig('products', serverLastUpdated);
   }
   
   console.log(`✅ ${totalProcessed} products synced to IndexedDB`);

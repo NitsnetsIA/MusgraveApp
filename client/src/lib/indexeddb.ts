@@ -98,6 +98,14 @@ export interface OrderItem {
   tax_rate_at_order: number;
 }
 
+export interface SyncEntity {
+  entity_type: string; // 'products', 'stores', 'users', 'taxes', 'delivery_centers'
+  last_sync: string; // ISO timestamp of last sync
+  total_count?: number; // Total count from last sync
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SyncConfig {
   entity: string;
   last_request: number;
@@ -164,6 +172,27 @@ export class DatabaseService {
   // Sync config operations
   static async getSyncConfig(entity: string): Promise<SyncConfig | undefined> {
     return await db.sync_config.where('entity').equals(entity).first();
+  }
+
+  static async updateSyncConfig(entity: string, lastUpdated: number): Promise<void> {
+    const now = Date.now();
+    await db.sync_config.put({
+      entity,
+      last_request: now,
+      last_updated: lastUpdated
+    });
+  }
+
+  static async needsSync(entity: string, serverLastUpdated: number): Promise<boolean> {
+    const config = await this.getSyncConfig(entity);
+    if (!config) {
+      console.log(`🔄 ${entity}: First sync - no local config found`);
+      return true;
+    }
+    
+    const needsUpdate = serverLastUpdated > config.last_updated;
+    console.log(`🔄 ${entity}: Local timestamp: ${config.last_updated}, Server timestamp: ${serverLastUpdated}, Needs sync: ${needsUpdate}`);
+    return needsUpdate;
   }
 
   static async setSyncConfig(config: SyncConfig): Promise<void> {

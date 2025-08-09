@@ -2,9 +2,23 @@
 
 ## Overview
 
-This is a full-stack Musgrave grocery ordering application built with React and Express. The application allows store users to browse products, manage shopping carts, and place purchase orders. It features a mobile-first design optimized for grocery store personnel, with offline capabilities using an in-browser SQLite database for data storage and synchronization.
+This is a full-stack Musgrave grocery ordering application built with React and Express. The application allows store users to browse products, manage shopping carts, and place purchase orders. It features a mobile-first design optimized for grocery store personnel, with offline capabilities using IndexedDB for data storage and synchronization.
 
 The application simulates a B2B grocery ordering system where registered store users can browse product catalogs, add items to cart, and create purchase orders that get processed by the system. It includes comprehensive user management, product catalog browsing, order tracking, and offline-first architecture.
+
+## Recent Changes (January 2025)
+
+✅ **COMPLETED: Full IndexedDB Migration**
+- Migrated completely from SQL.js to IndexedDB for better performance with large datasets (10,000+ products)
+- All core functionality working: product catalog, cart operations, checkout, purchase orders, order details
+- Eliminated duplicate SQL functions and consolidated to unified database service
+- Purchase order creation, listing, and detail pages fully functional
+
+🔄 **IN PROGRESS: Incremental Sync Implementation**
+- Added sync_config table to IndexedDB schema for tracking sync timestamps
+- Implemented sync checking functions (needsSync, updateSyncConfig)
+- Started updating sync service to support incremental updates instead of full sync
+- Need to complete: sync functions for stores, users, delivery centers with incremental logic
 
 ## User Preferences
 
@@ -36,10 +50,11 @@ Preferred communication style: Simple, everyday language.
 - **Build Command**: `npm run build` followed by deployment preparation script
 
 ### Data Storage Architecture
-- **Client-side Database**: SQL.js (SQLite in browser) for offline-first data storage
-- **Schema Design**: Comprehensive schema including users, stores, products, taxes, delivery centers, purchase orders, and order items
-- **Data Persistence**: LocalStorage for database state persistence across sessions
-- **Seed Data**: Pre-populated Spanish grocery data with realistic products, stores, and users
+- **Client-side Database**: IndexedDB for offline-first data storage with better performance for large datasets
+- **Schema Design**: Comprehensive schema including users, stores, products, taxes, delivery centers, purchase orders, order items, and sync tracking
+- **Data Persistence**: IndexedDB native persistence across browser sessions
+- **Sync Tracking**: sync_config table tracks last sync timestamps for incremental updates
+- **Seed Data**: Pre-populated Spanish grocery data with realistic products, stores, and users (1,200+ products)
 - **Offline Capabilities**: Full CRUD operations work offline with local database
 
 ### Database Schema Design
