@@ -295,10 +295,19 @@ export class DatabaseService {
   }
 
   static async getPurchaseOrders(userEmail: string): Promise<PurchaseOrder[]> {
+    if (!userEmail) {
+      // If no email provided, get all orders for debugging
+      return await db.purchase_orders.orderBy('created_at').reverse().toArray();
+    }
     return await db.purchase_orders
       .where('user_email').equals(userEmail)
       .reverse()
       .sortBy('created_at');
+  }
+
+  // Get purchase orders for user (alias for compatibility)
+  static async getPurchaseOrdersForUser(userEmail: string): Promise<any[]> {
+    return await this.getPurchaseOrders(userEmail);
   }
 
   static async getPurchaseOrder(orderId: string): Promise<PurchaseOrder | undefined> {
@@ -311,6 +320,10 @@ export class DatabaseService {
 
   // Order operations  
   static async getOrders(userEmail: string): Promise<Order[]> {
+    if (!userEmail) {
+      // If no email provided, get all orders for debugging
+      return await db.orders.orderBy('created_at').reverse().toArray();
+    }
     return await db.orders
       .where('user_email').equals(userEmail)
       .reverse()

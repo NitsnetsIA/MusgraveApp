@@ -175,10 +175,13 @@ export function useDatabase() {
     try {
       const { UnifiedDatabaseService } = await import('@/lib/database-service');
       
-      // Get all purchase orders first - we'll need to optimize this later
+      // Get all purchase orders first - pass empty string to get all orders
       const allOrders = await UnifiedDatabaseService.getPurchaseOrdersForUser('');
       const order = allOrders.find(o => o.purchase_order_id === id);
-      if (!order) return null;
+      if (!order) {
+        console.log('Order not found with ID:', id, 'Available orders:', allOrders.length);
+        return null;
+      }
 
       // Get items 
       const items = await UnifiedDatabaseService.getPurchaseOrderItems(id);
@@ -230,10 +233,13 @@ export function useDatabase() {
     try {
       const { UnifiedDatabaseService } = await import('@/lib/database-service');
       
-      // Get all orders - we'll need to optimize this later
+      // Get all orders - pass empty string to get all orders
       const allOrders = await UnifiedDatabaseService.getOrdersForUser('');
       const order = allOrders.find(o => o.order_id === id);
-      if (!order) return null;
+      if (!order) {
+        console.log('Order not found with ID:', id, 'Available orders:', allOrders.length);
+        return null;
+      }
 
       // Get items 
       const items = await UnifiedDatabaseService.getOrderItems(id);
@@ -436,12 +442,11 @@ export function useDatabase() {
 
 
 
-  // Get tax rate by code
+  // Get tax rate by code - use unified database service
   const getTaxRate = async (taxCode: string): Promise<number> => {
     try {
-      // Use direct string substitution due to SQLite parameter binding issue
-      const results = query(`SELECT tax_rate FROM taxes WHERE code = '${taxCode}'`);
-      return results[0]?.tax_rate || 0.21;
+      const { UnifiedDatabaseService } = await import('@/lib/database-service');
+      return await UnifiedDatabaseService.getTaxRate(taxCode);
     } catch (error) {
       console.error('Error getting tax rate:', error);
       return 0.21;
