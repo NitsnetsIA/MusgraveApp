@@ -200,14 +200,22 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     if (totalProcessed >= totalProducts) break;
   }
   
-  // MASSIVE PERFORMANCE BOOST: Use bulk insert instead of individual inserts
-  console.log(`🚀 OPTIMIZED BULK INSERT: Inserting ${allProducts.length} products at once...`);
-  await DatabaseService.syncProducts(allProducts);
+  // CRITICAL FIX: Only do bulk insert if we have products to insert
+  if (allProducts.length > 0) {
+    console.log(`🚀 OPTIMIZED BULK INSERT: Inserting ${allProducts.length} products at once...`);
+    await DatabaseService.syncProducts(allProducts);
+  } else {
+    console.log(`⏭️ No products to insert, skipping bulk insert to preserve existing products`);
+  }
   
   // Update sync config
   await DatabaseService.updateSyncConfig('products', Date.now());
   
-  console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
+  if (allProducts.length > 0) {
+    console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
+  } else {
+    console.log(`✅ Products sync completed - no new products to insert`);
+  }
 }
 
 async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Promise<void> {
