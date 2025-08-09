@@ -367,6 +367,11 @@ export class DatabaseService {
     return await db.order_items.where('order_id').equals(orderId).toArray();
   }
 
+  // Get orders for user (alias for compatibility)
+  static async getOrdersForUser(userEmail: string): Promise<Order[]> {
+    return await this.getOrders(userEmail);
+  }
+
   // Bulk sync operations
   static async syncTaxes(taxes: Tax[]): Promise<void> {
     await db.taxes.clear();
