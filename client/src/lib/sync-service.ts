@@ -990,16 +990,13 @@ export async function syncStores(onProgress: (message: string, progress: number)
     console.log(`Syncing stores since: ${timestampParam || 'beginning of time'}`);
     
     const query = `
-      query Stores($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
-        stores(timestamp: $timestamp, limit: $limit, offset: $offset, store_id: $storeId) {
+      query Stores($timestamp: String, $limit: Int, $offset: Int) {
+        stores(timestamp: $timestamp, limit: $limit, offset: $offset) {
           stores {
             code
             name
-            address
-            city
-            postal_code
-            phone
-            delivery_center_id
+            responsible_email
+            delivery_center_code
             is_active
             created_at
             updated_at
@@ -1021,7 +1018,7 @@ export async function syncStores(onProgress: (message: string, progress: number)
     while (true) {
       console.log(`Fetching stores page: offset=${offset}, limit=${limit}`);
       console.log(`Making GraphQL request to: ${GRAPHQL_ENDPOINT}`);
-      console.log(`Request variables:`, { timestamp: timestampParam, limit, offset, storeId: storeId || null });
+      console.log(`Request variables:`, { timestamp: timestampParam, limit, offset });
       
       const response = await fetch(GRAPHQL_ENDPOINT, {
         method: 'POST',
@@ -1033,8 +1030,7 @@ export async function syncStores(onProgress: (message: string, progress: number)
           variables: {
             timestamp: timestampParam,
             limit,
-            offset,
-            storeId: storeId || null
+            offset
           }
         })
       });
@@ -1087,9 +1083,9 @@ export async function syncStores(onProgress: (message: string, progress: number)
     
     for (const store of allStores) {
       execute(`
-        INSERT INTO stores (code, name, address, city, postal_code, phone, delivery_center_id, is_active) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [store.code, store.name || '', store.address || '', store.city || '', store.postal_code || '', store.phone || '', store.delivery_center_id || '', store.is_active ? 1 : 0]);
+        INSERT INTO stores (code, name, responsible_email, delivery_center_id, is_active) 
+        VALUES (?, ?, ?, ?, ?)
+      `, [store.code, store.name || '', store.responsible_email || '', store.delivery_center_code || '', store.is_active ? 1 : 0]);
     }
     
     console.log(`✅ Successfully synced ${allStores.length} stores`);
@@ -1132,21 +1128,17 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
     
     const query = `
       query DeliveryCenters($timestamp: String, $limit: Int, $offset: Int) {
-        delivery_centers(timestamp: $timestamp, limit: $limit, offset: $offset) {
-          delivery_centers {
-            id
+        deliveryCenters(timestamp: $timestamp, limit: $limit, offset: $offset) {
+          total
+          limit
+          offset
+          deliveryCenters {
+            code
             name
-            address
-            city
-            postal_code
-            phone
             is_active
             created_at
             updated_at
           }
-          total
-          limit
-          offset
         }
       }
     `;
@@ -1191,7 +1183,7 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
         throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
       }
       
-      const centersPage = data.data?.delivery_centers;
+      const centersPage = data.data?.deliveryCenters;
       
       if (!centersPage) {
         console.error('Invalid delivery_centers response structure:', data);
@@ -1199,7 +1191,7 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
       }
       
       totalRecords = centersPage.total;
-      const centers = centersPage.delivery_centers || [];
+      const centers = centersPage.deliveryCenters || [];
       
       allCenters.push(...centers);
       totalProcessed += centers.length;
@@ -1226,9 +1218,9 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
     
     for (const center of allCenters) {
       execute(`
-        INSERT INTO delivery_centers (id, name, address, city, postal_code, phone, is_active) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [center.id, center.name || '', center.address || '', center.city || '', center.postal_code || '', center.phone || '', center.is_active ? 1 : 0]);
+        INSERT INTO delivery_centers (id, name, is_active) 
+        VALUES (?, ?, ?)
+      `, [center.code, center.name || '', center.is_active ? 1 : 0]);
     }
     
     console.log(`✅ Successfully synced ${allCenters.length} delivery centers`);
