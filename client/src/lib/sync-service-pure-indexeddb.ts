@@ -46,31 +46,16 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
 async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing taxes directly to IndexedDB...');
   
-  // Check if we need to sync
+  // Check if we need to sync (temporarily disabled until GraphQL schema supports last_updated)
   if (!forceFullSync) {
-    // Get server info first to check if sync is needed
-    const infoQuery = `
-      query TaxesInfo {
-        taxes(limit: 1, offset: 0) {
-          total
-          last_updated
-        }
+    const syncConfig = await DatabaseService.getSyncConfig('taxes');
+    if (syncConfig) {
+      // For now, skip if synced in last hour
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+      if (syncConfig.last_request > oneHourAgo) {
+        console.log('⏭️ Taxes: Recently synced, skipping');
+        return;
       }
-    `;
-    
-    const infoResponse = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: infoQuery })
-    });
-    
-    const infoData = await infoResponse.json();
-    const serverLastUpdated = new Date(infoData.data.taxes.last_updated || '1970-01-01').getTime();
-    
-    const needsSync = await DatabaseService.needsSync('taxes', serverLastUpdated);
-    if (!needsSync) {
-      console.log('⏭️ Taxes: No updates needed, skipping sync');
-      return;
     }
   }
   
@@ -109,14 +94,15 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
   }
   
   const taxes = data.data.taxes.taxes;
-  const serverLastUpdated = new Date(data.data.taxes.last_updated || '1970-01-01').getTime();
   console.log(`📊 Received ${taxes.length} taxes`);
   
-  // Clear and resync if this is full sync or incremental sync with data
-  if (forceFullSync || taxes.length > 0) {
-    await DatabaseService.syncTaxes(taxes);
-    await DatabaseService.updateSyncConfig('taxes', serverLastUpdated);
+  // Store taxes in IndexedDB
+  for (const tax of taxes) {
+    await DatabaseService.addTax(tax);
   }
+  
+  // Update sync config
+  await DatabaseService.updateSyncConfig('taxes', Date.now());
   
   console.log('✅ Taxes synced to IndexedDB');
 }
@@ -124,33 +110,17 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
 async function syncProductsDirectly(onProgress?: (message: string, progress: number) => void, forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing products directly to IndexedDB...');
   
-  // Check if we need to sync
+  // Check if we need to sync (temporarily using time-based check)
   if (!forceFullSync) {
-    // Get server info first to check if sync is needed
-    const infoQuery = `
-      query ProductsInfo {
-        products(limit: 1, offset: 0) {
-          total
-          last_updated
-        }
+    const syncConfig = await DatabaseService.getSyncConfig('products');
+    if (syncConfig) {
+      // For now, skip if synced in last hour
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+      if (syncConfig.last_request > oneHourAgo) {
+        console.log('⏭️ Products: Recently synced, skipping');
+        onProgress?.('⏭️ Productos: No necesitan actualización', 60);
+        return;
       }
-    `;
-    
-    const infoResponse = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: infoQuery })
-    });
-    
-    const infoData = await infoResponse.json();
-    const serverLastUpdated = new Date(infoData.data.products.last_updated || '1970-01-01').getTime();
-    
-    const needsSync = await DatabaseService.needsSync('products', serverLastUpdated);
-    if (!needsSync) {
-      console.log('⏭️ Products: No updates needed, skipping sync');
-      // Update progress even if we skip
-      onProgress?.('⏭️ Productos: No necesitan actualización', 60);
-      return;
     }
   }
   
@@ -228,16 +198,26 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     if (totalProcessed >= totalProducts) break;
   }
   
-  // Update sync config with server timestamp
-  if (serverLastUpdated > 0) {
-    await DatabaseService.updateSyncConfig('products', serverLastUpdated);
-  }
+  // Update sync config
+  await DatabaseService.updateSyncConfig('products', Date.now());
   
   console.log(`✅ ${totalProcessed} products synced to IndexedDB`);
 }
 
-async function syncDeliveryCentersDirectly(): Promise<void> {
+async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing delivery centers directly to IndexedDB...');
+  
+  // Check if we need to sync (time-based check)
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('delivery_centers');
+    if (syncConfig) {
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+      if (syncConfig.last_request > oneHourAgo) {
+        console.log('⏭️ Delivery Centers: Recently synced, skipping');
+        return;
+      }
+    }
+  }
   
   const query = `
     query DeliveryCenters($timestamp: String, $limit: Int, $offset: Int) {
@@ -275,11 +255,26 @@ async function syncDeliveryCentersDirectly(): Promise<void> {
     await DatabaseService.addDeliveryCenter(center);
   }
   
+  // Update sync config
+  await DatabaseService.updateSyncConfig('delivery_centers', Date.now());
+  
   console.log('✅ Delivery centers synced to IndexedDB');
 }
 
-async function syncStoresDirectly(): Promise<void> {
+async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing stores directly to IndexedDB...');
+  
+  // Check if we need to sync (time-based check)
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('stores');
+    if (syncConfig) {
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+      if (syncConfig.last_request > oneHourAgo) {
+        console.log('⏭️ Stores: Recently synced, skipping');
+        return;
+      }
+    }
+  }
   
   const query = `
     query Stores($timestamp: String, $limit: Int, $offset: Int) {
@@ -319,11 +314,26 @@ async function syncStoresDirectly(): Promise<void> {
     await DatabaseService.addStore(store);
   }
   
+  // Update sync config
+  await DatabaseService.updateSyncConfig('stores', Date.now());
+  
   console.log('✅ Stores synced to IndexedDB');
 }
 
-async function syncUsersDirectly(): Promise<void> {
+async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing users directly to IndexedDB...');
+  
+  // Check if we need to sync (time-based check)
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('users');
+    if (syncConfig) {
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+      if (syncConfig.last_request > oneHourAgo) {
+        console.log('⏭️ Users: Recently synced, skipping');
+        return;
+      }
+    }
+  }
   
   const query = `
     query Users($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
@@ -367,6 +377,9 @@ async function syncUsersDirectly(): Promise<void> {
   for (const user of users) {
     await DatabaseService.addUser(user);
   }
+  
+  // Update sync config
+  await DatabaseService.updateSyncConfig('users', Date.now());
   
   console.log('✅ Users synced to IndexedDB');
 }
