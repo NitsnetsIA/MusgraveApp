@@ -31,10 +31,11 @@ export default function PurchaseOrderDetail() {
       // If status is completed, try to find the associated processed order
       if (orderData?.status === 'completed') {
         try {
-          const { query } = await import('../lib/database');
-          const processedOrders = query(`SELECT * FROM orders WHERE source_purchase_order_id = '${orderData.purchase_order_id}'`);
-          if (processedOrders.length > 0) {
-            setProcessedOrder(processedOrders[0]);
+          const { UnifiedDatabaseService } = await import('@/lib/database-service');
+          const processedOrders = await UnifiedDatabaseService.getOrdersForUser('');
+          const matchingOrder = processedOrders.find(o => o.source_purchase_order_id === orderData.purchase_order_id);
+          if (matchingOrder) {
+            setProcessedOrder(matchingOrder);
           }
         } catch (error) {
           console.error('Error finding processed order:', error);

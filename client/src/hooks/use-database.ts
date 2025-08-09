@@ -158,11 +158,11 @@ export function useDatabase() {
     return await UnifiedDatabaseService.getStoreByCode(code);
   };
 
-  // Purchase order operations
+  // Purchase order operations - use unified database service
   const getPurchaseOrders = async (userEmail: string): Promise<PurchaseOrder[]> => {
     try {
-      // Use direct string substitution due to SQLite parameter binding issue
-      const orders = query(`SELECT * FROM purchase_orders WHERE user_email = '${userEmail}' ORDER BY created_at DESC`);
+      const { UnifiedDatabaseService } = await import('@/lib/database-service');
+      const orders = await UnifiedDatabaseService.getPurchaseOrdersForUser(userEmail);
       console.log('Purchase orders found:', orders.length, 'for user:', userEmail);
       return orders;
     } catch (error) {
@@ -173,24 +173,21 @@ export function useDatabase() {
 
   const getPurchaseOrderById = async (id: string): Promise<any> => {
     try {
-      // Use direct string substitution due to SQLite parameter binding issue
-      const orders = query(`SELECT * FROM purchase_orders WHERE purchase_order_id = '${id}'`);
-      if (orders.length === 0) return null;
+      const { UnifiedDatabaseService } = await import('@/lib/database-service');
+      
+      // Get all purchase orders first - we'll need to optimize this later
+      const allOrders = await UnifiedDatabaseService.getPurchaseOrdersForUser('');
+      const order = allOrders.find(o => o.purchase_order_id === id);
+      if (!order) return null;
 
-      const order = orders[0];
-      // Get items with product snapshot data (captured at order time)
-      const items = query(`
-        SELECT poi.* 
-        FROM purchase_order_items poi 
-        WHERE poi.purchase_order_id = '${id}'
-      `);
-
+      // Get items 
+      const items = await UnifiedDatabaseService.getPurchaseOrderItems(id);
+      
       // For items without snapshot data (legacy), fallback to current product data
-      const enhancedItems = items.map(item => {
+      const enhancedItems = await Promise.all(items.map(async item => {
         if (!item.item_title) {
           // Fallback to current product data for legacy items
-          const productData = query(`SELECT * FROM products WHERE ean = '${item.item_ean}'`);
-          const product = productData[0];
+          const product = await UnifiedDatabaseService.getProductByEan(item.item_ean);
           if (product) {
             return {
               ...item,
@@ -207,11 +204,43 @@ export function useDatabase() {
           ...item,
           title: item.item_title, // For backward compatibility
         };
-      });
+      }));
 
       return { ...order, items: enhancedItems };
     } catch (error) {
       console.error('Error getting purchase order:', error);
+      return null;
+    }
+  };
+
+  // Orders operations - use unified database service
+  const getOrders = async (userEmail: string): Promise<any[]> => {
+    try {
+      const { UnifiedDatabaseService } = await import('@/lib/database-service');
+      const orders = await UnifiedDatabaseService.getOrdersForUser(userEmail);
+      console.log('Orders found:', orders.length, 'for user:', userEmail);
+      return orders;
+    } catch (error) {
+      console.error('Error getting orders:', error);
+      return [];
+    }
+  };
+
+  const getOrderById = async (id: string): Promise<any> => {
+    try {
+      const { UnifiedDatabaseService } = await import('@/lib/database-service');
+      
+      // Get all orders - we'll need to optimize this later
+      const allOrders = await UnifiedDatabaseService.getOrdersForUser('');
+      const order = allOrders.find(o => o.order_id === id);
+      if (!order) return null;
+
+      // Get items 
+      const items = await UnifiedDatabaseService.getOrderItems(id);
+      
+      return { ...order, items };
+    } catch (error) {
+      console.error('Error getting order:', error);
       return null;
     }
   };
@@ -405,61 +434,7 @@ export function useDatabase() {
     };
   };
 
-  // Order operations
-  const getOrders = async (userEmail: string): Promise<Order[]> => {
-    try {
-      // Use direct string substitution due to SQLite parameter binding issue
-      return query(`SELECT * FROM orders WHERE user_email = '${userEmail}' ORDER BY created_at DESC`);
-    } catch (error) {
-      console.error('Error getting orders:', error);
-      return [];
-    }
-  };
 
-  const getOrderById = async (id: string): Promise<any> => {
-    try {
-      // Use direct string substitution due to SQLite parameter binding issue
-      const orders = query(`SELECT * FROM orders WHERE order_id = '${id}'`);
-      if (orders.length === 0) return null;
-
-      const order = orders[0];
-      // Get items with product snapshot data (captured at order time)
-      const items = query(`
-        SELECT oi.* 
-        FROM order_items oi 
-        WHERE oi.order_id = '${id}'
-      `);
-
-      // For items without snapshot data (legacy), fallback to current product data
-      const enhancedItems = items.map(item => {
-        if (!item.item_title) {
-          // Fallback to current product data for legacy items
-          const productData = query(`SELECT * FROM products WHERE ean = '${item.item_ean}'`);
-          const product = productData[0];
-          if (product) {
-            return {
-              ...item,
-              item_title: product.title,
-              item_description: product.description,
-              unit_of_measure: product.unit_of_measure,
-              quantity_measure: product.quantity_measure,
-              image_url: product.image_url,
-              title: product.title, // For backward compatibility
-            };
-          }
-        }
-        return {
-          ...item,
-          title: item.item_title, // For backward compatibility
-        };
-      });
-
-      return { ...order, items: enhancedItems };
-    } catch (error) {
-      console.error('Error getting order:', error);
-      return null;
-    }
-  };
 
   // Get tax rate by code
   const getTaxRate = async (taxCode: string): Promise<number> => {
