@@ -977,6 +977,260 @@ export async function syncProducts(onProgress: (message: string, progress: numbe
 }
 
 /**
+ * Sync stores from server using GraphQL with pagination
+ */
+export async function syncStores(onProgress: (message: string, progress: number) => void, storeId?: string): Promise<boolean> {
+  try {
+    console.log('🔄 Starting stores synchronization...');
+    onProgress('Sincronizando Tiendas', 0);
+    
+    const lastRequestTimestamp = getLastRequestTimestamp('stores');
+    const timestampParam = lastRequestTimestamp ? new Date(lastRequestTimestamp).toISOString() : null;
+    
+    console.log(`Syncing stores since: ${timestampParam || 'beginning of time'}`);
+    
+    const query = `
+      query Stores($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
+        stores(timestamp: $timestamp, limit: $limit, offset: $offset, store_id: $storeId) {
+          stores {
+            code
+            name
+            address
+            city
+            postal_code
+            phone
+            delivery_center_id
+            is_active
+            created_at
+            updated_at
+          }
+          total
+          limit
+          offset
+        }
+      }
+    `;
+    
+    let offset = 0;
+    const limit = 1000;
+    let totalProcessed = 0;
+    let totalRecords = 0;
+    let allStores: any[] = [];
+    
+    // Fetch all pages
+    while (true) {
+      console.log(`Fetching stores page: offset=${offset}, limit=${limit}`);
+      
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables: {
+            timestamp: timestampParam,
+            limit,
+            offset,
+            storeId: storeId || null
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      }
+      
+      const storesPage = data.data?.stores;
+      
+      if (!storesPage) {
+        throw new Error('Invalid response structure');
+      }
+      
+      totalRecords = storesPage.total;
+      const stores = storesPage.stores || [];
+      
+      allStores.push(...stores);
+      totalProcessed += stores.length;
+      
+      const progressPercent = totalRecords > 0 ? (totalProcessed / totalRecords) * 100 : 100;
+      onProgress(`Sincronizando Tiendas (${totalProcessed}/${totalRecords})`, progressPercent);
+      
+      console.log(`Received ${stores.length} stores, total processed: ${totalProcessed}/${totalRecords}`);
+      
+      if (stores.length < limit || totalProcessed >= totalRecords) {
+        break;
+      }
+      
+      offset += limit;
+    }
+    
+    // Update database with all stores
+    console.log(`Updating database with ${allStores.length} stores...`);
+    
+    const { execute } = await import('./database');
+    
+    // Clear existing stores and insert new ones
+    execute('DELETE FROM stores');
+    
+    for (const store of allStores) {
+      execute(`
+        INSERT INTO stores (code, name, address, city, postal_code, phone, delivery_center_id, is_active) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [store.code, store.name || '', store.address || '', store.city || '', store.postal_code || '', store.phone || '', store.delivery_center_id || '', store.is_active ? 1 : 0]);
+    }
+    
+    console.log(`✅ Successfully synced ${allStores.length} stores`);
+    
+    // Update sync info
+    const serverInfo = await checkSynchronizationNeeds(storeId);
+    const storesInfo = serverInfo.find((entity: any) => entity.entity_name === 'stores');
+    if (storesInfo) {
+      markSyncCompleted('stores', storesInfo.server_last_updated);
+    }
+    
+    onProgress('Tiendas sincronizadas correctamente', 100);
+    return true;
+  } catch (error) {
+    console.error('❌ Error syncing stores:', error);
+    onProgress('Error sincronizando tiendas', 0);
+    return false;
+  }
+}
+
+/**
+ * Sync delivery centers from server using GraphQL with pagination
+ */
+export async function syncDeliveryCenters(onProgress: (message: string, progress: number) => void, storeId?: string): Promise<boolean> {
+  try {
+    console.log('🔄 Starting delivery centers synchronization...');
+    onProgress('Sincronizando Centros de Entrega', 0);
+    
+    const lastRequestTimestamp = getLastRequestTimestamp('delivery_centers');
+    const timestampParam = lastRequestTimestamp ? new Date(lastRequestTimestamp).toISOString() : null;
+    
+    console.log(`Syncing delivery centers since: ${timestampParam || 'beginning of time'}`);
+    
+    const query = `
+      query DeliveryCenters($timestamp: String, $limit: Int, $offset: Int) {
+        delivery_centers(timestamp: $timestamp, limit: $limit, offset: $offset) {
+          delivery_centers {
+            id
+            name
+            address
+            city
+            postal_code
+            phone
+            is_active
+            created_at
+            updated_at
+          }
+          total
+          limit
+          offset
+        }
+      }
+    `;
+    
+    let offset = 0;
+    const limit = 1000;
+    let totalProcessed = 0;
+    let totalRecords = 0;
+    let allCenters: any[] = [];
+    
+    // Fetch all pages
+    while (true) {
+      console.log(`Fetching delivery centers page: offset=${offset}, limit=${limit}`);
+      
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables: {
+            timestamp: timestampParam,
+            limit,
+            offset
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      }
+      
+      const centersPage = data.data?.delivery_centers;
+      
+      if (!centersPage) {
+        throw new Error('Invalid response structure');
+      }
+      
+      totalRecords = centersPage.total;
+      const centers = centersPage.delivery_centers || [];
+      
+      allCenters.push(...centers);
+      totalProcessed += centers.length;
+      
+      const progressPercent = totalRecords > 0 ? (totalProcessed / totalRecords) * 100 : 100;
+      onProgress(`Sincronizando Centros de Entrega (${totalProcessed}/${totalRecords})`, progressPercent);
+      
+      console.log(`Received ${centers.length} delivery centers, total processed: ${totalProcessed}/${totalRecords}`);
+      
+      if (centers.length < limit || totalProcessed >= totalRecords) {
+        break;
+      }
+      
+      offset += limit;
+    }
+    
+    // Update database with all delivery centers
+    console.log(`Updating database with ${allCenters.length} delivery centers...`);
+    
+    const { execute } = await import('./database');
+    
+    // Clear existing delivery centers and insert new ones
+    execute('DELETE FROM delivery_centers');
+    
+    for (const center of allCenters) {
+      execute(`
+        INSERT INTO delivery_centers (id, name, address, city, postal_code, phone, is_active) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [center.id, center.name || '', center.address || '', center.city || '', center.postal_code || '', center.phone || '', center.is_active ? 1 : 0]);
+    }
+    
+    console.log(`✅ Successfully synced ${allCenters.length} delivery centers`);
+    
+    // Update sync info
+    const serverInfo = await checkSynchronizationNeeds(storeId);
+    const centersInfo = serverInfo.find((entity: any) => entity.entity_name === 'delivery_centers');
+    if (centersInfo) {
+      markSyncCompleted('delivery_centers', centersInfo.server_last_updated);
+    }
+    
+    onProgress('Centros de entrega sincronizados correctamente', 100);
+    return true;
+  } catch (error) {
+    console.error('❌ Error syncing delivery centers:', error);
+    onProgress('Error sincronizando centros de entrega', 0);
+    return false;
+  }
+}
+
+/**
  * Test function to manually trigger sync check (for development)
  */
 export async function testSyncCheck(): Promise<void> {

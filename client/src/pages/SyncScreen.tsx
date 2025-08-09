@@ -120,6 +120,22 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['users'
               const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
               setProgress(Math.min(stepProgress, 90));
             }, user?.store_id);
+          } else if (step.id === 'stores') {
+            const { syncStores } = await import('../lib/sync-service');
+            syncSuccess = await syncStores((message, entityProgress) => {
+              setCurrentMessage(message);
+              // Map entity progress to overall progress within this step
+              const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
+              setProgress(Math.min(stepProgress, 90));
+            }, user?.store_id);
+          } else if (step.id === 'deliveryCenters') {
+            const { syncDeliveryCenters } = await import('../lib/sync-service');
+            syncSuccess = await syncDeliveryCenters((message, entityProgress) => {
+              setCurrentMessage(message);
+              // Map entity progress to overall progress within this step
+              const stepProgress = currentProgress + (progressPerStep * entityProgress / 100);
+              setProgress(Math.min(stepProgress, 90));
+            }, user?.store_id);
           }
           
           if (syncSuccess) {
