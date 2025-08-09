@@ -141,66 +141,21 @@ export function useDatabase() {
     }
   };
 
-  // Product operations
+  // Product operations - use unified database service
   const getProducts = async (searchTerm: string = ''): Promise<Product[]> => {
-    try {
-      let sql = `
-        SELECT p.*, t.tax_rate 
-        FROM products p 
-        LEFT JOIN taxes t ON p.tax_code = t.code 
-        WHERE p.is_active = 1
-      `;
-
-      if (searchTerm) {
-        // Use direct string substitution due to SQLite parameter binding issue
-        const escapedTerm = searchTerm.replace(/'/g, "''"); // Escape single quotes
-        sql += ` AND (p.ean LIKE '%${escapedTerm}%' OR p.title LIKE '%${escapedTerm}%' OR p.ref LIKE '%${escapedTerm}%')`;
-      }
-
-      sql += ' ORDER BY p.title';
-      
-      const products = query(sql);
-      
-      // Debug: Count active vs inactive products
-      const totalCount = query('SELECT COUNT(*) as total FROM products')[0]?.total || 0;
-      const activeCount = query('SELECT COUNT(*) as active FROM products WHERE is_active = 1')[0]?.active || 0;
-      const inactiveCount = query('SELECT COUNT(*) as inactive FROM products WHERE is_active = 0 OR is_active IS NULL')[0]?.inactive || 0;
-      
-      console.log(`Product counts: Total=${totalCount}, Active=${activeCount}, Inactive=${inactiveCount}`);
-      
-      return products;
-    } catch (error) {
-      console.error('Error getting products:', error);
-      return [];
-    }
+    const { UnifiedDatabaseService } = await import('@/lib/database-service');
+    return await UnifiedDatabaseService.getProducts(searchTerm);
   };
 
   const getProductByEan = async (ean: string): Promise<Product | null> => {
-    try {
-      // Use direct string substitution due to SQLite parameter binding issue
-      const results = query(`SELECT * FROM products WHERE ean = '${ean}' AND is_active = 1`);
-      return results[0] || null;
-    } catch (error) {
-      console.error('Error getting product:', error);
-      return null;
-    }
+    const { UnifiedDatabaseService } = await import('@/lib/database-service');
+    return await UnifiedDatabaseService.getProductByEan(ean);
   };
 
-  // Store operations
+  // Store operations - use unified database service
   const getStoreByCode = async (code: string) => {
-    try {
-      // Use direct string substitution due to SQLite parameter binding issue
-      const results = query(`
-        SELECT s.*, dc.name as delivery_center_name 
-        FROM stores s 
-        JOIN delivery_centers dc ON s.delivery_center_code = dc.code 
-        WHERE s.code = '${code}' AND s.is_active = 1
-      `);
-      return results[0] || null;
-    } catch (error) {
-      console.error('Error getting store:', error);
-      return null;
-    }
+    const { UnifiedDatabaseService } = await import('@/lib/database-service');
+    return await UnifiedDatabaseService.getStoreByCode(code);
   };
 
   // Purchase order operations

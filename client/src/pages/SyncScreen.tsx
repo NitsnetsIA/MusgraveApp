@@ -5,6 +5,7 @@ import { useLocation } from 'wouter';
 import { checkSynchronizationNeeds } from '../lib/sync-service';
 import { performPureIndexedDBSync as performIndexedDBSync } from '../lib/sync-service-pure-indexeddb';
 import { DatabaseService } from '../lib/indexeddb';
+import { getCurrentStorageType } from '@/lib/database-service';
 
 interface SyncStep {
   id: string;
@@ -25,7 +26,7 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
   const [syncSteps, setSyncSteps] = useState<SyncStep[]>([]);
   const [currentMessage, setCurrentMessage] = useState('Iniciando sincronización...');
   const [useIndexedDB, setUseIndexedDB] = useState(false);
-  const [showChoice, setShowChoice] = useState(true);
+  const [showChoice, setShowChoice] = useState(false); // Auto-detect storage type
 
   const handleIndexedDBSync = async () => {
     try {
@@ -54,7 +55,13 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
   };
 
   useEffect(() => {
-    // Don't auto-start sync, let user choose
+    // Auto-detect storage type and start sync
+    const storageType = getCurrentStorageType();
+    if (storageType === 'indexeddb') {
+      handleIndexedDBSync();
+    } else {
+      handleLegacySync();
+    }
   }, []);
 
   const performLegacySync = async () => {

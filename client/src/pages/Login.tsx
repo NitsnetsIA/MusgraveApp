@@ -11,7 +11,7 @@ import { loginSchema, type LoginForm } from '@shared/schema';
 import { clearDatabaseCompletely, resetDatabaseToEmpty, query } from '@/lib/database';
 
 interface LoginProps {
-  onLogin: (email: string, password: string, syncEntities?: string[]) => Promise<boolean>;
+  onLogin: (email: string, password: string, syncEntities?: string[], storageType?: 'sql' | 'indexeddb') => Promise<boolean>;
   isLoading?: boolean;
 }
 
@@ -26,6 +26,7 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
     stores: true,
     users: true
   });
+  const [storageType, setStorageType] = useState<'sql' | 'indexeddb'>('indexeddb');
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -44,7 +45,8 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
         .map(([entity, _]) => entity);
       
       console.log('Selected sync entities:', selectedEntities);
-      const success = await onLogin(data.email, data.password, selectedEntities);
+      console.log('Selected storage type:', storageType);
+      const success = await onLogin(data.email, data.password, selectedEntities, storageType);
       console.log('Login result:', success);
       if (!success) {
         setError('Credenciales inválidas');
@@ -220,6 +222,41 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                       />
                       <label htmlFor="sync-users" className="text-xs text-gray-600 cursor-pointer">
                         Usuarios
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Storage Type Selection */}
+                <div className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Tipo de almacenamiento:
+                  </FormLabel>
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input 
+                        type="radio" 
+                        id="storage-indexeddb" 
+                        name="storage-type" 
+                        checked={storageType === 'indexeddb'} 
+                        onChange={() => setStorageType('indexeddb')}
+                        className="text-musgrave-500 focus:ring-musgrave-500"
+                      />
+                      <label htmlFor="storage-indexeddb" className="text-xs text-gray-600 cursor-pointer">
+                        IndexedDB (Recomendado) - Sin límites, mejor rendimiento
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input 
+                        type="radio" 
+                        id="storage-sql" 
+                        name="storage-type" 
+                        checked={storageType === 'sql'} 
+                        onChange={() => setStorageType('sql')}
+                        className="text-musgrave-500 focus:ring-musgrave-500"
+                      />
+                      <label htmlFor="storage-sql" className="text-xs text-gray-600 cursor-pointer">
+                        SQL.js (Limitado) - Solo para pocos productos
                       </label>
                     </div>
                   </div>

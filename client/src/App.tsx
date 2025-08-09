@@ -63,9 +63,14 @@ function Router() {
   }, [user]); // Remove getStoreByCode from dependencies to prevent infinite loop
 
   // Authentication handlers
-  const handleLogin = async (email: string, password: string, syncEntities: string[] = ['taxes', 'products', 'deliveryCenters', 'stores', 'users']): Promise<boolean> => {
-    console.log('handleLogin called with:', { email, password, syncEntities });
+  const handleLogin = async (email: string, password: string, syncEntities: string[] = ['taxes', 'products', 'deliveryCenters', 'stores', 'users'], storageType: 'sql' | 'indexeddb' = 'indexeddb'): Promise<boolean> => {
+    console.log('handleLogin called with:', { email, password, syncEntities, storageType });
     setIsLoading(true);
+    
+    // Set storage type for unified database service
+    const { setStorageType } = await import('@/lib/database-service');
+    setStorageType(storageType);
+    
     try {
       const authenticatedUser = await authenticateUser(email, password);
       console.log('authenticatedUser result:', authenticatedUser);
@@ -73,7 +78,7 @@ function Router() {
         setUser(authenticatedUser);
         setSelectedSyncEntities(syncEntities);
         
-        // Show sync screen after successful login
+        // Show sync screen after successful login - IndexedDB or SQL.js based on selection
         setShowSyncScreen(true);
         return true;
       }
