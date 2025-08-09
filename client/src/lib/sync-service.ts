@@ -294,7 +294,7 @@ function isoToTimestamp(isoString: string): number {
 
 /**
  * Determine which entities need synchronization
- * Currently only handles 'products' and 'taxes' entities
+ * Handles: users, taxes, products, stores, delivery_centers
  */
 export async function determineEntitiesToSync(storeId?: string): Promise<EntityToSync[]> {
   console.log('🔍 Determining entities to sync with store_id:', storeId);
@@ -304,6 +304,13 @@ export async function determineEntitiesToSync(storeId?: string): Promise<EntityT
     console.log('❌ Could not fetch sync info from server, forcing sync of all entities');
     // If we can't get server info, force sync of core entities
     return [
+      {
+        entity_name: 'users',
+        needs_sync: true,
+        last_local_request: null,
+        server_last_updated: new Date().toISOString(),
+        total_records: 0
+      },
       {
         entity_name: 'taxes',
         needs_sync: true,
@@ -317,12 +324,26 @@ export async function determineEntitiesToSync(storeId?: string): Promise<EntityT
         last_local_request: null,
         server_last_updated: new Date().toISOString(),
         total_records: 0
+      },
+      {
+        entity_name: 'stores',
+        needs_sync: true,
+        last_local_request: null,
+        server_last_updated: new Date().toISOString(),
+        total_records: 0
+      },
+      {
+        entity_name: 'delivery_centers',
+        needs_sync: true,
+        last_local_request: null,
+        server_last_updated: new Date().toISOString(),
+        total_records: 0
       }
     ];
   }
   
   console.log('✅ Sync info received from server:', JSON.stringify(syncInfo, null, 2));
-  const entitiesToCheck = ['products', 'taxes'];
+  const entitiesToCheck = ['users', 'taxes', 'products', 'stores', 'delivery_centers'];
   const entitiesToSync: EntityToSync[] = [];
   
   for (const entityName of entitiesToCheck) {
