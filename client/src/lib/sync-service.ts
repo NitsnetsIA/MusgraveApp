@@ -1083,7 +1083,7 @@ export async function syncStores(onProgress: (message: string, progress: number)
     
     for (const store of allStores) {
       execute(`
-        INSERT INTO stores (code, name, responsible_email, delivery_center_id, is_active) 
+        INSERT INTO stores (code, name, responsible_email, delivery_center_code, is_active) 
         VALUES (?, ?, ?, ?, ?)
       `, [store.code, store.name || '', store.responsible_email || '', store.delivery_center_code || '', store.is_active ? 1 : 0]);
     }
@@ -1218,9 +1218,9 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
     
     for (const center of allCenters) {
       execute(`
-        INSERT INTO delivery_centers (id, name, is_active) 
-        VALUES (?, ?, ?)
-      `, [center.code, center.name || '', center.is_active ? 1 : 0]);
+        INSERT INTO delivery_centers (code, name) 
+        VALUES (?, ?)
+      `, [center.code, center.name || '']);
     }
     
     console.log(`✅ Successfully synced ${allCenters.length} delivery centers`);
