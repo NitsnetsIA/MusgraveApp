@@ -14,6 +14,7 @@ import type { User, CartItem } from "@shared/schema";
 import Layout from "@/components/Layout";
 import Login from "@/pages/Login";
 import SyncScreen from "@/pages/SyncScreen";
+import SyncScreenSimple from "@/pages/SyncScreenSimple";
 import ProductCatalog from "@/pages/ProductCatalog";
 import PurchaseOrders from "@/pages/PurchaseOrders";
 import PurchaseOrderDetail from "@/pages/PurchaseOrderDetail";

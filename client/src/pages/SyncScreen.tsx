@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import { checkSynchronizationNeeds } from '../lib/sync-service';
+import { performFullSync as performIndexedDBSync } from '../lib/sync-service-indexeddb';
+import { DatabaseService } from '../lib/indexeddb';
 
 interface SyncStep {
   id: string;
@@ -21,9 +24,40 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
   const [progress, setProgress] = useState(0);
   const [syncSteps, setSyncSteps] = useState<SyncStep[]>([]);
   const [currentMessage, setCurrentMessage] = useState('Iniciando sincronización...');
+  const [useIndexedDB, setUseIndexedDB] = useState(false);
+  const [showChoice, setShowChoice] = useState(true);
+
+  const handleIndexedDBSync = async () => {
+    try {
+      setShowChoice(false);
+      setCurrentMessage('🚀 Iniciando sincronización con IndexedDB...');
+      setProgress(10);
+
+      await performIndexedDBSync();
+      
+      setProgress(100);
+      setCurrentMessage('✅ Sincronización IndexedDB completada exitosamente');
+      
+      setTimeout(() => {
+        onSyncComplete();
+      }, 1500);
+    } catch (error) {
+      console.error('IndexedDB sync failed:', error);
+      setCurrentMessage('❌ Error en sincronización IndexedDB: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+    }
+  };
+
+  const handleLegacySync = () => {
+    setShowChoice(false);
+    setUseIndexedDB(false);
+    performLegacySync();
+  };
 
   useEffect(() => {
-    async function performSync() {
+    // Don't auto-start sync, let user choose
+  }, []);
+
+  const performLegacySync = async () => {
       try {
         // Step 1: Check what needs to be synced
         setCurrentMessage('Conectando con servidor...');
@@ -171,10 +205,43 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
           onSyncComplete();
         }, 2000);
       }
-    }
-    
-    performSync();
-  }, [onSyncComplete]);
+    };
+
+  // Show sync method selection
+  if (showChoice) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-bold text-center mb-6">Selecciona Método de Sincronización</h2>
+          
+          <div className="space-y-4">
+            <Button
+              onClick={handleIndexedDBSync}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              size="lg"
+            >
+              🚀 IndexedDB (Recomendado)
+              <span className="block text-sm opacity-90">Sin límites de capacidad</span>
+            </Button>
+            
+            <Button
+              onClick={handleLegacySync}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              📦 Sistema Original (SQL.js)
+              <span className="block text-sm opacity-70">Limitado a ~5MB</span>
+            </Button>
+          </div>
+          
+          <p className="text-xs text-gray-500 text-center mt-4">
+            IndexedDB puede manejar los 9,000 productos sin problemas de capacidad
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
