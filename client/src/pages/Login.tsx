@@ -8,10 +8,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Settings } from 'lucide-react';
 import { loginSchema, type LoginForm } from '@shared/schema';
-import { clearDatabaseCompletely, resetDatabaseToEmpty, query } from '@/lib/database';
+import { UnifiedDatabaseService } from '@/lib/database-service';
 
 interface LoginProps {
-  onLogin: (email: string, password: string, syncEntities?: string[], storageType?: 'sql' | 'indexeddb') => Promise<boolean>;
+  onLogin: (email: string, password: string, syncEntities?: string[], storageType?: 'indexeddb') => Promise<boolean>;
   isLoading?: boolean;
 }
 
@@ -26,7 +26,7 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
     stores: true,
     users: true
   });
-  const [storageType, setStorageType] = useState<'sql' | 'indexeddb'>('indexeddb');
+  const [storageType, setStorageType] = useState<'indexeddb'>('indexeddb');
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -60,12 +60,14 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
   const handleClearDatabase = async () => {
     setIsResetting(true);
     try {
-      await clearDatabaseCompletely();
+      console.log('🗑️ Clearing IndexedDB database completely...');
+      await UnifiedDatabaseService.clearAllData();
       setError('');
-      alert('Base de datos limpiada completamente. Recarga la página para continuar.');
+      alert('Base de datos IndexedDB limpiada completamente. Recarga la página para continuar.');
+      console.log('✅ IndexedDB database cleared successfully');
     } catch (error) {
-      console.error('Error clearing database:', error);
-      setError('Error al limpiar la base de datos');
+      console.error('Error clearing IndexedDB database:', error);
+      setError('Error al limpiar la base de datos IndexedDB');
     } finally {
       setIsResetting(false);
     }
@@ -74,12 +76,14 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
   const handleResetToTestData = async () => {
     setIsResetting(true);
     try {
-      await resetDatabaseToEmpty();
+      console.log('🔄 Resetting IndexedDB database to empty state...');
+      await UnifiedDatabaseService.clearAllData();
       setError('');
-      alert('Base de datos vaciada. Ahora inicia sesión para sincronizar con el servidor GraphQL.');
+      alert('Base de datos IndexedDB vaciada. Ahora inicia sesión para sincronizar con el servidor GraphQL.');
+      console.log('✅ IndexedDB database reset successfully');
     } catch (error) {
-      console.error('Error resetting database:', error);
-      setError('Error al reiniciar la base de datos');
+      console.error('Error resetting IndexedDB database:', error);
+      setError('Error al reiniciar la base de datos IndexedDB');
     } finally {
       setIsResetting(false);
     }
@@ -246,17 +250,17 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                         IndexedDB (Recomendado) - Sin límites, mejor rendimiento
                       </label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 opacity-50">
                       <input 
                         type="radio" 
                         id="storage-sql" 
                         name="storage-type" 
-                        checked={storageType === 'sql'} 
-                        onChange={() => setStorageType('sql')}
+                        checked={false}
+                        disabled={true}
                         className="text-musgrave-500 focus:ring-musgrave-500"
                       />
-                      <label htmlFor="storage-sql" className="text-xs text-gray-600 cursor-pointer">
-                        SQL.js (Limitado) - Solo para pocos productos
+                      <label htmlFor="storage-sql" className="text-xs text-gray-400 cursor-not-allowed">
+                        SQL.js (Deshabilitado) - Solo IndexedDB soportado
                       </label>
                     </div>
                   </div>
@@ -291,25 +295,13 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                     <Button
                       type="button"
                       onClick={() => {
-                        try {
-                          const syncData = query(`SELECT entity_name, last_request_timestamp, last_updated_timestamp FROM sync_config ORDER BY entity_name`);
-                          console.log('=== TABLA SYNC ===');
-                          console.table(syncData.map(row => ({
-                            entity: row.entity_name,
-                            last_request: row.last_request_timestamp ? new Date(row.last_request_timestamp).toLocaleString() : 'Never',
-                            last_updated: row.last_updated_timestamp ? new Date(row.last_updated_timestamp).toLocaleString() : 'Never'
-                          })));
-                          alert(`Tabla sync mostrada en consola. ${syncData.length} registros encontrados.`);
-                        } catch (error) {
-                          console.error('Error reading sync table:', error);
-                          alert('Error leyendo tabla sync - ver consola');
-                        }
+                        alert('Función de debug IndexedDB disponible solo durante sincronización. Ve a la consola durante el login para ver logs de sync.');
                       }}
                       variant="outline"
                       size="sm"
                       className="text-xs h-8 text-blue-600 hover:text-blue-700"
                     >
-                      📊 Ver Sync Table
+                      📊 Debug Sync (Ver Consola)
                     </Button>
                   </div>
                 </div>
