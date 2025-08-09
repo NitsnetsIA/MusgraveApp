@@ -1,5 +1,5 @@
 // Abstract database service that works with both SQL.js and IndexedDB
-import { DatabaseService as IndexedDBService } from './indexeddb';
+import { DatabaseService as IndexedDBService, db } from './indexeddb';
 import { query } from './database';
 
 export type StorageType = 'sql' | 'indexeddb';
@@ -20,8 +20,23 @@ export class UnifiedDatabaseService {
   
   // Get all products with optional search
   static async getProducts(searchTerm?: string): Promise<any[]> {
+    console.log(`UnifiedDatabaseService.getProducts called with searchTerm: "${searchTerm}", storage type: ${currentStorageType}`);
+    
     if (currentStorageType === 'indexeddb') {
-      return await IndexedDBService.getAllProducts(searchTerm);
+      try {
+        let products;
+        if (searchTerm) {
+          products = await IndexedDBService.searchProducts(searchTerm);
+          console.log(`IndexedDB search returned ${products.length} products for "${searchTerm}"`);
+        } else {
+          products = await IndexedDBService.getProducts(true); // active only
+          console.log(`IndexedDB getProducts returned ${products.length} active products`);
+        }
+        return products;
+      } catch (error) {
+        console.error('Error getting products from IndexedDB:', error);
+        return [];
+      }
     } else {
       return await UnifiedDatabaseService.getProductsSQL(searchTerm);
     }
@@ -39,7 +54,14 @@ export class UnifiedDatabaseService {
   // Get products count
   static async getProductCounts(): Promise<{ total: number; active: number; inactive: number }> {
     if (currentStorageType === 'indexeddb') {
-      return await IndexedDBService.getProductCounts();
+      const allProducts = await db.products.toArray();
+      const activeProducts = allProducts.filter(p => p.is_active === 1);
+      console.log(`IndexedDB Product counts: Total=${allProducts.length}, Active=${activeProducts.length}, Inactive=${allProducts.length - activeProducts.length}`);
+      return {
+        total: allProducts.length,
+        active: activeProducts.length,
+        inactive: allProducts.length - activeProducts.length
+      };
     } else {
       return UnifiedDatabaseService.getProductCountsSQL();
     }
@@ -66,7 +88,17 @@ export class UnifiedDatabaseService {
   // Get store by code
   static async getStoreByCode(code: string): Promise<any | null> {
     if (currentStorageType === 'indexeddb') {
-      return await IndexedDBService.getStore(code);
+      // Use the imported db instance directly
+      const store = await db.stores.where('code').equals(code).first();
+      if (!store) return null;
+      
+      // Get delivery center name
+      const deliveryCenter = await db.delivery_centers.where('code').equals(store.delivery_center_code).first();
+      
+      return {
+        ...store,
+        delivery_center_name: deliveryCenter?.name
+      };
     } else {
       return UnifiedDatabaseService.getStoreByCodeSQL(code);
     }

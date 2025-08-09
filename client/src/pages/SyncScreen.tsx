@@ -57,6 +57,7 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
   useEffect(() => {
     // Auto-detect storage type and start sync
     const storageType = getCurrentStorageType();
+    console.log('SyncScreen: Detected storage type:', storageType);
     if (storageType === 'indexeddb') {
       handleIndexedDBSync();
     } else {
