@@ -109,6 +109,16 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
 async function syncProductsDirectly(onProgress?: (message: string, progress: number) => void, forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing products directly to IndexedDB...');
   
+  // CRITICAL FIX: Check if we have products in database before doing incremental sync
+  const existingProducts = await DatabaseService.getProducts(false); // Get all products including inactive
+  console.log(`🔍 Database check: Found ${existingProducts.length} existing products`);
+  
+  // If no products exist, force a full sync regardless of the flag
+  if (existingProducts.length === 0 && !forceFullSync) {
+    console.log('⚠️ No products found in database, forcing full sync...');
+    forceFullSync = true;
+  }
+  
   // Get last sync timestamp for incremental sync
   let timestampFilter = '';
   if (!forceFullSync) {
