@@ -218,6 +218,7 @@ export function useDatabase() {
 
   const createPurchaseOrder = async (userEmail: string, storeId: string, cartItems: CartItem[]): Promise<string> => {
     try {
+      const { UnifiedDatabaseService } = await import('@/lib/database-service');
       const purchaseOrderId = generatePurchaseOrderId(storeId);
       const now = new Date().toISOString();
 
@@ -238,11 +239,17 @@ export function useDatabase() {
       const random = Math.random();
       const randomStatus = random < 0.9 ? 'completed' : (random < 0.95 ? 'processing' : 'uncommunicated');
 
-      // Insert purchase order with random status using parameterized query
-      execute(`
-        INSERT INTO purchase_orders (purchase_order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [purchaseOrderId, userEmail, storeId, now, randomStatus, subtotal, taxTotal, finalTotal]);
+      // Create purchase order using unified service
+      await UnifiedDatabaseService.createPurchaseOrder({
+        purchase_order_id: purchaseOrderId,
+        user_email: userEmail,
+        store_id: storeId,
+        created_at: now,
+        status: randomStatus,
+        subtotal,
+        tax_total: taxTotal,
+        final_total: finalTotal
+      });
 
       // Direct insert using cart data - no database lookups needed since all data is local
       for (const item of cartItems) {

@@ -28,7 +28,7 @@ export default function Cart({
   onCreateTestCart,
   store
 }: CartProps) {
-  const { getProductByEan } = useDatabase();
+  // Use unified database service instead of useDatabase hook
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
   const [tempQuantity, setTempQuantity] = useState<string>('');
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -80,7 +80,8 @@ export default function Cart({
       
       // Check if input looks like an EAN (13 digits)
       if (/^\d{13}$/.test(ean)) {
-        const product = await getProductByEan(ean);
+        const { UnifiedDatabaseService } = await import('@/lib/database-service');
+        const product = await UnifiedDatabaseService.getProductByEan(ean);
         
         if (product) {
           // Add one unit to cart

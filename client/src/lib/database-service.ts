@@ -44,10 +44,38 @@ export class UnifiedDatabaseService {
 
   // Get product by EAN
   static async getProductByEan(ean: string): Promise<any | null> {
+    console.log(`UnifiedDatabaseService.getProductByEan called for EAN: ${ean}, storage type: ${currentStorageType}`);
+    
     if (currentStorageType === 'indexeddb') {
-      return await IndexedDBService.getProduct(ean);
+      try {
+        const product = await IndexedDBService.getProduct(ean);
+        console.log(`IndexedDB getProductByEan returned:`, product ? 'found' : 'not found');
+        return product || null;
+      } catch (error) {
+        console.error('Error getting product by EAN from IndexedDB:', error);
+        return null;
+      }
     } else {
-      return UnifiedDatabaseService.getProductByEanSQL(ean);
+      return await UnifiedDatabaseService.getProductByEanSQL(ean);
+    }
+  }
+
+  // Get tax rate by code
+  static async getTaxRate(taxCode: string): Promise<number> {
+    console.log(`UnifiedDatabaseService.getTaxRate called for code: ${taxCode}, storage type: ${currentStorageType}`);
+    
+    if (currentStorageType === 'indexeddb') {
+      try {
+        const tax = await IndexedDBService.getTax(taxCode);
+        const rate = tax ? tax.tax_rate : 0.21; // Default IVA general
+        console.log(`IndexedDB getTaxRate returned: ${rate} for code ${taxCode}`);
+        return rate;
+      } catch (error) {
+        console.error('Error getting tax rate from IndexedDB:', error);
+        return 0.21; // Default IVA general
+      }
+    } else {
+      return await UnifiedDatabaseService.getTaxRateSQL(taxCode);
     }
   }
 
@@ -323,5 +351,90 @@ export class UnifiedDatabaseService {
       console.error('Error getting tax by code from SQL:', error);
       return null;
     }
+  }
+
+  // SQL.js fallback methods for backward compatibility
+  static async getProductsSQL(searchTerm?: string): Promise<any[]> {
+    if (searchTerm) {
+      const results = query(`
+        SELECT * FROM products 
+        WHERE is_active = 1 
+        AND (
+          title LIKE '%${searchTerm}%' 
+          OR ean LIKE '%${searchTerm}%'
+          OR ref LIKE '%${searchTerm}%'
+        )
+        ORDER BY title
+      `);
+      return results || [];
+    } else {
+      const results = query('SELECT * FROM products WHERE is_active = 1 ORDER BY title');
+      return results || [];
+    }
+  }
+
+  static async getProductByEanSQL(ean: string): Promise<any | null> {
+    const results = query('SELECT * FROM products WHERE ean = ? AND is_active = 1', [ean]);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  static async getTaxRateSQL(taxCode: string): Promise<number> {
+    const results = query('SELECT tax_rate FROM taxes WHERE code = ?', [taxCode]);
+    return results.length > 0 ? results[0].tax_rate : 0.21; // Default IVA general
+  }
+
+  static async getProductCountsSQL(): Promise<{ total: number; active: number; inactive: number }> {
+    const total = query('SELECT COUNT(*) as count FROM products')[0]?.count || 0;
+    const active = query('SELECT COUNT(*) as count FROM products WHERE is_active = 1')[0]?.count || 0;
+    return {
+      total,
+      active,
+      inactive: total - active
+    };
+  }
+
+  static async getUserByEmailSQL(email: string): Promise<any | null> {
+    const results = query('SELECT * FROM users WHERE email = ? AND is_active = 1', [email]);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  static addUserSQL(user: any): void {
+    query('INSERT OR REPLACE INTO users (email, store_id, name, password_hash, is_active) VALUES (?, ?, ?, ?, ?)', 
+      [user.email, user.store_id, user.name, user.password_hash, user.is_active]);
+  }
+
+  static async getStoreByCodeSQL(code: string): Promise<any | null> {
+    const results = query(`
+      SELECT s.*, dc.name as delivery_center_name 
+      FROM stores s 
+      LEFT JOIN delivery_centers dc ON s.delivery_center_code = dc.code 
+      WHERE s.code = ?
+    `, [code]);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  static createPurchaseOrderSQL(order: any): void {
+    query(`INSERT INTO purchase_orders 
+      (purchase_order_id, user_email, store_id, created_at, status, subtotal, tax_total, final_total) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [order.purchase_order_id, order.user_email, order.store_id, order.created_at, order.status, 
+       order.subtotal, order.tax_total, order.final_total]);
+  }
+
+  static addPurchaseOrderItemSQL(item: any): void {
+    query(`INSERT INTO purchase_order_items 
+      (purchase_order_id, item_ean, item_title, item_description, unit_of_measure, quantity_measure, 
+       image_url, quantity, base_price_at_order, tax_rate_at_order) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [item.purchase_order_id, item.item_ean, item.item_title, item.item_description, item.unit_of_measure, 
+       item.quantity_measure, item.image_url, item.quantity, item.base_price_at_order, item.tax_rate_at_order]);
+  }
+
+  static async getPurchaseOrdersForUserSQL(userEmail: string): Promise<any[]> {
+    return query('SELECT * FROM purchase_orders WHERE user_email = ? ORDER BY created_at DESC', [userEmail]);
+  }
+
+  static async getPurchaseOrderItemsSQL(purchaseOrderId: string): Promise<any[]> {
+    return query('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?', [purchaseOrderId]);
   }
 }

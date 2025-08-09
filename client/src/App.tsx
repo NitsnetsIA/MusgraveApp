@@ -134,18 +134,17 @@ function Router() {
           )
         );
       } else {
-        // Add new item - get product details first
-        const { query } = await import('./lib/database');
-        const products = query(`SELECT * FROM products WHERE ean = '${ean}'`);
-        if (products.length > 0) {
-          const product = products[0];
-          const taxRate = await getTaxRate(product.tax_code);
+        // Add new item - get product details using unified service
+        const { UnifiedDatabaseService } = await import('./lib/database-service');
+        const product = await UnifiedDatabaseService.getProductByEan(ean);
+        if (product) {
+          const taxRate = await UnifiedDatabaseService.getTaxRate(product.tax_code);
           
           const newItem: CartItem = {
             ean: product.ean,
             title: product.title,
             base_price: product.base_price,
-            tax_rate: taxRate,
+            tax_rate: taxRate || 0.21, // Default IVA rate if not found
             quantity,
             image_url: product.image_url
           };
@@ -197,9 +196,9 @@ function Router() {
   // Create test cart with only ACTIVE products
   const createTestCart = async () => {
     try {
-      // Get only ACTIVE products to avoid any invalid EANs
-      const { query } = await import('./lib/database');
-      const activeProducts = query(`SELECT * FROM products WHERE is_active = 1`);
+      // Get only ACTIVE products using unified service
+      const { UnifiedDatabaseService } = await import('./lib/database-service');
+      const activeProducts = await UnifiedDatabaseService.getProducts();
       
       if (activeProducts.length === 0) {
         toast({
