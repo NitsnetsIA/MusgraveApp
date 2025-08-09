@@ -60,8 +60,8 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
   }
   
   const query = `
-    query Taxes($timestamp: String, $limit: Int, $offset: Int) {
-      taxes(timestamp: $timestamp, limit: $limit, offset: $offset) {
+    query {
+      taxes {
         taxes {
           code
           name
@@ -69,10 +69,6 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
           created_at
           updated_at
         }
-        total
-        limit
-        offset
-        last_updated
       }
     }
   `;
@@ -80,10 +76,7 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      query,
-      variables: { limit: 1000, offset: 0 }
-    })
+    body: JSON.stringify({ query })
   });
   
   const data = await response.json();
@@ -132,8 +125,8 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   
   while (true) {
     const query = `
-      query Products($timestamp: String, $limit: Int, $offset: Int) {
-        products(timestamp: $timestamp, limit: $limit, offset: $offset) {
+      query {
+        products(limit: ${limit}, offset: ${offset}) {
           products {
             ean
             ref
@@ -158,10 +151,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        query, 
-        variables: { limit, offset }
-      })
+      body: JSON.stringify({ query })
     });
     
     const data = await response.json();
@@ -220,17 +210,11 @@ async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Prom
   }
   
   const query = `
-    query DeliveryCenters($timestamp: String, $limit: Int, $offset: Int) {
-      deliveryCenters(timestamp: $timestamp, limit: $limit, offset: $offset) {
-        total
-        limit
-        offset
+    query {
+      deliveryCenters {
         deliveryCenters {
           code
           name
-          is_active
-          created_at
-          updated_at
         }
       }
     }
@@ -239,10 +223,7 @@ async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Prom
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      query,
-      variables: { limit: 1000, offset: 0 }
-    })
+    body: JSON.stringify({ query })
   });
   
   const data = await response.json();
@@ -277,8 +258,8 @@ async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void>
   }
   
   const query = `
-    query Stores($timestamp: String, $limit: Int, $offset: Int) {
-      stores(timestamp: $timestamp, limit: $limit, offset: $offset) {
+    query {
+      stores {
         stores {
           code
           name
@@ -288,9 +269,6 @@ async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void>
           created_at
           updated_at
         }
-        total
-        limit
-        offset
       }
     }
   `;
@@ -298,10 +276,7 @@ async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void>
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      query,
-      variables: { limit: 1000, offset: 0 }
-    })
+    body: JSON.stringify({ query })
   });
   
   const data = await response.json();
@@ -336,11 +311,8 @@ async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> 
   }
   
   const query = `
-    query Users($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
-      users(timestamp: $timestamp, limit: $limit, offset: $offset, store_id: $storeId) {
-        limit
-        offset
-        total
+    query {
+      users {
         users {
           email
           store_id
@@ -358,14 +330,7 @@ async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> 
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      query, 
-      variables: { 
-        storeId: STORE_ID,
-        limit: 1000, 
-        offset: 0 
-      }
-    })
+    body: JSON.stringify({ query })
   });
   
   const data = await response.json();
