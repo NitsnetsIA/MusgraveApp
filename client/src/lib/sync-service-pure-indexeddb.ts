@@ -46,9 +46,22 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
 async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing taxes directly to IndexedDB...');
   
-  // Always sync to detect new records from server
-  console.log('🔍 Checking for new taxes on server...');
+  // Get last sync timestamp for incremental sync
+  let timestampFilter = '';
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('taxes');
+    if (syncConfig && syncConfig.last_request) {
+      const lastSync = new Date(syncConfig.last_request).toISOString();
+      timestampFilter = `, timestamp: "${lastSync}"`;
+      console.log(`🔍 Incremental sync: checking for taxes modified after ${lastSync}`);
+    } else {
+      console.log('🔍 First sync: downloading all taxes');
+    }
+  } else {
+    console.log('🔍 Full sync: downloading all taxes');
+  }
   
+  // For now, simplify the query until GraphQL timestamp filtering is working
   const query = `
     query {
       taxes {
@@ -77,24 +90,39 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
   }
   
   const taxes = data.data.taxes.taxes;
-  console.log(`📊 Received ${taxes.length} taxes`);
+  console.log(`📊 Received ${taxes.length} ${forceFullSync ? 'taxes' : 'new/updated taxes'}`);
   
-  // Store taxes in IndexedDB
-  for (const tax of taxes) {
-    await DatabaseService.addTax(tax);
+  if (taxes.length > 0) {
+    // Store taxes in IndexedDB
+    for (const tax of taxes) {
+      await DatabaseService.addTax(tax);
+    }
+    
+    // Update sync config with current timestamp
+    await DatabaseService.updateSyncConfig('taxes', Date.now());
+    console.log('✅ Taxes synced to IndexedDB');
+  } else {
+    console.log('⏭️ No new taxes to sync');
   }
-  
-  // Update sync config
-  await DatabaseService.updateSyncConfig('taxes', Date.now());
-  
-  console.log('✅ Taxes synced to IndexedDB');
 }
 
 async function syncProductsDirectly(onProgress?: (message: string, progress: number) => void, forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing products directly to IndexedDB...');
   
-  // Always sync to detect new records from server
-  console.log('🔍 Checking for new products on server...');
+  // Get last sync timestamp for incremental sync
+  let timestampFilter = '';
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('products');
+    if (syncConfig && syncConfig.last_request) {
+      const lastSync = new Date(syncConfig.last_request).toISOString();
+      timestampFilter = `, timestamp: "${lastSync}"`;
+      console.log(`🔍 Incremental sync: checking for products modified after ${lastSync}`);
+    } else {
+      console.log('🔍 First sync: downloading all products');
+    }
+  } else {
+    console.log('🔍 Full sync: downloading all products');
+  }
   
   let offset = 0;
   const limit = 1000;
@@ -105,7 +133,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   while (true) {
     const query = `
       query {
-        products(limit: ${limit}, offset: ${offset}) {
+        products(limit: ${limit}, offset: ${offset}${timestampFilter}) {
           products {
             ean
             ref
@@ -176,8 +204,20 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
 async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing delivery centers directly to IndexedDB...');
   
-  // Always sync to detect new records from server
-  console.log('🔍 Checking for new delivery centers on server...');
+  // Get last sync timestamp for incremental sync
+  let timestampFilter = '';
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('delivery_centers');
+    if (syncConfig && syncConfig.last_request) {
+      const lastSync = new Date(syncConfig.last_request).toISOString();
+      timestampFilter = `, timestamp: "${lastSync}"`;
+      console.log(`🔍 Incremental sync: checking for delivery centers modified after ${lastSync}`);
+    } else {
+      console.log('🔍 First sync: downloading all delivery centers');
+    }
+  } else {
+    console.log('🔍 Full sync: downloading all delivery centers');
+  }
   
   const query = `
     query {
@@ -215,8 +255,20 @@ async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Prom
 async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing stores directly to IndexedDB...');
   
-  // Always sync to detect new records from server
-  console.log('🔍 Checking for new stores on server...');
+  // Get last sync timestamp for incremental sync
+  let timestampFilter = '';
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('stores');
+    if (syncConfig && syncConfig.last_request) {
+      const lastSync = new Date(syncConfig.last_request).toISOString();
+      timestampFilter = `, timestamp: "${lastSync}"`;
+      console.log(`🔍 Incremental sync: checking for stores modified after ${lastSync}`);
+    } else {
+      console.log('🔍 First sync: downloading all stores');
+    }
+  } else {
+    console.log('🔍 Full sync: downloading all stores');
+  }
   
   const query = `
     query {
@@ -259,8 +311,20 @@ async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void>
 async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing users directly to IndexedDB...');
   
-  // Always sync to detect new records from server
-  console.log('🔍 Checking for new users on server...');
+  // Get last sync timestamp for incremental sync
+  let timestampFilter = '';
+  if (!forceFullSync) {
+    const syncConfig = await DatabaseService.getSyncConfig('users');
+    if (syncConfig && syncConfig.last_request) {
+      const lastSync = new Date(syncConfig.last_request).toISOString();
+      timestampFilter = `, timestamp: "${lastSync}"`;
+      console.log(`🔍 Incremental sync: checking for users modified after ${lastSync}`);
+    } else {
+      console.log('🔍 First sync: downloading all users');
+    }
+  } else {
+    console.log('🔍 Full sync: downloading all users');
+  }
   
   const query = `
     query {
