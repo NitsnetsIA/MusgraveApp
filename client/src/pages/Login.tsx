@@ -20,11 +20,11 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
   const [isResetting, setIsResetting] = useState(false);
   const [isDevPanelOpen, setIsDevPanelOpen] = useState(false);
   const [syncEntities, setSyncEntities] = useState({
-    users: true,
     taxes: true,
     products: true,
+    deliveryCenters: true,
     stores: true,
-    deliveryCenters: true
+    users: true
   });
 
   const form = useForm<LoginForm>({
@@ -164,18 +164,6 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="sync-users"
-                        checked={syncEntities.users}
-                        onCheckedChange={(checked) => 
-                          setSyncEntities(prev => ({ ...prev, users: !!checked }))
-                        }
-                      />
-                      <label htmlFor="sync-users" className="text-xs text-gray-600 cursor-pointer">
-                        Usuarios
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
                         id="sync-taxes"
                         checked={syncEntities.taxes}
                         onCheckedChange={(checked) => 
@@ -200,6 +188,18 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
+                        id="sync-delivery-centers"
+                        checked={syncEntities.deliveryCenters}
+                        onCheckedChange={(checked) => 
+                          setSyncEntities(prev => ({ ...prev, deliveryCenters: !!checked }))
+                        }
+                      />
+                      <label htmlFor="sync-delivery-centers" className="text-xs text-gray-600 cursor-pointer">
+                        Centros de Entrega
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
                         id="sync-stores"
                         checked={syncEntities.stores}
                         onCheckedChange={(checked) => 
@@ -212,14 +212,14 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="sync-delivery-centers"
-                        checked={syncEntities.deliveryCenters}
+                        id="sync-users"
+                        checked={syncEntities.users}
                         onCheckedChange={(checked) => 
-                          setSyncEntities(prev => ({ ...prev, deliveryCenters: !!checked }))
+                          setSyncEntities(prev => ({ ...prev, users: !!checked }))
                         }
                       />
-                      <label htmlFor="sync-delivery-centers" className="text-xs text-gray-600 cursor-pointer">
-                        Centros de Entrega
+                      <label htmlFor="sync-users" className="text-xs text-gray-600 cursor-pointer">
+                        Usuarios
                       </label>
                     </div>
                   </div>

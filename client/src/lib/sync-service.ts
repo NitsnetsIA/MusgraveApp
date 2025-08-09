@@ -1043,13 +1043,17 @@ export async function syncStores(onProgress: (message: string, progress: number)
       
       const data = await response.json();
       
+      console.log('Stores GraphQL Response:', JSON.stringify(data, null, 2));
+      
       if (data.errors) {
+        console.error('GraphQL errors for stores:', data.errors);
         throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
       }
       
       const storesPage = data.data?.stores;
       
       if (!storesPage) {
+        console.error('Invalid stores response structure:', data);
         throw new Error('Invalid response structure');
       }
       
@@ -1169,13 +1173,17 @@ export async function syncDeliveryCenters(onProgress: (message: string, progress
       
       const data = await response.json();
       
+      console.log('Delivery Centers GraphQL Response:', JSON.stringify(data, null, 2));
+      
       if (data.errors) {
+        console.error('GraphQL errors for delivery_centers:', data.errors);
         throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
       }
       
       const centersPage = data.data?.delivery_centers;
       
       if (!centersPage) {
+        console.error('Invalid delivery_centers response structure:', data);
         throw new Error('Invalid response structure');
       }
       

@@ -42,7 +42,7 @@ function Router() {
   const [store, setStore] = useState<any>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showSyncScreen, setShowSyncScreen] = useState(false);
-  const [selectedSyncEntities, setSelectedSyncEntities] = useState<string[]>(['users', 'taxes', 'products', 'stores', 'deliveryCenters']);
+  const [selectedSyncEntities, setSelectedSyncEntities] = useState<string[]>(['taxes', 'products', 'deliveryCenters', 'stores', 'users']);
   
   // Cart state is managed here
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -62,7 +62,7 @@ function Router() {
   }, [user]); // Remove getStoreByCode from dependencies to prevent infinite loop
 
   // Authentication handlers
-  const handleLogin = async (email: string, password: string, syncEntities: string[] = ['users', 'taxes', 'products', 'stores', 'deliveryCenters']): Promise<boolean> => {
+  const handleLogin = async (email: string, password: string, syncEntities: string[] = ['taxes', 'products', 'deliveryCenters', 'stores', 'users']): Promise<boolean> => {
     console.log('handleLogin called with:', { email, password, syncEntities });
     setIsLoading(true);
     try {
