@@ -31,11 +31,18 @@ async function syncTaxesDirectly(): Promise<void> {
   console.log('🔄 Syncing taxes directly to IndexedDB...');
   
   const query = `
-    query GetTaxes {
-      taxes {
-        code
-        name
-        tax_rate
+    query Taxes($timestamp: String, $limit: Int, $offset: Int) {
+      taxes(timestamp: $timestamp, limit: $limit, offset: $offset) {
+        taxes {
+          code
+          name
+          tax_rate
+          created_at
+          updated_at
+        }
+        total
+        limit
+        offset
       }
     }
   `;
@@ -43,18 +50,20 @@ async function syncTaxesDirectly(): Promise<void> {
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ 
+      query,
+      variables: { limit: 1000, offset: 0 }
+    })
   });
   
   const data = await response.json();
-  console.log('GraphQL response for taxes:', JSON.stringify(data, null, 2));
   
   if (data.errors) {
     console.error('GraphQL errors:', data.errors);
     throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
   }
   
-  const taxes = data.data.taxes;
+  const taxes = data.data.taxes.taxes;
   console.log(`📊 Received ${taxes.length} taxes`);
   
   for (const tax of taxes) {
@@ -73,19 +82,25 @@ async function syncProductsDirectly(): Promise<void> {
   
   while (true) {
     const query = `
-      query GetProducts($offset: Int!, $limit: Int!) {
-        products(offset: $offset, limit: $limit) {
-          ean
-          ref
-          title
-          description
-          price
-          tax_code
-          is_active
-          unit_of_measure
-          image_url
-          created_at
-          updated_at
+      query Products($timestamp: String, $limit: Int, $offset: Int) {
+        products(timestamp: $timestamp, limit: $limit, offset: $offset) {
+          products {
+            ean
+            ref
+            title
+            description
+            base_price
+            tax_code
+            unit_of_measure
+            quantity_measure
+            image_url
+            is_active
+            created_at
+            updated_at
+          }
+          total
+          limit
+          offset
         }
       }
     `;
@@ -95,14 +110,14 @@ async function syncProductsDirectly(): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         query, 
-        variables: { offset, limit }
+        variables: { limit, offset }
       })
     });
     
     const data = await response.json();
     if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
     
-    const products = data.data.products;
+    const products = data.data.products.products;
     console.log(`📦 Received ${products.length} products (offset: ${offset})`);
     
     if (products.length === 0) break;
@@ -127,18 +142,18 @@ async function syncDeliveryCentersDirectly(): Promise<void> {
   console.log('🔄 Syncing delivery centers directly to IndexedDB...');
   
   const query = `
-    query GetDeliveryCenters {
-      deliveryCenters {
-        code
-        name
-        address
-        city
-        postal_code
-        phone
-        email
-        is_active
-        created_at
-        updated_at
+    query DeliveryCenters($timestamp: String, $limit: Int, $offset: Int) {
+      deliveryCenters(timestamp: $timestamp, limit: $limit, offset: $offset) {
+        total
+        limit
+        offset
+        deliveryCenters {
+          code
+          name
+          is_active
+          created_at
+          updated_at
+        }
       }
     }
   `;
@@ -146,13 +161,16 @@ async function syncDeliveryCentersDirectly(): Promise<void> {
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ 
+      query,
+      variables: { limit: 1000, offset: 0 }
+    })
   });
   
   const data = await response.json();
   if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
   
-  const centers = data.data.deliveryCenters;
+  const centers = data.data.deliveryCenters.deliveryCenters;
   console.log(`🏢 Received ${centers.length} delivery centers`);
   
   for (const center of centers) {
@@ -166,15 +184,20 @@ async function syncStoresDirectly(): Promise<void> {
   console.log('🔄 Syncing stores directly to IndexedDB...');
   
   const query = `
-    query GetStores {
-      stores {
-        code
-        name
-        responsible_email
-        delivery_center_code
-        is_active
-        created_at
-        updated_at
+    query Stores($timestamp: String, $limit: Int, $offset: Int) {
+      stores(timestamp: $timestamp, limit: $limit, offset: $offset) {
+        stores {
+          code
+          name
+          responsible_email
+          delivery_center_code
+          is_active
+          created_at
+          updated_at
+        }
+        total
+        limit
+        offset
       }
     }
   `;
@@ -182,13 +205,16 @@ async function syncStoresDirectly(): Promise<void> {
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query })
+    body: JSON.stringify({ 
+      query,
+      variables: { limit: 1000, offset: 0 }
+    })
   });
   
   const data = await response.json();
   if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
   
-  const stores = data.data.stores;
+  const stores = data.data.stores.stores;
   console.log(`🏪 Received ${stores.length} stores`);
   
   for (const store of stores) {
@@ -202,16 +228,21 @@ async function syncUsersDirectly(): Promise<void> {
   console.log('🔄 Syncing users directly to IndexedDB...');
   
   const query = `
-    query GetUsers($storeId: String!) {
-      usersByStore(store_id: $storeId) {
-        email
-        name
-        store_id
-        password_hash
-        is_active
-        last_login
-        created_at
-        updated_at
+    query Users($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
+      users(timestamp: $timestamp, limit: $limit, offset: $offset, store_id: $storeId) {
+        limit
+        offset
+        total
+        users {
+          email
+          store_id
+          name
+          password_hash
+          is_active
+          last_login
+          created_at
+          updated_at
+        }
       }
     }
   `;
@@ -221,14 +252,18 @@ async function syncUsersDirectly(): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
       query, 
-      variables: { storeId: STORE_ID }
+      variables: { 
+        storeId: STORE_ID,
+        limit: 1000, 
+        offset: 0 
+      }
     })
   });
   
   const data = await response.json();
   if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
   
-  const users = data.data.usersByStore;
+  const users = data.data.users.users;
   console.log(`👥 Received ${users.length} users`);
   
   for (const user of users) {
