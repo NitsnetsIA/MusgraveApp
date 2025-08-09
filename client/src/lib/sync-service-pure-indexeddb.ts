@@ -46,18 +46,8 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
 async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing taxes directly to IndexedDB...');
   
-  // Check if we need to sync (temporarily disabled until GraphQL schema supports last_updated)
-  if (!forceFullSync) {
-    const syncConfig = await DatabaseService.getSyncConfig('taxes');
-    if (syncConfig) {
-      // For now, skip if synced in last hour
-      const oneHourAgo = Date.now() - (60 * 60 * 1000);
-      if (syncConfig.last_request > oneHourAgo) {
-        console.log('⏭️ Taxes: Recently synced, skipping');
-        return;
-      }
-    }
-  }
+  // Always sync to detect new records from server
+  console.log('🔍 Checking for new taxes on server...');
   
   const query = `
     query {
@@ -103,19 +93,8 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
 async function syncProductsDirectly(onProgress?: (message: string, progress: number) => void, forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing products directly to IndexedDB...');
   
-  // Check if we need to sync (temporarily using time-based check)
-  if (!forceFullSync) {
-    const syncConfig = await DatabaseService.getSyncConfig('products');
-    if (syncConfig) {
-      // For now, skip if synced in last hour
-      const oneHourAgo = Date.now() - (60 * 60 * 1000);
-      if (syncConfig.last_request > oneHourAgo) {
-        console.log('⏭️ Products: Recently synced, skipping');
-        onProgress?.('⏭️ Productos: No necesitan actualización', 60);
-        return;
-      }
-    }
-  }
+  // Always sync to detect new records from server
+  console.log('🔍 Checking for new products on server...');
   
   let offset = 0;
   const limit = 1000;
@@ -197,17 +176,8 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
 async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing delivery centers directly to IndexedDB...');
   
-  // Check if we need to sync (time-based check)
-  if (!forceFullSync) {
-    const syncConfig = await DatabaseService.getSyncConfig('delivery_centers');
-    if (syncConfig) {
-      const oneHourAgo = Date.now() - (60 * 60 * 1000);
-      if (syncConfig.last_request > oneHourAgo) {
-        console.log('⏭️ Delivery Centers: Recently synced, skipping');
-        return;
-      }
-    }
-  }
+  // Always sync to detect new records from server
+  console.log('🔍 Checking for new delivery centers on server...');
   
   const query = `
     query {
@@ -245,17 +215,8 @@ async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Prom
 async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing stores directly to IndexedDB...');
   
-  // Check if we need to sync (time-based check)
-  if (!forceFullSync) {
-    const syncConfig = await DatabaseService.getSyncConfig('stores');
-    if (syncConfig) {
-      const oneHourAgo = Date.now() - (60 * 60 * 1000);
-      if (syncConfig.last_request > oneHourAgo) {
-        console.log('⏭️ Stores: Recently synced, skipping');
-        return;
-      }
-    }
-  }
+  // Always sync to detect new records from server
+  console.log('🔍 Checking for new stores on server...');
   
   const query = `
     query {
@@ -298,17 +259,8 @@ async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void>
 async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> {
   console.log('🔄 Syncing users directly to IndexedDB...');
   
-  // Check if we need to sync (time-based check)
-  if (!forceFullSync) {
-    const syncConfig = await DatabaseService.getSyncConfig('users');
-    if (syncConfig) {
-      const oneHourAgo = Date.now() - (60 * 60 * 1000);
-      if (syncConfig.last_request > oneHourAgo) {
-        console.log('⏭️ Users: Recently synced, skipping');
-        return;
-      }
-    }
-  }
+  // Always sync to detect new records from server
+  console.log('🔍 Checking for new users on server...');
   
   const query = `
     query {
