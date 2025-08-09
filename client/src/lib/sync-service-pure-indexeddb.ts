@@ -1,6 +1,6 @@
 import { DatabaseService } from './indexeddb';
 
-const GRAPHQL_ENDPOINT = 'https://pim-grocery-ia64.replit.app/graphql';
+const GRAPHQL_ENDPOINT = '/api/graphql'; // Use server proxy to avoid CORS
 const STORE_ID = 'ES001';
 
 // Pure IndexedDB sync - no SQL.js dependency
