@@ -29,42 +29,34 @@ export async function sendPurchaseOrderToServer(
   items: PurchaseOrderItem[]
 ): Promise<boolean> {
   try {
-    console.log(`🚀 Attempting to sync purchase order ${purchaseOrder.purchase_order_id} with server...`);
+    console.log(`🚀 Sending purchase order ${purchaseOrder.purchase_order_id} to GraphQL server...`);
     
-    // For now, disable server sync due to GraphQL server issues
-    // The purchase order is already saved locally and can be accessed offline
-    console.log(`⚠️ Server sync temporarily disabled - purchase order ${purchaseOrder.purchase_order_id} remains available offline`);
-    return false; // Indicates server sync failed, but order is saved locally
+    // Try with the direct external endpoint first
+    const EXTERNAL_ENDPOINT = 'https://pim-grocery-ia64.replit.app/graphql';
     
-    /* TODO: Re-enable when GraphQL server issues are resolved */
-    // First, create the purchase order
     const createOrderMutation = `
-      mutation CreatePurchaseOrder {
+      mutation {
         createPurchaseOrder(
-          purchase_order_id: "${purchaseOrder.purchase_order_id}",
-          user_email: "${purchaseOrder.user_email}",
-          store_id: "${purchaseOrder.store_id}",
-          status: "${purchaseOrder.status}",
-          subtotal: ${purchaseOrder.subtotal},
-          tax_total: ${purchaseOrder.tax_total},
+          purchase_order_id: "${purchaseOrder.purchase_order_id}"
+          user_email: "${purchaseOrder.user_email}"
+          store_id: "${purchaseOrder.store_id}"
+          status: "${purchaseOrder.status}"
+          subtotal: ${purchaseOrder.subtotal}
+          tax_total: ${purchaseOrder.tax_total}
           final_total: ${purchaseOrder.final_total}
         ) {
           purchase_order_id
-          user_email
-          store_id
           status
           subtotal
           tax_total
           final_total
-          created_at
-          updated_at
         }
       }
     `;
 
-    console.log('📊 Step 1: Creating purchase order via GraphQL');
+    console.log('📊 Step 1: Creating purchase order via external GraphQL endpoint');
 
-    const orderResponse = await fetch(GRAPHQL_ENDPOINT, {
+    const orderResponse = await fetch(EXTERNAL_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,15 +85,15 @@ export async function sendPurchaseOrderToServer(
       const createItemMutation = `
         mutation {
           createPurchaseOrderItem(
-            purchase_order_id: "${purchaseOrder.purchase_order_id}",
-            item_ean: "${item.item_ean}",
-            item_title: "${item.item_title || ''}",
-            item_description: "${(item.item_description || '').replace(/"/g, '\\"')}",
-            unit_of_measure: "${item.unit_of_measure || ''}",
-            quantity_measure: ${item.quantity_measure || 1},
-            image_url: "${item.image_url || ''}",
-            quantity: ${item.quantity},
-            base_price_at_order: ${item.base_price_at_order},
+            purchase_order_id: "${purchaseOrder.purchase_order_id}"
+            item_ean: "${item.item_ean}"
+            item_title: "${item.item_title || ''}"
+            item_description: "${(item.item_description || '').replace(/"/g, '\\"')}"
+            unit_of_measure: "${item.unit_of_measure || ''}"
+            quantity_measure: ${item.quantity_measure || 1}
+            image_url: "${item.image_url || ''}"
+            quantity: ${item.quantity}
+            base_price_at_order: ${item.base_price_at_order}
             tax_rate_at_order: ${item.tax_rate_at_order}
           ) {
             item_id
@@ -112,7 +104,7 @@ export async function sendPurchaseOrderToServer(
         }
       `;
 
-      const itemResponse = await fetch(GRAPHQL_ENDPOINT, {
+      const itemResponse = await fetch(EXTERNAL_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
