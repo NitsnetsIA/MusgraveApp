@@ -31,37 +31,82 @@ export async function sendPurchaseOrderToServer(
   try {
     console.log(`🚀 Sending purchase order ${purchaseOrder.purchase_order_id} to GraphQL server...`);
     
-    // Try with the direct external endpoint first
-    const EXTERNAL_ENDPOINT = 'https://pim-grocery-ia64.replit.app/graphql';
+    // Use the correct GraphQL server URL from working CURL
+    const EXTERNAL_ENDPOINT = 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/';
     
+    // Format the mutation exactly like the working CURL example
     const createOrderMutation = `
-      mutation {
-        createPurchaseOrder(
-          purchase_order_id: "${purchaseOrder.purchase_order_id}"
-          user_email: "${purchaseOrder.user_email}"
-          store_id: "${purchaseOrder.store_id}"
-          status: "${purchaseOrder.status}"
-          subtotal: ${purchaseOrder.subtotal}
-          tax_total: ${purchaseOrder.tax_total}
-          final_total: ${purchaseOrder.final_total}
-        ) {
+      mutation CreatePurchaseOrder($input: PurchaseOrderInput!) {
+        createPurchaseOrder(input: $input) {
           purchase_order_id
+          user_email
+          store_id
           status
           subtotal
           tax_total
           final_total
+          server_sent_at
+          created_at
+          updated_at
+          items {
+            item_id
+            purchase_order_id
+            item_ean
+            item_title
+            item_description
+            unit_of_measure
+            quantity_measure
+            image_url
+            quantity
+            base_price_at_order
+            tax_rate_at_order
+            created_at
+            updated_at
+          }
         }
       }
     `;
 
-    console.log('📊 Step 1: Creating purchase order via external GraphQL endpoint');
+    // Prepare variables exactly like the working CURL
+    const variables = {
+      input: {
+        purchase_order_id: purchaseOrder.purchase_order_id,
+        user_email: purchaseOrder.user_email,
+        store_id: purchaseOrder.store_id,
+        status: purchaseOrder.status,
+        subtotal: purchaseOrder.subtotal,
+        tax_total: purchaseOrder.tax_total,
+        final_total: purchaseOrder.final_total,
+        created_at: purchaseOrder.created_at,
+        updated_at: purchaseOrder.created_at,
+        items: items.map(item => ({
+          item_ean: item.item_ean,
+          item_title: item.item_title || '',
+          item_description: item.item_description || '',
+          unit_of_measure: item.unit_of_measure || 'unidades',
+          quantity_measure: item.quantity_measure || 1,
+          image_url: item.image_url || '',
+          quantity: item.quantity,
+          base_price_at_order: item.base_price_at_order,
+          tax_rate_at_order: item.tax_rate_at_order,
+          created_at: purchaseOrder.created_at,
+          updated_at: purchaseOrder.created_at
+        }))
+      }
+    };
+
+    console.log('📊 Sending complete purchase order with items to GraphQL server');
+    console.log('Variables:', JSON.stringify(variables, null, 2));
 
     const orderResponse = await fetch(EXTERNAL_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query: createOrderMutation })
+      body: JSON.stringify({ 
+        query: createOrderMutation,
+        variables 
+      })
     });
 
     if (!orderResponse.ok) {
@@ -76,59 +121,27 @@ export async function sendPurchaseOrderToServer(
       return false;
     }
 
-    console.log('✅ Step 1 completed: Purchase order created on server');
-
-    // Step 2: Add all purchase order items
-    console.log(`📊 Step 2: Adding ${items.length} purchase order items`);
-    
-    for (const item of items) {
-      const createItemMutation = `
-        mutation {
-          createPurchaseOrderItem(
-            purchase_order_id: "${purchaseOrder.purchase_order_id}"
-            item_ean: "${item.item_ean}"
-            item_title: "${item.item_title || ''}"
-            item_description: "${(item.item_description || '').replace(/"/g, '\\"')}"
-            unit_of_measure: "${item.unit_of_measure || ''}"
-            quantity_measure: ${item.quantity_measure || 1}
-            image_url: "${item.image_url || ''}"
-            quantity: ${item.quantity}
-            base_price_at_order: ${item.base_price_at_order}
-            tax_rate_at_order: ${item.tax_rate_at_order}
-          ) {
-            item_id
-            purchase_order_id
-            item_ean
-            quantity
-          }
-        }
-      `;
-
-      const itemResponse = await fetch(EXTERNAL_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: createItemMutation })
-      });
-
-      if (!itemResponse.ok) {
-        console.error(`❌ Server error creating item ${item.item_ean}: HTTP ${itemResponse.status}`);
-        continue; // Continue with other items
+    if (orderData.data && orderData.data.createPurchaseOrder) {
+      console.log('✅ Purchase order with all items sent successfully to server!');
+      console.log('Server response:', orderData.data.createPurchaseOrder);
+      
+      // Update server_sent_at timestamp in local database
+      try {
+        const { UnifiedDatabaseService } = await import('@/lib/database-service');
+        await UnifiedDatabaseService.updatePurchaseOrderServerSentAt(
+          purchaseOrder.purchase_order_id, 
+          new Date().toISOString()
+        );
+        console.log('✅ Updated server_sent_at timestamp locally');
+      } catch (updateError) {
+        console.error('Error updating server_sent_at:', updateError);
       }
-
-      const itemData = await itemResponse.json();
-
-      if (itemData.errors) {
-        console.error(`❌ GraphQL errors creating item ${item.item_ean}:`, itemData.errors);
-        continue; // Continue with other items
-      }
-
-      console.log(`✅ Item ${item.item_ean} added to purchase order`);
+      
+      return true;
+    } else {
+      console.error('❌ Unexpected response format:', orderData);
+      return false;
     }
-
-    console.log('✅ Purchase order sent successfully to server with all items');
-    return true;
 
   } catch (error) {
     console.error('❌ Error sending purchase order to server:', error);

@@ -278,6 +278,15 @@ export class DatabaseService {
       throw error;
     }
   }
+
+  static async updatePurchaseOrderServerSentAt(purchaseOrderId: string, serverSentAt: string): Promise<void> {
+    try {
+      await IndexedDBService.updatePurchaseOrderServerSentAt(purchaseOrderId, serverSentAt);
+    } catch (error) {
+      console.error('Error updating purchase order server_sent_at:', error);
+      throw error;
+    }
+  }
 }
 
 // For backward compatibility, export as UnifiedDatabaseService too
