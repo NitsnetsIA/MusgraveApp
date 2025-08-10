@@ -33,6 +33,9 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
     
     onProgress?.('👥 Sincronizando usuarios...', 90);
     await syncUsersDirectly(forceFullSync);
+
+    onProgress?.('📦 Enviando órdenes de compra pendientes...', 95);
+    await syncPendingPurchaseOrders();
     
     onProgress?.('✅ Sincronización completada exitosamente', 100);
     console.log('✅ Pure IndexedDB synchronization completed successfully');
@@ -387,4 +390,18 @@ async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> 
   await DatabaseService.updateSyncConfig('users', Date.now());
   
   console.log('✅ Users synced to IndexedDB');
+}
+
+// Sync pending purchase orders to GraphQL server
+async function syncPendingPurchaseOrders(): Promise<void> {
+  console.log('🔄 Syncing pending purchase orders to server...');
+  
+  try {
+    const { syncPendingPurchaseOrders } = await import('./purchase-order-sync');
+    await syncPendingPurchaseOrders();
+    console.log('✅ Pending purchase orders sync completed');
+  } catch (error) {
+    console.error('❌ Failed to sync pending purchase orders:', error);
+    // Don't throw error - this shouldn't block the main sync process
+  }
 }

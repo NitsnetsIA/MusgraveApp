@@ -54,6 +54,7 @@ export interface PurchaseOrder {
   subtotal: number;
   tax_total: number;
   final_total: number;
+  server_send_at?: string | null; // Timestamp when sent to server, null if not sent
 }
 
 export interface PurchaseOrderItem {

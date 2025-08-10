@@ -193,8 +193,26 @@ export function usePurchaseOrders() {
 
   const savePurchaseOrder = async (order: PurchaseOrder, items: PurchaseOrderItem[]) => {
     try {
-      await DatabaseService.savePurchaseOrder(order, items);
+      // Save to IndexedDB first (with server_send_at = null)
+      const orderWithNullSend = { ...order, server_send_at: null };
+      await DatabaseService.savePurchaseOrder(orderWithNullSend, items);
       console.log(`Saved purchase order: ${order.purchase_order_id} with ${items.length} items`);
+
+      // Try to send to GraphQL server
+      try {
+        const { sendPurchaseOrderToServer } = await import('../lib/purchase-order-sync');
+        const success = await sendPurchaseOrderToServer(orderWithNullSend, items);
+        
+        if (success) {
+          // Update server_send_at timestamp
+          await DatabaseService.updatePurchaseOrderSendStatus(order.purchase_order_id, new Date().toISOString());
+          console.log(`✅ Purchase order ${order.purchase_order_id} sent to server successfully`);
+        } else {
+          console.log(`⚠️ Purchase order ${order.purchase_order_id} saved locally but failed to send to server`);
+        }
+      } catch (serverError) {
+        console.error(`Failed to send purchase order ${order.purchase_order_id} to server:`, serverError);
+      }
     } catch (err) {
       console.error('Failed to save purchase order:', err);
       throw err;

@@ -294,7 +294,7 @@ export function useDatabase() {
       const randomStatus = random < 0.9 ? 'completed' : (random < 0.95 ? 'processing' : 'uncommunicated');
 
       // Create purchase order using unified service
-      await UnifiedDatabaseService.createPurchaseOrder({
+      const purchaseOrder = {
         purchase_order_id: purchaseOrderId,
         user_email: userEmail,
         store_id: storeId,
@@ -302,12 +302,16 @@ export function useDatabase() {
         status: randomStatus,
         subtotal,
         tax_total: taxTotal,
-        final_total: finalTotal
-      });
+        final_total: finalTotal,
+        server_send_at: null // Initialize as not sent to server
+      };
+      
+      await UnifiedDatabaseService.createPurchaseOrder(purchaseOrder);
 
       // Add purchase order items using unified service
+      const purchaseOrderItems = [];
       for (const item of cartItems) {
-        await UnifiedDatabaseService.addPurchaseOrderItem({
+        const orderItem = {
           purchase_order_id: purchaseOrderId,
           item_ean: item.ean,
           item_title: item.title,
@@ -318,7 +322,26 @@ export function useDatabase() {
           quantity: item.quantity,
           base_price_at_order: item.base_price,
           tax_rate_at_order: item.tax_rate
-        });
+        };
+        purchaseOrderItems.push(orderItem);
+        await UnifiedDatabaseService.addPurchaseOrderItem(orderItem);
+      }
+
+      // Try to send to GraphQL server
+      try {
+        const { sendPurchaseOrderToServer } = await import('../lib/purchase-order-sync');
+        const success = await sendPurchaseOrderToServer(purchaseOrder, purchaseOrderItems);
+        
+        if (success) {
+          // Update server_send_at timestamp using IndexedDB
+          const { DatabaseService } = await import('../lib/indexeddb');
+          await DatabaseService.updatePurchaseOrderSendStatus(purchaseOrderId, new Date().toISOString());
+          console.log(`✅ Purchase order ${purchaseOrderId} sent to server successfully`);
+        } else {
+          console.log(`⚠️ Purchase order ${purchaseOrderId} saved locally but failed to send to server`);
+        }
+      } catch (serverError) {
+        console.error(`Failed to send purchase order ${purchaseOrderId} to server:`, serverError);
       }
 
       // If status is "completed", create a corresponding processed order

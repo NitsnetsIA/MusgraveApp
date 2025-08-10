@@ -55,6 +55,7 @@ export interface PurchaseOrder {
   subtotal: number;
   tax_total: number;
   final_total: number;
+  server_send_at?: string | null; // Timestamp when sent to server, null if not sent
 }
 
 export interface PurchaseOrderItem {
@@ -134,7 +135,7 @@ export class MusgraveDatabase extends Dexie {
       stores: 'code, name, responsible_email, delivery_center_code, is_active',
       users: 'email, store_id, name, is_active',
       products: 'ean, ref, title, tax_code, is_active, unit_of_measure',
-      purchase_orders: 'purchase_order_id, user_email, store_id, created_at, status',
+      purchase_orders: 'purchase_order_id, user_email, store_id, created_at, status, server_send_at',
       purchase_order_items: '++item_id, purchase_order_id, item_ean',
       orders: 'order_id, source_purchase_order_id, user_email, store_id, created_at, status',
       order_items: '++item_id, order_id, item_ean',
@@ -356,6 +357,20 @@ export class DatabaseService {
 
   static async getPurchaseOrderItems(orderId: string): Promise<PurchaseOrderItem[]> {
     return await db.purchase_order_items.where('purchase_order_id').equals(orderId).toArray();
+  }
+
+  // Get purchase orders that haven't been sent to server (server_send_at is null)
+  static async getPendingPurchaseOrders(): Promise<PurchaseOrder[]> {
+    return await db.purchase_orders.filter(order => 
+      order.server_send_at === null || order.server_send_at === undefined
+    ).toArray();
+  }
+
+  // Update server_send_at timestamp
+  static async updatePurchaseOrderSendStatus(orderId: string, timestamp: string): Promise<void> {
+    await db.purchase_orders.where('purchase_order_id').equals(orderId).modify({
+      server_send_at: timestamp
+    });
   }
 
   // Order operations  
