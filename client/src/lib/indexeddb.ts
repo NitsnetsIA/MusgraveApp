@@ -409,15 +409,26 @@ export class DatabaseService {
     return await db.stores.where('code').equals(code).first();
   }
 
-  static async syncProducts(products: Product[]): Promise<void> {
-    await db.products.clear();
-    
-    // Insert products in batches for better performance
-    const batchSize = 1000;
-    for (let i = 0; i < products.length; i += batchSize) {
-      const batch = products.slice(i, i + batchSize);
-      await db.products.bulkAdd(batch);
-      console.log(`Inserted batch ${Math.floor(i/batchSize) + 1} - ${Math.min(i + batchSize, products.length)}/${products.length} products`);
+  static async syncProducts(products: Product[], isIncrementalUpdate: boolean = false): Promise<void> {
+    if (isIncrementalUpdate) {
+      // For incremental updates, only update specific products without clearing all
+      console.log(`🔄 Incremental update: Updating ${products.length} specific products...`);
+      for (const product of products) {
+        await db.products.put(product); // put() will update if exists, insert if not
+        console.log(`Updated product: ${product.ean} - ${product.title} (active: ${product.is_active})`);
+      }
+    } else {
+      // For full sync, clear and bulk insert all products
+      console.log(`🗑️ Full sync: Clearing all products and bulk inserting ${products.length} products...`);
+      await db.products.clear();
+      
+      // Insert products in batches for better performance
+      const batchSize = 1000;
+      for (let i = 0; i < products.length; i += batchSize) {
+        const batch = products.slice(i, i + batchSize);
+        await db.products.bulkAdd(batch);
+        console.log(`Inserted batch ${Math.floor(i/batchSize) + 1} - ${Math.min(i + batchSize, products.length)}/${products.length} products`);
+      }
     }
   }
 

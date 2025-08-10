@@ -202,16 +202,17 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   
   // CRITICAL FIX: Only do bulk insert if we have products to insert
   if (allProducts.length > 0) {
-    console.log(`🚀 OPTIMIZED BULK INSERT: Inserting ${allProducts.length} products at once...`);
+    const isIncremental = !forceFullSync && timestampFilter !== '';
+    console.log(`🚀 ${isIncremental ? 'INCREMENTAL UPDATE' : 'OPTIMIZED BULK INSERT'}: ${isIncremental ? 'Updating' : 'Inserting'} ${allProducts.length} products...`);
     
     // DEBUG: Log first few products to check is_active values
     if (allProducts.length > 0) {
-      console.log(`DEBUG: About to insert product with is_active:`, allProducts[0].is_active, `(type: ${typeof allProducts[0].is_active})`);
+      console.log(`DEBUG: About to ${isIncremental ? 'update' : 'insert'} product with is_active:`, allProducts[0].is_active, `(type: ${typeof allProducts[0].is_active})`);
     }
     
-    await DatabaseService.syncProducts(allProducts);
+    await DatabaseService.syncProducts(allProducts, isIncremental);
   } else {
-    console.log(`⏭️ No products to insert, skipping bulk insert to preserve existing products`);
+    console.log(`⏭️ No products to update, preserving existing products`);
   }
   
   // Update sync config
