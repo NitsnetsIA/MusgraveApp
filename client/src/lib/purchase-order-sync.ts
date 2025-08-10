@@ -29,11 +29,17 @@ export async function sendPurchaseOrderToServer(
   items: PurchaseOrderItem[]
 ): Promise<boolean> {
   try {
-    console.log(`🚀 Sending purchase order ${purchaseOrder.purchase_order_id} to GraphQL server...`);
-
+    console.log(`🚀 Attempting to sync purchase order ${purchaseOrder.purchase_order_id} with server...`);
+    
+    // For now, disable server sync due to GraphQL server issues
+    // The purchase order is already saved locally and can be accessed offline
+    console.log(`⚠️ Server sync temporarily disabled - purchase order ${purchaseOrder.purchase_order_id} remains available offline`);
+    return false; // Indicates server sync failed, but order is saved locally
+    
+    /* TODO: Re-enable when GraphQL server issues are resolved */
     // First, create the purchase order
     const createOrderMutation = `
-      mutation {
+      mutation CreatePurchaseOrder {
         createPurchaseOrder(
           purchase_order_id: "${purchaseOrder.purchase_order_id}",
           user_email: "${purchaseOrder.user_email}",
