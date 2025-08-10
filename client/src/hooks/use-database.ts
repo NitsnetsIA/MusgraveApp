@@ -95,11 +95,11 @@ export function useDatabase() {
           email: onlineResult.user.email,
           store_id: onlineResult.user.store_id,
           name: onlineResult.user.name,
-          is_active: onlineResult.user.is_active,
+          is_active: onlineResult.user.is_active ? 1 : 0,
           password_hash: 'online_verified', // Placeholder since we verified online
-          created_at: onlineResult.user.created_at || new Date().toISOString(),
-          updated_at: onlineResult.user.updated_at || new Date().toISOString(),
-          last_login: onlineResult.user.last_login || new Date().toISOString()
+          created_at: (onlineResult.user as any).created_at || new Date().toISOString(),
+          updated_at: (onlineResult.user as any).updated_at || new Date().toISOString(),
+          last_login: (onlineResult.user as any).last_login || new Date().toISOString()
         };
         
         if (!localUser) {
@@ -273,7 +273,7 @@ export function useDatabase() {
   const createPurchaseOrder = async (userEmail: string, storeId: string, cartItems: CartItem[]): Promise<string> => {
     try {
       const { UnifiedDatabaseService } = await import('@/lib/database-service');
-      const purchaseOrderId = generatePurchaseOrderId(storeId);
+      const purchaseOrderId = generatePurchaseOrderId();
       const now = new Date().toISOString();
 
       let subtotal = 0;
@@ -315,9 +315,9 @@ export function useDatabase() {
           purchase_order_id: purchaseOrderId,
           item_ean: item.ean,
           item_title: item.title,
-          item_description: item.description || 'Producto',
-          unit_of_measure: item.unit_of_measure || 'unidad',
-          quantity_measure: item.quantity_measure || 1,
+          item_description: (item as any).description || 'Producto',
+          unit_of_measure: (item as any).unit_of_measure || 'unidad',
+          quantity_measure: (item as any).quantity_measure || 1,
           image_url: item.image_url || '',
           quantity: item.quantity,
           base_price_at_order: item.base_price,
@@ -338,7 +338,7 @@ export function useDatabase() {
           await DatabaseService.updatePurchaseOrderSendStatus(purchaseOrderId, new Date().toISOString());
           console.log(`✅ Purchase order ${purchaseOrderId} sent to server successfully`);
         } else {
-          console.log(`⚠️ Purchase order ${purchaseOrderId} saved locally but failed to send to server`);
+          console.log(`💾 Purchase order ${purchaseOrderId} saved locally - server sync will retry during next sync`);
         }
       } catch (serverError) {
         console.error(`Failed to send purchase order ${purchaseOrderId} to server:`, serverError);
@@ -368,7 +368,7 @@ export function useDatabase() {
   ): Promise<string> => {
     try {
       // Use Musgrave center code for processed order ID (122 for Dolores Alicante)
-      const orderId = generateProcessedOrderId('122');
+      const orderId = generateProcessedOrderId();
       const now = new Date().toISOString();
 
       // Simulate modifications for processed order
@@ -400,9 +400,9 @@ export function useDatabase() {
           order_id: orderId,
           item_ean: item.ean,
           item_title: item.title,
-          item_description: item.description || 'Producto',
-          unit_of_measure: item.unit_of_measure || 'unidad',
-          quantity_measure: item.quantity_measure || 1,
+          item_description: (item as any).description || 'Producto',
+          unit_of_measure: (item as any).unit_of_measure || 'unidad',
+          quantity_measure: (item as any).quantity_measure || 1,
           image_url: item.image_url || '',
           quantity: item.quantity,
           base_price_at_order: item.base_price,

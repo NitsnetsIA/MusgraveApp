@@ -208,7 +208,7 @@ export function usePurchaseOrders() {
           await DatabaseService.updatePurchaseOrderSendStatus(order.purchase_order_id, new Date().toISOString());
           console.log(`✅ Purchase order ${order.purchase_order_id} sent to server successfully`);
         } else {
-          console.log(`⚠️ Purchase order ${order.purchase_order_id} saved locally but failed to send to server`);
+          console.log(`💾 Purchase order ${order.purchase_order_id} saved locally - server sync will retry during next sync`);
         }
       } catch (serverError) {
         console.error(`Failed to send purchase order ${order.purchase_order_id} to server:`, serverError);
