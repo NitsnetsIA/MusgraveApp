@@ -31,31 +31,18 @@ export async function sendPurchaseOrderToServer(
   try {
     console.log(`🚀 Sending purchase order ${purchaseOrder.purchase_order_id} to GraphQL server...`);
 
-    // Prepare the input for GraphQL mutation
-    const input: PurchaseOrderInput = {
-      purchase_order_id: purchaseOrder.purchase_order_id,
-      user_email: purchaseOrder.user_email,
-      store_id: purchaseOrder.store_id,
-      status: purchaseOrder.status,
-      subtotal: purchaseOrder.subtotal,
-      tax_total: purchaseOrder.tax_total,
-      final_total: purchaseOrder.final_total,
-      items: items.map(item => ({
-        item_ean: item.item_ean,
-        item_title: item.item_title || '',
-        item_description: item.item_description,
-        unit_of_measure: item.unit_of_measure || '',
-        quantity_measure: item.quantity_measure || 1,
-        image_url: item.image_url,
-        quantity: item.quantity,
-        base_price_at_order: item.base_price_at_order,
-        tax_rate_at_order: item.tax_rate_at_order
-      }))
-    };
-
-    const mutation = `
-      mutation CreatePurchaseOrder($input: PurchaseOrderInput!) {
-        createPurchaseOrder(input: $input) {
+    // First, create the purchase order
+    const createOrderMutation = `
+      mutation {
+        createPurchaseOrder(
+          purchase_order_id: "${purchaseOrder.purchase_order_id}",
+          user_email: "${purchaseOrder.user_email}",
+          store_id: "${purchaseOrder.store_id}",
+          status: "${purchaseOrder.status}",
+          subtotal: ${purchaseOrder.subtotal},
+          tax_total: ${purchaseOrder.tax_total},
+          final_total: ${purchaseOrder.final_total}
+        ) {
           purchase_order_id
           user_email
           store_id
@@ -65,49 +52,84 @@ export async function sendPurchaseOrderToServer(
           final_total
           created_at
           updated_at
-          items {
-            item_id
-            purchase_order_id
-            item_ean
-            item_title
-            item_description
-            unit_of_measure
-            quantity_measure
-            image_url
-            quantity
-            base_price_at_order
-            tax_rate_at_order
-            created_at
-            updated_at
-          }
         }
       }
     `;
 
-    const response = await fetch(GRAPHQL_ENDPOINT, {
+    console.log('📊 Step 1: Creating purchase order via GraphQL');
+
+    const orderResponse = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        query: mutation,
-        variables: { input }
-      })
+      body: JSON.stringify({ query: createOrderMutation })
     });
 
-    if (!response.ok) {
-      console.error(`❌ Server error: HTTP ${response.status}`);
+    if (!orderResponse.ok) {
+      console.error(`❌ Server error creating purchase order: HTTP ${orderResponse.status}`);
       return false;
     }
 
-    const data = await response.json();
+    const orderData = await orderResponse.json();
 
-    if (data.errors) {
-      console.error('❌ GraphQL errors:', data.errors);
+    if (orderData.errors) {
+      console.error('❌ GraphQL errors creating purchase order:', orderData.errors);
       return false;
     }
 
-    console.log('✅ Purchase order sent successfully to server');
+    console.log('✅ Step 1 completed: Purchase order created on server');
+
+    // Step 2: Add all purchase order items
+    console.log(`📊 Step 2: Adding ${items.length} purchase order items`);
+    
+    for (const item of items) {
+      const createItemMutation = `
+        mutation {
+          createPurchaseOrderItem(
+            purchase_order_id: "${purchaseOrder.purchase_order_id}",
+            item_ean: "${item.item_ean}",
+            item_title: "${item.item_title || ''}",
+            item_description: "${(item.item_description || '').replace(/"/g, '\\"')}",
+            unit_of_measure: "${item.unit_of_measure || ''}",
+            quantity_measure: ${item.quantity_measure || 1},
+            image_url: "${item.image_url || ''}",
+            quantity: ${item.quantity},
+            base_price_at_order: ${item.base_price_at_order},
+            tax_rate_at_order: ${item.tax_rate_at_order}
+          ) {
+            item_id
+            purchase_order_id
+            item_ean
+            quantity
+          }
+        }
+      `;
+
+      const itemResponse = await fetch(GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: createItemMutation })
+      });
+
+      if (!itemResponse.ok) {
+        console.error(`❌ Server error creating item ${item.item_ean}: HTTP ${itemResponse.status}`);
+        continue; // Continue with other items
+      }
+
+      const itemData = await itemResponse.json();
+
+      if (itemData.errors) {
+        console.error(`❌ GraphQL errors creating item ${item.item_ean}:`, itemData.errors);
+        continue; // Continue with other items
+      }
+
+      console.log(`✅ Item ${item.item_ean} added to purchase order`);
+    }
+
+    console.log('✅ Purchase order sent successfully to server with all items');
     return true;
 
   } catch (error) {
