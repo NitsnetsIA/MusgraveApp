@@ -275,6 +275,17 @@ export class DatabaseService {
       if (activeOnly) {
         // Filter by is_active using toArray() and filter() since is_active is not indexed
         const allProducts = await db.products.toArray();
+        
+        // DEBUG: Log first few products to see is_active values
+        if (allProducts.length > 0) {
+          console.log(`DEBUG: First product is_active value:`, allProducts[0].is_active, `(type: ${typeof allProducts[0].is_active})`);
+          console.log(`DEBUG: Sample product data:`, {
+            ean: allProducts[0].ean,
+            title: allProducts[0].title,
+            is_active: allProducts[0].is_active
+          });
+        }
+        
         const activeProducts = allProducts.filter(product => 
           product.is_active === true || product.is_active === 1
         );

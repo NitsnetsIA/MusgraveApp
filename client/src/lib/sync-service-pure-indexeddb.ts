@@ -203,6 +203,12 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   // CRITICAL FIX: Only do bulk insert if we have products to insert
   if (allProducts.length > 0) {
     console.log(`🚀 OPTIMIZED BULK INSERT: Inserting ${allProducts.length} products at once...`);
+    
+    // DEBUG: Log first few products to check is_active values
+    if (allProducts.length > 0) {
+      console.log(`DEBUG: About to insert product with is_active:`, allProducts[0].is_active, `(type: ${typeof allProducts[0].is_active})`);
+    }
+    
     await DatabaseService.syncProducts(allProducts);
   } else {
     console.log(`⏭️ No products to insert, skipping bulk insert to preserve existing products`);
