@@ -34,8 +34,11 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
     onProgress?.('👥 Sincronizando usuarios...', 90);
     await syncUsersDirectly(forceFullSync);
 
-    onProgress?.('📦 Enviando órdenes de compra pendientes...', 95);
+    onProgress?.('📦 Enviando órdenes de compra pendientes...', 93);
     await syncPendingPurchaseOrders();
+
+    onProgress?.('🛒 Importando pedidos procesados del servidor...', 97);
+    await syncProcessedOrdersFromServer(forceFullSync);
     
     onProgress?.('✅ Sincronización completada exitosamente', 100);
     console.log('✅ Pure IndexedDB synchronization completed successfully');
@@ -402,6 +405,142 @@ async function syncPendingPurchaseOrders(): Promise<void> {
     console.log('✅ Pending purchase orders sync completed');
   } catch (error) {
     console.error('❌ Failed to sync pending purchase orders:', error);
+    // Don't throw error - this shouldn't block the main sync process
+  }
+}
+
+// Sync processed orders from GraphQL server
+async function syncProcessedOrdersFromServer(forceFullSync: boolean = false): Promise<void> {
+  console.log('🔄 Syncing processed orders from GraphQL server...');
+  
+  try {
+    // Get last sync timestamp for incremental sync
+    let timestamp = '2024-08-09T09:45:40.647Z'; // Default starting date
+    if (!forceFullSync) {
+      const syncConfig = await DatabaseService.getSyncConfig('orders');
+      if (syncConfig && syncConfig.last_request) {
+        timestamp = new Date(syncConfig.last_request).toISOString();
+        console.log(`🔍 Incremental sync: checking for orders modified after ${timestamp}`);
+      } else {
+        console.log('🔍 First sync: downloading orders from default date');
+      }
+    } else {
+      console.log('🔍 Full sync: downloading all orders');
+    }
+
+    const query = `
+      query Order($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
+        orders(timestamp: $timestamp, limit: $limit, offset: $offset, store_id: $storeId) {
+          orders {
+            order_id
+            source_purchase_order_id
+            user_email
+            store_id
+            observations
+            subtotal
+            tax_total
+            final_total
+            created_at
+            updated_at
+            items {
+              item_id
+              order_id
+              item_ean
+              item_title
+              item_description
+              unit_of_measure
+              quantity_measure
+              image_url
+              quantity
+              base_price_at_order
+              tax_rate_at_order
+              created_at
+              updated_at
+            }
+          }
+          total
+          limit
+          offset
+        }
+      }
+    `;
+
+    // Query orders for the user's store only
+    const variables = {
+      timestamp: timestamp,
+      limit: 1000,
+      offset: 0,
+      storeId: STORE_ID // This ensures we only get orders for ES001 store
+    };
+
+    console.log(`📊 Requesting processed orders for store ${STORE_ID} since ${timestamp}`);
+    
+    const response = await fetch('https://pim-grocery-ia64.replit.app/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (data.errors) {
+      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+    }
+
+    const ordersData = data.data.orders;
+    const orders = ordersData.orders || [];
+    
+    console.log(`🛒 Received ${orders.length} processed orders for store ${STORE_ID}`);
+    
+    if (orders.length > 0) {
+      // Import each order with its items
+      for (const order of orders) {
+        console.log(`📦 Importing processed order ${order.order_id} from purchase order ${order.source_purchase_order_id}`);
+        
+        // Create the order
+        await DatabaseService.addOrder({
+          order_id: order.order_id,
+          source_purchase_order_id: order.source_purchase_order_id,
+          user_email: order.user_email,
+          store_id: order.store_id,
+          created_at: order.created_at,
+          observations: order.observations,
+          subtotal: order.subtotal,
+          tax_total: order.tax_total,
+          final_total: order.final_total,
+          status: 'completed'
+        });
+
+        // Add order items
+        for (const item of order.items) {
+          await DatabaseService.addOrderItem({
+            order_id: order.order_id,
+            item_ean: item.item_ean,
+            item_title: item.item_title,
+            item_description: item.item_description,
+            unit_of_measure: item.unit_of_measure,
+            quantity_measure: item.quantity_measure,
+            image_url: item.image_url,
+            quantity: item.quantity,
+            base_price_at_order: item.base_price_at_order,
+            tax_rate_at_order: item.tax_rate_at_order
+          });
+        }
+      }
+
+      console.log(`✅ Successfully imported ${orders.length} processed orders`);
+    } else {
+      console.log('📭 No new processed orders found');
+    }
+
+    // Update sync config
+    await DatabaseService.updateSyncConfig('orders', Date.now());
+    
+  } catch (error) {
+    console.error('❌ Failed to sync processed orders:', error);
     // Don't throw error - this shouldn't block the main sync process
   }
 }
