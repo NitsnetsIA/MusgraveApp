@@ -289,17 +289,13 @@ export function useDatabase() {
 
       const finalTotal = subtotal + taxTotal;
 
-      // Simulate workflow - 90% completed for easier testing
-      const random = Math.random();
-      const randomStatus = random < 0.9 ? 'completed' : (random < 0.95 ? 'processing' : 'uncommunicated');
-
-      // Create purchase order using unified service
+      // Initialize purchase order as "uncommunicated" - will change to "processing" if server sync succeeds
       const purchaseOrder = {
         purchase_order_id: purchaseOrderId,
         user_email: userEmail,
         store_id: storeId,
         created_at: now,
-        status: randomStatus,
+        status: 'uncommunicated', // Always start as uncommunicated
         subtotal,
         tax_total: taxTotal,
         final_total: finalTotal,
@@ -309,7 +305,7 @@ export function useDatabase() {
       await UnifiedDatabaseService.createPurchaseOrder(purchaseOrder);
 
       // Add purchase order items using unified service
-      const purchaseOrderItems = [];
+      const purchaseOrderItems: any[] = [];
       for (const item of cartItems) {
         const orderItem = {
           purchase_order_id: purchaseOrderId,
@@ -327,27 +323,25 @@ export function useDatabase() {
         await UnifiedDatabaseService.addPurchaseOrderItem(orderItem);
       }
 
-      // Try to send to GraphQL server
-      try {
-        const { sendPurchaseOrderToServer } = await import('../lib/purchase-order-sync');
-        const success = await sendPurchaseOrderToServer(purchaseOrder, purchaseOrderItems);
-        
-        if (success) {
-          // Update server_send_at timestamp using IndexedDB
-          const { DatabaseService } = await import('../lib/indexeddb');
-          await DatabaseService.updatePurchaseOrderSendStatus(purchaseOrderId, new Date().toISOString());
-          console.log(`✅ Purchase order ${purchaseOrderId} sent to server successfully`);
-        } else {
-          console.log(`💾 Purchase order ${purchaseOrderId} saved locally - server sync will retry during next sync`);
+      // Send to GraphQL server in background - don't block user
+      setTimeout(async () => {
+        try {
+          const { sendPurchaseOrderToServer } = await import('../lib/purchase-order-sync');
+          const success = await sendPurchaseOrderToServer(purchaseOrder, purchaseOrderItems);
+          
+          if (success) {
+            // Update status to "processing" and set server_send_at timestamp
+            const { UnifiedDatabaseService } = await import('@/lib/database-service');
+            await UnifiedDatabaseService.updatePurchaseOrderStatus(purchaseOrderId, 'processing');
+            await UnifiedDatabaseService.updatePurchaseOrderServerSentAt(purchaseOrderId, new Date().toISOString());
+            console.log(`✅ Purchase order ${purchaseOrderId} sent to server successfully - status updated to 'processing'`);
+          } else {
+            console.log(`💾 Purchase order ${purchaseOrderId} remains as 'uncommunicated' - will retry sync later`);
+          }
+        } catch (serverError) {
+          console.error(`Background sync failed for purchase order ${purchaseOrderId}:`, serverError);
         }
-      } catch (serverError) {
-        console.error(`Failed to send purchase order ${purchaseOrderId} to server:`, serverError);
-      }
-
-      // If status is "completed", create a corresponding processed order
-      if (randomStatus === 'completed') {
-        await createProcessedOrder(purchaseOrderId, userEmail, storeId, cartItems, subtotal, taxTotal, finalTotal);
-      }
+      }, 100); // Send after 100ms to not block UI
 
       return purchaseOrderId;
     } catch (error) {
@@ -356,133 +350,9 @@ export function useDatabase() {
     }
   };
 
-  // Create processed order when purchase order is completed
-  const createProcessedOrder = async (
-    purchaseOrderId: string, 
-    userEmail: string, 
-    storeId: string, 
-    cartItems: CartItem[], 
-    subtotal: number, 
-    taxTotal: number, 
-    finalTotal: number
-  ): Promise<string> => {
-    try {
-      // Use Musgrave center code for processed order ID (122 for Dolores Alicante)
-      const orderId = generateProcessedOrderId();
-      const now = new Date().toISOString();
-
-      // Simulate modifications for processed order
-      const { modifiedItems, hasModifications, newSubtotal, newTaxTotal, newFinalTotal } = simulateOrderModifications(cartItems);
-
-      // Create observations if there are modifications
-      const observations = hasModifications ? 
-        "Se han producido cambios sobre su orden de compra. Si tiene cualquier problema póngase en contacto con Musgrave" : 
-        null;
-
-      // Create processed order using unified service
-      const { UnifiedDatabaseService } = await import('@/lib/database-service');
-      await UnifiedDatabaseService.createOrder({
-        order_id: orderId,
-        source_purchase_order_id: purchaseOrderId,
-        user_email: userEmail,
-        store_id: storeId,
-        created_at: now,
-        observations: observations,
-        subtotal: newSubtotal,
-        tax_total: newTaxTotal,
-        final_total: newFinalTotal,
-        status: 'completed'
-      });
-
-      // Add order items using unified service
-      for (const item of modifiedItems) {
-        await UnifiedDatabaseService.addOrderItem({
-          order_id: orderId,
-          item_ean: item.ean,
-          item_title: item.title,
-          item_description: (item as any).description || 'Producto',
-          unit_of_measure: (item as any).unit_of_measure || 'unidad',
-          quantity_measure: (item as any).quantity_measure || 1,
-          image_url: item.image_url || '',
-          quantity: item.quantity,
-          base_price_at_order: item.base_price,
-          tax_rate_at_order: item.tax_rate
-        });
-      }
-
-      console.log(`Created processed order ${orderId} for completed purchase order ${purchaseOrderId}${hasModifications ? ' with modifications' : ''}`);
-      return orderId;
-    } catch (error) {
-      console.error('Error creating processed order:', error);
-      throw error;
-    }
-  };
-
-  // Simulate modifications for processed orders - ULTRA OPTIMIZED
-  const simulateOrderModifications = (originalItems: CartItem[]) => {
-    // Quick simulation without database queries for maximum speed
-    let modifiedItems: CartItem[] = [];
-    let hasModifications = false;
-    
-    for (const item of originalItems) {
-      let modifiedItem = { ...item };
-      
-      // 10% chance of quantity modification per item
-      if (Math.random() < 0.1) {
-        hasModifications = true;
-        const modType = Math.random();
-        
-        if (modType < 0.3) {
-          // 30% chance: Delete item completely (skip it)
-          continue;
-        } else if (modType < 0.8) {
-          // 50% chance: Decrease quantity (10-30% reduction)
-          const reductionFactor = 0.1 + Math.random() * 0.2; // 10-30% reduction
-          const newQuantity = Math.max(1, Math.floor(item.quantity * (1 - reductionFactor)));
-          modifiedItem.quantity = newQuantity;
-        } else {
-          // 20% chance: Increase quantity (10-20% increase)
-          const increaseFactor = 0.1 + Math.random() * 0.1; // 10-20% increase
-          const newQuantity = Math.ceil(item.quantity * (1 + increaseFactor));
-          modifiedItem.quantity = newQuantity;
-        }
-      }
-      
-      // 5% chance of price modification per item (reduced probability)
-      if (Math.random() < 0.05) {
-        hasModifications = true;
-        // Random ±10% price change
-        const priceChangeFactor = Math.random() < 0.5 ? 0.95 : 1.05; // -5% or +5%
-        modifiedItem.base_price = Number((item.base_price * priceChangeFactor).toFixed(2));
-      }
-      
-      // Add item to modified list
-      modifiedItems.push(modifiedItem);
-    }
-    
-    // Calculate new totals
-    let newSubtotal = 0;
-    let newTaxTotal = 0;
-    
-    for (const item of modifiedItems) {
-      const itemSubtotal = item.quantity * item.base_price;
-      const itemTax = itemSubtotal * item.tax_rate;
-      newSubtotal += itemSubtotal;
-      newTaxTotal += itemTax;
-    }
-    
-    const newFinalTotal = newSubtotal + newTaxTotal;
-    
-    return {
-      modifiedItems,
-      hasModifications,
-      newSubtotal,
-      newTaxTotal,
-      newFinalTotal
-    };
-  };
-
-
+  // NOTE: Processed order creation is now handled by the GraphQL server
+  // When the server receives a purchase order, it will simulate Musgrave IT processing 
+  // and send back the confirmed order via GraphQL subscription or polling
 
   // Get tax rate by code - use unified database service
   const getTaxRate = async (taxCode: string): Promise<number> => {
@@ -506,10 +376,8 @@ export function useDatabase() {
     getPurchaseOrders,
     getPurchaseOrderById,
     createPurchaseOrder,
-    createProcessedOrder,
     getOrders,
     getOrderById,
     getTaxRate,
-
   };
 }

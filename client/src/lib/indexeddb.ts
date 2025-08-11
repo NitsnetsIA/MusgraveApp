@@ -483,4 +483,8 @@ export class DatabaseService {
   static async updatePurchaseOrderServerSentAt(purchaseOrderId: string, serverSentAt: string): Promise<void> {
     await db.purchase_orders.update(purchaseOrderId, { server_send_at: serverSentAt });
   }
+
+  static async updatePurchaseOrderStatus(purchaseOrderId: string, status: string): Promise<void> {
+    await db.purchase_orders.update(purchaseOrderId, { status });
+  }
 }

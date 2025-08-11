@@ -287,6 +287,15 @@ export class DatabaseService {
       throw error;
     }
   }
+
+  static async updatePurchaseOrderStatus(purchaseOrderId: string, status: string): Promise<void> {
+    try {
+      await IndexedDBService.updatePurchaseOrderStatus(purchaseOrderId, status);
+    } catch (error) {
+      console.error('Error updating purchase order status:', error);
+      throw error;
+    }
+  }
 }
 
 // For backward compatibility, export as UnifiedDatabaseService too
