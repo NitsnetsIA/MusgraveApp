@@ -118,6 +118,26 @@ export async function sendPurchaseOrderToServer(
 
     if (orderData.errors) {
       console.error('❌ GraphQL errors creating purchase order:', orderData.errors);
+      
+      // Check if error is due to duplicate key (order already exists on server)
+      const isDuplicateError = orderData.errors.some((error: any) => 
+        error.message && error.message.includes('duplicate key value violates unique constraint')
+      );
+      
+      if (isDuplicateError) {
+        console.log(`⚠️ Purchase order ${purchaseOrder.purchase_order_id} already exists on server, marking as sent`);
+        
+        // Mark as sent since it already exists on server
+        try {
+          await DatabaseService.updatePurchaseOrderSendStatus(purchaseOrder.purchase_order_id, new Date().toISOString());
+          console.log('✅ Marked existing purchase order as sent');
+          return true; // Consider this a success since order exists on server
+        } catch (updateError) {
+          console.error('Error updating send status for existing order:', updateError);
+          return false;
+        }
+      }
+      
       return false;
     }
 

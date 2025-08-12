@@ -676,6 +676,27 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
           // Clear existing items and add server items
           await DatabaseService.clearPurchaseOrderItems(serverOrder.purchase_order_id);
           
+          // Add purchase order items from server
+          if (serverOrder.items && serverOrder.items.length > 0) {
+            for (const item of serverOrder.items) {
+              await DatabaseService.addPurchaseOrderItem({
+                purchase_order_id: serverOrder.purchase_order_id,
+                item_ean: item.item_ean,
+                item_title: item.item_title,
+                item_description: item.item_description || '',
+                unit_of_measure: item.unit_of_measure || 'unidades',
+                quantity_measure: item.quantity_measure || 1,
+                image_url: item.image_url || '',
+                quantity: item.quantity,
+                base_price_at_order: item.base_price_at_order || 0,
+                tax_rate_at_order: item.tax_rate_at_order || 0,
+                created_at: item.created_at || new Date().toISOString(),
+                updated_at: item.updated_at || new Date().toISOString()
+              });
+            }
+            console.log(`✅ Added ${serverOrder.items.length} items to purchase order ${serverOrder.purchase_order_id}`);
+          }
+          
         } else {
           // Create new purchase order from server
           console.log(`📦 Creating new purchase order ${serverOrder.purchase_order_id} from server`);
@@ -693,24 +714,25 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
             updated_at: serverOrder.updated_at
           });
           
-          // Add purchase order items if they exist
+          // Add purchase order items from server
           if (serverOrder.items && serverOrder.items.length > 0) {
             for (const item of serverOrder.items) {
               await DatabaseService.addPurchaseOrderItem({
                 purchase_order_id: serverOrder.purchase_order_id,
                 item_ean: item.item_ean,
                 item_title: item.item_title,
-                item_description: item.item_description,
-                unit_of_measure: item.unit_of_measure,
-                quantity_measure: item.quantity_measure,
-                image_url: item.image_url,
+                item_description: item.item_description || '',
+                unit_of_measure: item.unit_of_measure || 'unidades',
+                quantity_measure: item.quantity_measure || 1,
+                image_url: item.image_url || '',
                 quantity: item.quantity,
-                base_price_at_order: item.base_price_at_order,
-                tax_rate_at_order: item.tax_rate_at_order,
-                created_at: item.created_at,
-                updated_at: item.updated_at
+                base_price_at_order: item.base_price_at_order || 0,
+                tax_rate_at_order: item.tax_rate_at_order || 0,
+                created_at: item.created_at || new Date().toISOString(),
+                updated_at: item.updated_at || new Date().toISOString()
               });
             }
+            console.log(`✅ Added ${serverOrder.items.length} items to new purchase order ${serverOrder.purchase_order_id}`);
           }
         }
       }
