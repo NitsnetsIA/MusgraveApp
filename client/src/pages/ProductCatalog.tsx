@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useMemo } from 'react';
+import { useState, useEffect, memo, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,32 @@ function ProductCatalog({
     return savedPage ? parseInt(savedPage, 10) : 1;
   });
   const PRODUCTS_PER_PAGE = 60;
+  
+  // Use refs to prevent unnecessary reloads
+  const previousSearchRef = useRef(searchTerm);
+  const scrollPositionRef = useRef(0);
+
+  // Save scroll position before loading
+  useEffect(() => {
+    const saveScrollPosition = () => {
+      scrollPositionRef.current = window.scrollY;
+    };
+    
+    const handleScroll = () => {
+      scrollPositionRef.current = window.scrollY;
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
+    // Only reload products if search term actually changed
+    if (previousSearchRef.current === searchTerm) {
+      return;
+    }
+    previousSearchRef.current = searchTerm;
+    
     async function loadProducts() {
       setIsLoading(true);
       const productList = await getProducts(searchTerm);
@@ -43,10 +67,17 @@ function ProductCatalog({
       }
       
       setIsLoading(false);
+      
+      // Preserve scroll position after a short delay to ensure DOM is updated
+      if (searchTerm === '' && scrollPositionRef.current > 0) {
+        setTimeout(() => {
+          window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
+        }, 50);
+      }
     }
 
     loadProducts();
-  }, [searchTerm]);
+  }, [searchTerm, getProducts]);
 
   // Calculate pagination
   const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
@@ -60,6 +91,22 @@ function ProductCatalog({
     cartItems.forEach(item => map.set(item.ean, item.quantity));
     return map;
   }, [cartItems]);
+
+  // Memoize callback functions to prevent ProductCard re-renders
+  const memoizedOnAddToCart = useCallback((ean: string, quantity: number) => {
+    scrollPositionRef.current = window.scrollY; // Save current position
+    onAddToCart(ean, quantity);
+  }, [onAddToCart]);
+
+  const memoizedOnUpdateCart = useCallback((ean: string, quantity: number) => {
+    scrollPositionRef.current = window.scrollY; // Save current position
+    onUpdateCart(ean, quantity);
+  }, [onUpdateCart]);
+
+  const memoizedOnRemoveFromCart = useCallback((ean: string) => {
+    scrollPositionRef.current = window.scrollY; // Save current position
+    onRemoveFromCart(ean);
+  }, [onRemoveFromCart]);
 
   // Pagination handlers with localStorage persistence
   const goToFirstPage = () => {
@@ -81,8 +128,8 @@ function ProductCatalog({
     localStorage.setItem('productCatalogPage', totalPages.toString());
   };
 
-  // Handle barcode scanner input (EAN + Enter)
-  const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Handle barcode scanner input (EAN + Enter) - memoized to prevent re-renders
+  const handleBarcodeInput = useCallback(async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       const ean = searchTerm.trim();
       
@@ -91,6 +138,9 @@ function ProductCatalog({
         const product = await getProductByEan(ean);
         
         if (product) {
+          // Save current scroll position before adding to cart
+          scrollPositionRef.current = window.scrollY;
+          
           // Add one unit to cart
           onAddToCart(ean, 1);
           
@@ -98,8 +148,11 @@ function ProductCatalog({
           setBarcodeMessage(`✓ ${product.title} añadido al carrito`);
           setTimeout(() => setBarcodeMessage(''), 3000);
           
-          // Clear search without resetting pagination
+          // Clear search WITHOUT triggering the useEffect that causes reload
+          // by setting searchTerm directly without changing previousSearchRef
           setSearchTerm('');
+          // Don't update previousSearchRef here so the useEffect won't reload products
+          
         } else {
           // Show error message
           setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
@@ -107,7 +160,7 @@ function ProductCatalog({
         }
       }
     }
-  };
+  }, [searchTerm, getProductByEan, onAddToCart]);
 
   return (
     <div className="p-4">
@@ -163,9 +216,9 @@ function ProductCatalog({
               key={product.ean}
               product={product}
               cartQuantity={cartItemsMap.get(product.ean) || 0}
-              onAddToCart={onAddToCart}
-              onUpdateCart={onUpdateCart}
-              onRemoveFromCart={onRemoveFromCart}
+              onAddToCart={memoizedOnAddToCart}
+              onUpdateCart={memoizedOnUpdateCart}
+              onRemoveFromCart={memoizedOnRemoveFromCart}
             />
           ))}
         </div>
@@ -234,5 +287,5 @@ function ProductCatalog({
   );
 }
 
-// Export component without memo to allow normal re-renders but with persistent pagination
-export default ProductCatalog;
+// Export memoized component to prevent unnecessary re-renders when parent state changes
+export default memo(ProductCatalog);

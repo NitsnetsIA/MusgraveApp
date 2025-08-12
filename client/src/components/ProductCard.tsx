@@ -138,7 +138,7 @@ function ProductCard({
           </div>
           <div className="text-xs text-gray-500 leading-tight h-4">
             {product.quantity_measure && product.unit_of_measure 
-              ? calculateDisplayPrice(product.base_price, product.quantity_measure, product.unit_of_measure)
+              ? formatPricePerUnit(product.base_price, product.quantity_measure, product.unit_of_measure)
               : '\u00A0'
             }
           </div>
@@ -194,5 +194,5 @@ function ProductCard({
   );
 }
 
-// Export component with basic memo for performance
+// Export memoized component to prevent unnecessary re-renders when props haven't changed
 export default memo(ProductCard);

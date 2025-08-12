@@ -8,6 +8,15 @@ The application simulates a B2B grocery ordering system where registered store u
 
 ## Recent Changes (January 2025)
 
+✅ **COMPLETED: Performance Optimization - UI Flickering and UX Issues Fixed (January 12, 2025)**
+- Eliminated interface flickering when adding products to cart by implementing React.memo on ProductCard component
+- Fixed unwanted scroll jumping by preserving scroll position during cart operations
+- Protected search terms from being cleared when adding products via barcode scanner or add buttons
+- Optimized ProductCatalog with memoized callbacks and intelligent re-render prevention
+- Added scroll position preservation system that maintains user's current view position
+- Implemented smart search term tracking to prevent unnecessary product reloads
+- All UI performance issues resolved - smooth, responsive experience maintained during all cart operations
+
 ✅ **COMPLETED: Complete Bidirectional Sync System with Robust Error Handling (January 12, 2025)**
 - Fixed critical purchase order items sync issue: items now properly import from server for both existing and new orders
 - Implemented intelligent duplicate handling: when purchase order already exists on server, automatically marks as sent
