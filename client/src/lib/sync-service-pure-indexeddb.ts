@@ -400,9 +400,17 @@ async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> 
 
 // Sync pending purchase orders to GraphQL server
 async function syncPendingPurchaseOrders(): Promise<void> {
-  console.log('🔄 Syncing pending purchase orders to server...');
-  
   try {
+    // First check if there are actually any pending orders to sync
+    const pendingOrders = await DatabaseService.getPendingPurchaseOrders();
+    
+    if (pendingOrders.length === 0) {
+      console.log('⏭️ No pending purchase orders to sync - skipping');
+      return;
+    }
+    
+    console.log('🔄 Syncing pending purchase orders to server...');
+    
     const { syncPendingPurchaseOrders } = await import('./purchase-order-sync');
     await syncPendingPurchaseOrders();
     console.log('✅ Pending purchase orders sync completed');

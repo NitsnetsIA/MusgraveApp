@@ -182,8 +182,31 @@ export async function syncPendingPurchaseOrders(): Promise<void> {
     }
 
     console.log(`📦 Found ${pendingOrders.length} pending purchase orders to sync`);
-
+    
+    // Filter out orders that might already be on server (to avoid duplicate errors)
+    const ordersToSync = [];
     for (const order of pendingOrders) {
+      // Check if this order was recently imported from server (has created_at very close to import time)
+      const orderAge = Date.now() - new Date(order.created_at).getTime();
+      const isRecentlyImported = orderAge < 5 * 60 * 1000; // 5 minutes
+      
+      if (isRecentlyImported && !order.server_send_at) {
+        console.log(`⏭️ Skipping recently imported order ${order.purchase_order_id} - likely already on server`);
+        // Mark it as sent to avoid future sync attempts
+        await DatabaseService.updatePurchaseOrderSendStatus(order.purchase_order_id, new Date().toISOString());
+      } else {
+        ordersToSync.push(order);
+      }
+    }
+    
+    if (ordersToSync.length === 0) {
+      console.log('✅ No orders need to be sent to server (all were recently imported)');
+      return;
+    }
+
+    console.log(`📤 Syncing ${ordersToSync.length} genuine pending purchase orders`);
+
+    for (const order of ordersToSync) {
       try {
         // Get order items
         const items = await DatabaseService.getPurchaseOrderItems(order.purchase_order_id);
