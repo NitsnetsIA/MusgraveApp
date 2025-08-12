@@ -125,6 +125,18 @@ export class DatabaseService {
     }
   }
 
+  static async addPurchaseOrder(order: any): Promise<void> {
+    console.log(`DatabaseService.addPurchaseOrder called for: ${order.purchase_order_id}`);
+    
+    try {
+      await IndexedDBService.addPurchaseOrder(order);
+      console.log(`IndexedDB addPurchaseOrder completed for: ${order.purchase_order_id}`);
+    } catch (error) {
+      console.error('Error adding purchase order to IndexedDB:', error);
+      throw error;
+    }
+  }
+
   static async addPurchaseOrderItem(item: any): Promise<void> {
     console.log(`DatabaseService.addPurchaseOrderItem called for order: ${item.purchase_order_id}`);
     
@@ -160,6 +172,19 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error getting purchase order items from IndexedDB:', error);
       return [];
+    }
+  }
+
+  static async getPurchaseOrder(purchaseOrderId: string): Promise<any | null> {
+    console.log(`DatabaseService.getPurchaseOrder called for: ${purchaseOrderId}`);
+    
+    try {
+      const order = await IndexedDBService.getPurchaseOrder(purchaseOrderId);
+      console.log(`IndexedDB getPurchaseOrder returned:`, order ? 'found' : 'not found');
+      return order || null;
+    } catch (error) {
+      console.error('Error getting purchase order from IndexedDB:', error);
+      return null;
     }
   }
 

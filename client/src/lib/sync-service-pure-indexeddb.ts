@@ -680,7 +680,7 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
           // Create new purchase order from server
           console.log(`📦 Creating new purchase order ${serverOrder.purchase_order_id} from server`);
           
-          await DatabaseService.createPurchaseOrder({
+          await DatabaseService.addPurchaseOrder({
             purchase_order_id: serverOrder.purchase_order_id,
             user_email: serverOrder.user_email,
             store_id: serverOrder.store_id,
