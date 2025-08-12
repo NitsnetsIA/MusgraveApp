@@ -187,6 +187,7 @@ export default function PurchaseOrderDetail() {
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-sm leading-tight line-clamp-2" style={{lineHeight: "1.2", minHeight: "2.4em"}}>{item.title}</div>
                             <div className="text-xs text-gray-500">EAN:{item.item_ean}</div>
+                            <div className="text-xs text-gray-500">REF:{item.item_ref || 'NO REF'}</div>
                           </div>
                         </div>
                       </td>

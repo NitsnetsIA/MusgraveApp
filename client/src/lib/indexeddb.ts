@@ -304,7 +304,22 @@ export class DatabaseService {
   }
 
   static async getProduct(ean: string): Promise<Product | undefined> {
-    return await db.products.where('ean').equals(ean).first();
+    const product = await db.products.where('ean').equals(ean).first();
+    
+    // DEBUG: Log the product ref field specifically
+    if (product) {
+      console.log(`🔍 IndexedDB getProduct(${ean}) found product:`, {
+        ean: product.ean,
+        ref: product.ref,
+        ref_type: typeof product.ref,
+        has_ref_field: product.hasOwnProperty('ref'),
+        title: product.title?.substring(0, 30)
+      });
+    } else {
+      console.log(`❌ IndexedDB getProduct(${ean}) - product not found`);
+    }
+    
+    return product;
   }
 
   static async searchProducts(query: string): Promise<Product[]> {
