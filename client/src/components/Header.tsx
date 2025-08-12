@@ -1,5 +1,6 @@
 import { User, ShoppingCart } from 'lucide-react';
 import { useLocation } from 'wouter';
+import ImageCacheIndicator from '@/components/ImageCacheIndicator';
 
 interface HeaderProps {
   user?: any;
@@ -37,14 +38,21 @@ export default function Header({
             M
           </button>
         </div>
-        <button onClick={onCartToggle} className="relative">
-          <ShoppingCart className="h-6 w-6 text-gray-600" />
-          {cartItemCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {cartItemCount}
-            </span>
-          )}
-        </button>
+        
+        {/* Image Cache Progress Indicator - Center area */}
+        <div className="flex-1 flex justify-center">
+          <ImageCacheIndicator />
+        </div>
+        <div className="flex items-center space-x-3">
+          <button onClick={onCartToggle} className="relative">
+            <ShoppingCart className="h-6 w-6 text-gray-600" />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {cartItemCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   );

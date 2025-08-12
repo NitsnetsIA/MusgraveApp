@@ -1,0 +1,46 @@
+ La aplicación necesita funcionar offline, y para ello, debemos cachear las imágenes de los productos. Un punto crítico es que la sincronización puede involucrar un gran volumen de productos (ej: más de 10.000), por lo que el proceso de cacheo de imágenes no debe bloquear la interfaz de usuario ni degradar la experiencia.
+
+Requisitos de Implementación:
+1. Flujo de Sincronización de Datos y Cacheo de Imágenes:
+
+Sincronización Principal (IndexedDB): Cuando el usuario inicia una sincronización, los datos de los productos (texto, precios, etc.) se guardan en IndexedDB. Este proceso debe seguir funcionando como hasta ahora.
+
+Cacheo de Imágenes Asíncrono (Segundo Plano):
+
+Inmediatamente después de que los datos de un lote de productos se guarden en IndexedDB, se debe iniciar un proceso en segundo plano para descargar y almacenar las imágenes de dichos productos en la Cache API.
+
+Este proceso debe ser de baja prioridad y no debe interferir con la interactividad de la aplicación.
+
+Utiliza un Service Worker para gestionar las peticiones de red, el cacheo y la lógica de servicio de imágenes.
+
+2. Lógica del Service Worker:
+
+Estrategia "Cache-First" o "Stale-While-Revalidate": El Service Worker debe interceptar todas las peticiones de imágenes (.jpg, .png, .webp, etc.).
+
+Si la imagen ya está en la caché, la debe servir inmediatamente desde ahí (rápido y offline-ready).
+
+Si no está en la caché, debe hacer la petición a la red, servirla a la aplicación y, simultáneamente, guardarla en la caché para futuras peticiones.
+
+Gestión de la Cola de Descarga: El Service Worker debe gestionar una cola de URLs de imágenes pendientes de descargar para el proceso de cacheo en segundo plano.
+
+3. Renderizado en la Aplicación:
+
+El código de la aplicación (HTML/JS) no debe cambiar su forma de mostrar las imágenes. Debe seguir usando el tag estándar:
+
+<img src="https://url.del.proveedor/imagen_producto.jpg">
+
+La aplicación debe ser agnóstica al estado de la conexión; el Service Worker se encargará de resolver la petición de la imagen de forma transparente.
+
+4. Feedback Visual en la Interfaz de Usuario (UI):
+
+Indicador de Progreso: Mientras el proceso de cacheo de imágenes en segundo plano esté activo, se debe mostrar un indicador de progreso en la cabecera de la aplicación.
+
+Posición: En la parte superior derecha de la pantalla, junto al logo de la aplicación.
+
+Estilo: Texto de color naranja (#FFA500 o similar).
+
+Formato del Texto: Debe mostrar el número de imágenes cacheadas sobre el total. Por ejemplo: 1.345/10.000 Imágenes sincronizadas.
+
+Actualización en Tiempo Real: Este contador debe actualizarse en tiempo real a medida que cada imagen se guarda correctamente en la caché.
+
+Visibilidad: El indicador solo debe ser visible cuando haya imágenes pendientes en la cola de descarga. Una vez que se completa el 100%, debe desaparecer.

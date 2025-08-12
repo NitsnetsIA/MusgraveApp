@@ -1,4 +1,5 @@
 import { DatabaseService } from './indexeddb';
+import { imageCacheService } from './image-cache-service';
 
 const GRAPHQL_ENDPOINT = '/api/graphql'; // Use server proxy to avoid CORS
 const STORE_ID = 'ES001';
@@ -235,6 +236,19 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   
   if (allProducts.length > 0) {
     console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
+    
+    // Queue images for background caching after products are synced
+    console.log(`📷 Queuing ${allProducts.length} product images for background caching...`);
+    const imageUrls = allProducts
+      .map(product => product.image_url)
+      .filter(url => url && typeof url === 'string' && url.trim() !== '');
+    
+    if (imageUrls.length > 0) {
+      await imageCacheService.queueImagesForCache(imageUrls);
+      console.log(`🎯 Queued ${imageUrls.length} images for background download`);
+    } else {
+      console.log('⏭️ No valid image URLs found in products');
+    }
   } else {
     console.log(`✅ Products sync completed - no new products to insert`);
   }
