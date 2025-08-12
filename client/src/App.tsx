@@ -142,10 +142,14 @@ function Router() {
           
           const newItem: CartItem = {
             ean: product.ean,
+            ref: product.ref,
             title: product.title,
+            description: product.description,
             base_price: product.base_price,
             tax_rate: taxRate || 0.21, // Default IVA rate if not found
             quantity,
+            unit_of_measure: product.unit_of_measure,
+            quantity_measure: product.quantity_measure,
             image_url: product.image_url
           };
           

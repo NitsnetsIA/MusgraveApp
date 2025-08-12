@@ -106,10 +106,14 @@ export interface SyncConfig {
 // Cart item type for frontend
 export interface CartItem {
   ean: string;
+  ref?: string;
   title: string;
+  description?: string;
   base_price: number;
   tax_rate: number;
   quantity: number;
+  unit_of_measure?: string;
+  quantity_measure?: number;
   image_url?: string;
 }
 
