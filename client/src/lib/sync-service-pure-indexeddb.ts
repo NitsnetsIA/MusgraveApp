@@ -642,13 +642,30 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
         // Check if purchase order exists locally
         const existingOrder = await DatabaseService.getPurchaseOrder(serverOrder.purchase_order_id);
         
+        // Map server status to frontend status
+        const mapServerStatus = (serverStatus: string): string => {
+          switch (serverStatus) {
+            case 'COMPLETADO':
+              return 'completed';
+            case 'PROCESANDO':
+              return 'processing';
+            case 'SIN_COMUNICAR':
+              return 'uncommunicated';
+            default:
+              return serverStatus.toLowerCase();
+          }
+        };
+        
+        const localStatus = mapServerStatus(serverOrder.status);
+        console.log(`🔄 Mapping server status "${serverOrder.status}" to local status "${localStatus}"`);
+        
         if (existingOrder) {
           // Update existing purchase order with server data
           console.log(`📝 Overwriting local purchase order ${serverOrder.purchase_order_id} with server data`);
           
           // Update purchase order with server data
           await DatabaseService.updatePurchaseOrder(serverOrder.purchase_order_id, {
-            status: serverOrder.status,
+            status: localStatus,
             subtotal: serverOrder.subtotal,
             tax_total: serverOrder.tax_total,
             final_total: serverOrder.final_total,
@@ -667,7 +684,7 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
             purchase_order_id: serverOrder.purchase_order_id,
             user_email: serverOrder.user_email,
             store_id: serverOrder.store_id,
-            status: serverOrder.status,
+            status: localStatus,
             subtotal: serverOrder.subtotal,
             tax_total: serverOrder.tax_total,
             final_total: serverOrder.final_total,
