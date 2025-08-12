@@ -100,7 +100,7 @@ export interface OrderItem {
 }
 
 export interface SyncEntity {
-  entity_type: string; // 'products', 'stores', 'users', 'taxes', 'delivery_centers'
+  entity_type: string; // 'products', 'stores', 'users', 'taxes', 'delivery_centers', 'purchase_orders', 'orders'
   last_sync: string; // ISO timestamp of last sync
   total_count?: number; // Total count from last sync
   created_at: string;

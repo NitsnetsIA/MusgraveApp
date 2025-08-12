@@ -8,6 +8,14 @@ The application simulates a B2B grocery ordering system where registered store u
 
 ## Recent Changes (January 2025)
 
+✅ **COMPLETED: Complete Bidirectional Sync System with Robust Error Handling (January 12, 2025)**
+- Fixed critical purchase order items sync issue: items now properly import from server for both existing and new orders
+- Implemented intelligent duplicate handling: when purchase order already exists on server, automatically marks as sent
+- Added comprehensive sync config tracking for purchase_orders and orders entities
+- Enhanced incremental sync logging with detailed timestamps and entity-specific messages
+- Corrected SyncEntity interface documentation to include all tracked entities
+- All purchase order workflows now work perfectly: local creation → server sync → status updates → item sync
+
 ✅ **COMPLETED: Robust Offline-First Purchase Order System with GraphQL Sync**
 - Added server_send_at timestamp field to purchase orders for tracking server synchronization status
 - Implemented comprehensive purchase order sync system with proper error handling

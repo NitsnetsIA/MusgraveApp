@@ -423,12 +423,13 @@ async function syncProcessedOrdersFromServer(forceFullSync: boolean = false): Pr
       const syncConfig = await DatabaseService.getSyncConfig('orders');
       if (syncConfig && syncConfig.last_request) {
         timestamp = new Date(syncConfig.last_request).toISOString();
-        console.log(`🔍 Incremental sync: checking for orders modified after ${timestamp}`);
+        console.log(`🔍 Orders incremental sync: checking for orders modified after ${timestamp}`);
+        console.log(`📊 Last orders sync was at: ${new Date(syncConfig.last_request).toLocaleString()}`);
       } else {
-        console.log('🔍 First sync: downloading orders from default date');
+        console.log('🔍 Orders first sync: downloading orders from default date');
       }
     } else {
-      console.log('🔍 Full sync: downloading all orders');
+      console.log('🔍 Orders full sync: downloading all orders');
     }
 
     const query = `
@@ -539,8 +540,10 @@ async function syncProcessedOrdersFromServer(forceFullSync: boolean = false): Pr
       console.log('📭 No new processed orders found');
     }
 
-    // Update sync config
-    await DatabaseService.updateSyncConfig('orders', Date.now());
+    // Update sync config with current timestamp for next incremental sync
+    const currentTime = Date.now();
+    await DatabaseService.updateSyncConfig('orders', currentTime);
+    console.log(`📝 Updated orders sync config with timestamp: ${new Date(currentTime).toISOString()}`);
     
   } catch (error) {
     console.error('❌ Failed to sync processed orders:', error);
@@ -559,12 +562,13 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
       const syncConfig = await DatabaseService.getSyncConfig('purchase_orders');
       if (syncConfig && syncConfig.last_request) {
         timestamp = new Date(syncConfig.last_request).toISOString();
-        console.log(`🔍 Incremental sync: checking for purchase orders modified after ${timestamp}`);
+        console.log(`🔍 Purchase orders incremental sync: checking for purchase orders modified after ${timestamp}`);
+        console.log(`📊 Last purchase orders sync was at: ${new Date(syncConfig.last_request).toLocaleString()}`);
       } else {
-        console.log('🔍 First sync: downloading purchase orders from default date');
+        console.log('🔍 Purchase orders first sync: downloading purchase orders from default date');
       }
     } else {
-      console.log('🔍 Full sync: downloading all purchase orders');
+      console.log('🔍 Purchase orders full sync: downloading all purchase orders');
     }
 
     const query = `
@@ -742,8 +746,10 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
       console.log('📭 No purchase order updates found on server');
     }
 
-    // Update sync config
-    await DatabaseService.updateSyncConfig('purchase_orders', Date.now());
+    // Update sync config with current timestamp for next incremental sync
+    const currentTime = Date.now();
+    await DatabaseService.updateSyncConfig('purchase_orders', currentTime);
+    console.log(`📝 Updated purchase_orders sync config with timestamp: ${new Date(currentTime).toISOString()}`);
     
   } catch (error) {
     console.error('❌ Failed to sync purchase orders from server:', error);
