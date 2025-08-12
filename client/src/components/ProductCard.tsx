@@ -127,7 +127,7 @@ function ProductCard({
       {/* Fixed height EAN/REF section with better spacing */}
       <div className="text-xs text-gray-500 mb-4 h-8 flex-shrink-0">
         <div>EAN: {product.ean}</div>
-        <div>REF: {product.ean.substring(7)}</div>
+        <div>REF: {product.ref || product.ean.substring(7)}</div>
       </div>
       
       {/* Fixed height price section - always 2 lines */}

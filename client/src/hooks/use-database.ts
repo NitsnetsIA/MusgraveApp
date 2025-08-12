@@ -346,10 +346,18 @@ export function useDatabase() {
       // Add purchase order items using unified service
       const purchaseOrderItems: any[] = [];
       for (const item of cartItems) {
+        // DEBUG: Log cart item ref field
+        console.log(`🔍 Cart item debugging:`, {
+          ean: item.ean,
+          ref: item.ref,
+          ref_type: typeof item.ref,
+          title: item.title?.substring(0, 30)
+        });
+        
         const orderItem = {
           purchase_order_id: purchaseOrderId,
           item_ean: item.ean,
-          item_ref: item.ref || '',
+          item_ref: item.ref || '', // This should now have the correct ref
           item_title: item.title,
           item_description: item.description || 'Producto',
           unit_of_measure: item.unit_of_measure || 'unidad',
@@ -359,6 +367,8 @@ export function useDatabase() {
           base_price_at_order: item.base_price,
           tax_rate_at_order: item.tax_rate
         };
+        
+        console.log(`📦 Order item created with ref:`, orderItem.item_ref);
         purchaseOrderItems.push(orderItem);
         await UnifiedDatabaseService.addPurchaseOrderItem(orderItem);
       }

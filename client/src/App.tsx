@@ -140,6 +140,14 @@ function Router() {
         if (product) {
           const taxRate = await UnifiedDatabaseService.getTaxRate(product.tax_code);
           
+          // DEBUG: Log product ref before adding to cart
+          console.log(`🛒 Adding product to cart:`, {
+            ean: product.ean,
+            ref: product.ref,
+            ref_type: typeof product.ref,
+            title: product.title?.substring(0, 30)
+          });
+          
           const newItem: CartItem = {
             ean: product.ean,
             ref: product.ref,
@@ -152,6 +160,8 @@ function Router() {
             quantity_measure: product.quantity_measure,
             image_url: product.image_url
           };
+          
+          console.log(`✅ Cart item created with ref:`, newItem.ref);
           
           // Add new item at the end to minimize DOM restructuring
           setCartItems(prev => [...prev, newItem]);
