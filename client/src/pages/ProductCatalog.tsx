@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  RefreshCw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ function ProductCatalog({
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [barcodeMessage, setBarcodeMessage] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(() => {
     const savedPage = localStorage.getItem("productCatalogPage");
     return savedPage ? parseInt(savedPage, 10) : 1;
@@ -132,6 +134,56 @@ function ProductCatalog({
     localStorage.setItem("productCatalogPage", totalPages.toString());
   };
 
+  // Force refresh products by clearing and re-syncing
+  const handleForceRefresh = async () => {
+    if (isRefreshing) return;
+    
+    try {
+      setIsRefreshing(true);
+      setBarcodeMessage("🔄 Limpiando productos y forzando sincronización...");
+      
+      // Clear products and sync config from IndexedDB
+      const request = indexedDB.open('MsgDatabase', 1);
+      
+      request.onsuccess = async function(event) {
+        const db = event.target.result as IDBDatabase;
+        
+        try {
+          const transaction = db.transaction(['products', 'sync_config'], 'readwrite');
+          
+          await Promise.all([
+            transaction.objectStore('products').clear(),
+            transaction.objectStore('sync_config').delete('products')
+          ]);
+          
+          console.log('✅ Products and sync config cleared - forcing fresh sync');
+          setBarcodeMessage("✅ Productos limpiados - recargando página para sincronizar...");
+          
+          // Reload page to trigger fresh sync with ref fields
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+          
+        } catch (error) {
+          console.error('Error clearing products:', error);
+          setBarcodeMessage("❌ Error al limpiar productos");
+          setIsRefreshing(false);
+        }
+      };
+      
+      request.onerror = () => {
+        console.error('Error accessing IndexedDB');
+        setBarcodeMessage("❌ Error al acceder a la base de datos");
+        setIsRefreshing(false);
+      };
+      
+    } catch (error) {
+      console.error('Error in force refresh:', error);
+      setBarcodeMessage("❌ Error al forzar actualización");
+      setIsRefreshing(false);
+    }
+  };
+
   // Handle barcode scanner input (EAN + Enter)
   const handleBarcodeInput = async (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -164,18 +216,29 @@ function ProductCatalog({
 
   return (
     <div className="p-4">
-      {/* Search Bar */}
+      {/* Search Bar with Force Refresh Button */}
       <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleBarcodeInput}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-musgrave-500"
-            placeholder="Buscar por EAN, REF o Nombre - Escáner: EAN + Enter"
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleBarcodeInput}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-musgrave-500"
+              placeholder="Buscar por EAN, REF o Nombre - Escáner: EAN + Enter"
+            />
+          </div>
+          <Button
+            onClick={handleForceRefresh}
+            disabled={isRefreshing}
+            variant="outline"
+            className="px-4 py-3 border border-musgrave-300 hover:bg-musgrave-50 disabled:opacity-50"
+            title="Forzar sincronización completa con referencias de productos"
+          >
+            <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
 
         {/* Barcode Scanner Message */}
