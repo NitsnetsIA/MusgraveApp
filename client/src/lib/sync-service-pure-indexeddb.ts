@@ -214,9 +214,11 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     const isIncremental = !forceFullSync && timestampFilter !== '';
     console.log(`🚀 ${isIncremental ? 'INCREMENTAL UPDATE' : 'OPTIMIZED BULK INSERT'}: ${isIncremental ? 'Updating' : 'Inserting'} ${allProducts.length} products...`);
     
-    // DEBUG: Log first few products to check is_active values
+    // DEBUG: Log first few products to check is_active and ref values
     if (allProducts.length > 0) {
       console.log(`DEBUG: About to ${isIncremental ? 'update' : 'insert'} product with is_active:`, allProducts[0].is_active, `(type: ${typeof allProducts[0].is_active})`);
+      console.log(`DEBUG: First product ref field:`, allProducts[0].ref, `(has ref: ${allProducts[0].hasOwnProperty('ref')})`);
+      console.log(`DEBUG: First 3 products refs:`, allProducts.slice(0, 3).map(p => ({ ean: p.ean, ref: p.ref })));
     }
     
     await DatabaseService.syncProducts(allProducts, isIncremental);

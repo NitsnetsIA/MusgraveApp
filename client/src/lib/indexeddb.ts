@@ -432,12 +432,17 @@ export class DatabaseService {
       console.log(`🔄 Incremental update: Updating ${products.length} specific products...`);
       for (const product of products) {
         await db.products.put(product); // put() will update if exists, insert if not
-        console.log(`Updated product: ${product.ean} - ${product.title} (active: ${product.is_active})`);
+        console.log(`Updated product: ${product.ean} - ${product.title} (active: ${product.is_active}, ref: ${product.ref || 'MISSING'})`);
       }
     } else {
       // For full sync, clear and bulk insert all products
       console.log(`🗑️ Full sync: Clearing all products and bulk inserting ${products.length} products...`);
       await db.products.clear();
+      
+      // DEBUG: Check if products have ref before inserting
+      if (products.length > 0) {
+        console.log(`DEBUG: First product to insert has ref:`, products[0].ref, `(all fields:`, Object.keys(products[0]).join(', ') + ')')
+      }
       
       // Insert products in batches for better performance
       const batchSize = 1000;
@@ -447,6 +452,10 @@ export class DatabaseService {
         console.log(`Inserted batch ${Math.floor(i/batchSize) + 1} - ${Math.min(i + batchSize, products.length)}/${products.length} products`);
       }
     }
+    
+    // DEBUG: Verify first few products were stored with ref field
+    const storedProducts = await db.products.limit(3).toArray();
+    console.log(`DEBUG: After sync, first 3 stored products have refs:`, storedProducts.map(p => ({ ean: p.ean, ref: p.ref || 'MISSING' })));
   }
 
   // Database statistics
