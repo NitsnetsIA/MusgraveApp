@@ -151,7 +151,7 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Imágenes:</span>
               <span className="font-medium">
-                {stats.loading ? '...' : `${stats.cachedImageCount}/${stats.productCount} descargadas`}
+                {stats.loading ? '...' : `${stats.cachedImageCount}/${stats.productCount}`}
               </span>
             </div>
             <div className="flex items-center justify-between">

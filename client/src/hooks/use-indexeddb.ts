@@ -72,6 +72,16 @@ export function useAuth() {
       console.log('User logged in:', user);
       console.log('Store data loaded after sync:', store);
       
+      // Resume incomplete image downloads after successful login
+      try {
+        const { resumeImageCaching } = await import('@/lib/sync-service-pure-indexeddb');
+        setTimeout(() => {
+          resumeImageCaching();
+        }, 2000); // Wait 2 seconds after login to start image resume
+      } catch (imageError) {
+        console.warn('Failed to resume image caching:', imageError);
+      }
+      
       return user;
     } catch (error) {
       console.error('Login failed:', error);

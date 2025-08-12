@@ -8,6 +8,14 @@ The application simulates a B2B grocery ordering system where registered store u
 
 ## Recent Changes (January 2025)
 
+✅ **COMPLETED: Auto-Resume Image Caching + Account Statistics (January 12, 2025)**
+- Added "Datos descargados" section in My Account page showing real-time statistics
+- Products count, cached images (X/Y format), purchase orders, and completed orders
+- Progress bar showing image download percentage with direct Service Worker cache queries
+- Implemented auto-resume functionality for incomplete image downloads after login
+- System automatically continues downloading remaining images when user logs back in
+- Removed batch delays for faster processing while maintaining stability with staggered requests
+
 ✅ **COMPLETED: Complete Offline Image Caching System (January 12, 2025)**
 - Implemented comprehensive Service Worker-based image caching with Cache-First strategy for offline functionality
 - Background image downloading queue processes 1000+ product images without blocking UI

@@ -237,26 +237,62 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   if (allProducts.length > 0) {
     console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
     
-    // Queue images for background caching after products are synced
-    console.log(`📷 Preparing ${allProducts.length} product images for background caching...`);
-    const imageUrls = allProducts
-      .map(product => product.image_url)
-      .filter(url => url && typeof url === 'string' && url.trim() !== '')
-      .filter((url, index, array) => array.indexOf(url) === index); // Remove duplicates
+    // Always queue images for caching to resume incomplete downloads
+    await queueImageCaching(allProducts);
+  }
+}
+
+// Separate function to handle image caching logic
+async function queueImageCaching(products: any[]) {
+  console.log(`📷 Preparing ${products.length} product images for background caching...`);
+  const imageUrls = products
+    .map(product => product.image_url)
+    .filter(url => url && typeof url === 'string' && url.trim() !== '')
+    .filter((url, index, array) => array.indexOf(url) === index); // Remove duplicates
+  
+  if (imageUrls.length > 0) {
+    console.log(`🎯 Queuing ${imageUrls.length} unique images for background download`);
     
-    if (imageUrls.length > 0) {
-      console.log(`🎯 Queuing ${imageUrls.length} unique images for background download`);
-      
-      // Add delay before starting image cache to let sync complete
-      setTimeout(async () => {
-        await imageCacheService.queueImagesForCache(imageUrls);
-        console.log(`✅ Image caching queue initiated with ${imageUrls.length} images`);
-      }, 1000);
-    } else {
-      console.log('⏭️ No valid image URLs found in products');
-    }
+    // Add delay before starting image cache to let sync complete
+    setTimeout(async () => {
+      await imageCacheService.queueImagesForCache(imageUrls);
+      console.log(`✅ Image caching queue initiated with ${imageUrls.length} images`);
+    }, 1000);
   } else {
-    console.log(`✅ Products sync completed - no new products to insert`);
+    console.log('⏭️ No valid image URLs found in products');
+  }
+}
+
+// Function to resume image caching for existing products
+export async function resumeImageCaching() {
+  try {
+    console.log('🔄 Checking for incomplete image downloads to resume...');
+    
+    // Get all products from database
+    const { DatabaseService } = await import('./database-service');
+    const products = await DatabaseService.getProducts();
+    
+    if (products.length === 0) {
+      console.log('⏭️ No products found, skipping image resume');
+      return;
+    }
+
+    // Get current cached image count
+    const { imageCacheService } = await import('./image-cache-service');
+    const cachedCount = await imageCacheService.getCachedImageCount();
+    const totalImages = products.filter(p => p.image_url && p.image_url.trim() !== '').length;
+    
+    console.log(`📊 Image caching status: ${cachedCount}/${totalImages} cached`);
+    
+    if (cachedCount < totalImages) {
+      console.log(`🔄 Resuming image downloads: ${totalImages - cachedCount} remaining`);
+      await queueImageCaching(products);
+    } else {
+      console.log('✅ All images already cached');
+    }
+    
+  } catch (error) {
+    console.error('Error resuming image caching:', error);
   }
 }
 
