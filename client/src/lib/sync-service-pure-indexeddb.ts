@@ -122,9 +122,13 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   const existingProducts = await DatabaseService.getProducts(false); // Get all products including inactive
   console.log(`🔍 Database check: Found ${existingProducts.length} existing products`);
   
-  // If no products exist, force a full sync regardless of the flag
-  if (existingProducts.length === 0 && !forceFullSync) {
-    console.log('⚠️ No products found in database, forcing full sync...');
+  // Check if existing products have ref field - if not, force full sync
+  const productsWithRef = existingProducts.filter(p => p.ref && p.ref !== '');
+  console.log(`🔍 Products with ref field: ${productsWithRef.length}/${existingProducts.length}`);
+  
+  // If no products exist or no products have ref field, force a full sync
+  if ((existingProducts.length === 0 || productsWithRef.length === 0) && !forceFullSync) {
+    console.log('⚠️ No products with ref field found, forcing full sync to ensure ref data...');
     forceFullSync = true;
   }
   
