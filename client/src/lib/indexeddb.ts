@@ -62,6 +62,7 @@ export interface PurchaseOrderItem {
   item_id?: number;
   purchase_order_id: string;
   item_ean: string;
+  item_ref?: string;
   item_title?: string;
   item_description?: string;
   unit_of_measure?: string;
@@ -89,6 +90,7 @@ export interface OrderItem {
   item_id?: number;
   order_id: string;
   item_ean: string;
+  item_ref?: string;
   item_title?: string;
   item_description?: string;
   unit_of_measure?: string;

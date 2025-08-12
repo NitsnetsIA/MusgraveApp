@@ -13,6 +13,7 @@ interface PurchaseOrderInput {
   final_total: number;
   items: {
     item_ean: string;
+    item_ref?: string;
     item_title: string;
     item_description?: string;
     unit_of_measure: string;
@@ -52,6 +53,7 @@ export async function sendPurchaseOrderToServer(
             item_id
             purchase_order_id
             item_ean
+            item_ref
             item_title
             item_description
             unit_of_measure
@@ -81,6 +83,7 @@ export async function sendPurchaseOrderToServer(
         updated_at: purchaseOrder.created_at,
         items: items.map(item => ({
           item_ean: item.item_ean,
+          item_ref: item.item_ref || '',
           item_title: item.item_title || '',
           item_description: item.item_description || '',
           unit_of_measure: item.unit_of_measure || 'unidades',

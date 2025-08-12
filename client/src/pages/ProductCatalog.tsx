@@ -1,9 +1,15 @@
-import { useState, useEffect, memo, useMemo, useCallback, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import ProductCard from '@/components/ProductCard';
-import { useDatabase } from '@/hooks/use-database';
+import { useState, useEffect, memo, useMemo, useCallback, useRef } from "react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import ProductCard from "@/components/ProductCard";
+import { useDatabase } from "@/hooks/use-database";
 
 interface ProductCatalogProps {
   cartItems: any[];
@@ -12,23 +18,23 @@ interface ProductCatalogProps {
   onRemoveFromCart: (ean: string) => void;
 }
 
-function ProductCatalog({ 
-  cartItems, 
-  onAddToCart, 
-  onUpdateCart, 
-  onRemoveFromCart 
+function ProductCatalog({
+  cartItems,
+  onAddToCart,
+  onUpdateCart,
+  onRemoveFromCart,
 }: ProductCatalogProps) {
   const { getProducts, getProductByEan } = useDatabase();
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [barcodeMessage, setBarcodeMessage] = useState('');
+  const [barcodeMessage, setBarcodeMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(() => {
-    const savedPage = localStorage.getItem('productCatalogPage');
+    const savedPage = localStorage.getItem("productCatalogPage");
     return savedPage ? parseInt(savedPage, 10) : 1;
   });
   const PRODUCTS_PER_PAGE = 60;
-  
+
   // Use refs for scroll position preservation only
   const scrollPositionRef = useRef(0);
 
@@ -37,24 +43,26 @@ function ProductCatalog({
     const handleScroll = () => {
       scrollPositionRef.current = window.scrollY;
     };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
     async function loadProducts() {
       setIsLoading(true);
       const productList = await getProducts(searchTerm);
-      console.log(`ProductCatalog: Loaded ${productList.length} products${searchTerm ? ` (filtered by "${searchTerm}")` : ' (all products)'}`);
+      console.log(
+        `ProductCatalog: Loaded ${productList.length} products${searchTerm ? ` (filtered by "${searchTerm}")` : " (all products)"}`,
+      );
       setAllProducts(productList);
-      
+
       // Reset to page 1 only when searching (not when clearing search via barcode)
       if (searchTerm.length > 0) {
         setCurrentPage(1);
-        localStorage.setItem('productCatalogPage', '1');
+        localStorage.setItem("productCatalogPage", "1");
       }
-      
+
       setIsLoading(false);
     }
 
@@ -70,74 +78,85 @@ function ProductCatalog({
   // Memoize cart lookup to prevent unnecessary re-renders
   const cartItemsMap = useMemo(() => {
     const map = new Map();
-    cartItems.forEach(item => map.set(item.ean, item.quantity));
+    cartItems.forEach((item) => map.set(item.ean, item.quantity));
     return map;
   }, [cartItems]);
 
   // Memoize callback functions to prevent ProductCard re-renders while preserving scroll
-  const memoizedOnAddToCart = useCallback((ean: string, quantity: number) => {
-    // Preserve scroll position during cart operations
-    const currentScroll = window.scrollY;
-    onAddToCart(ean, quantity);
-    // Restore scroll position after operation
-    setTimeout(() => window.scrollTo(0, currentScroll), 10);
-  }, [onAddToCart]);
+  const memoizedOnAddToCart = useCallback(
+    (ean: string, quantity: number) => {
+      // Preserve scroll position during cart operations
+      const currentScroll = window.scrollY;
+      onAddToCart(ean, quantity);
+      // Restore scroll position after operation
+      setTimeout(() => window.scrollTo(0, currentScroll), 10);
+    },
+    [onAddToCart],
+  );
 
-  const memoizedOnUpdateCart = useCallback((ean: string, quantity: number) => {
-    const currentScroll = window.scrollY;
-    onUpdateCart(ean, quantity);
-    setTimeout(() => window.scrollTo(0, currentScroll), 10);
-  }, [onUpdateCart]);
+  const memoizedOnUpdateCart = useCallback(
+    (ean: string, quantity: number) => {
+      const currentScroll = window.scrollY;
+      onUpdateCart(ean, quantity);
+      setTimeout(() => window.scrollTo(0, currentScroll), 10);
+    },
+    [onUpdateCart],
+  );
 
-  const memoizedOnRemoveFromCart = useCallback((ean: string) => {
-    const currentScroll = window.scrollY;
-    onRemoveFromCart(ean);
-    setTimeout(() => window.scrollTo(0, currentScroll), 10);
-  }, [onRemoveFromCart]);
+  const memoizedOnRemoveFromCart = useCallback(
+    (ean: string) => {
+      const currentScroll = window.scrollY;
+      onRemoveFromCart(ean);
+      setTimeout(() => window.scrollTo(0, currentScroll), 10);
+    },
+    [onRemoveFromCart],
+  );
 
   // Pagination handlers with localStorage persistence
   const goToFirstPage = () => {
     setCurrentPage(1);
-    localStorage.setItem('productCatalogPage', '1');
+    localStorage.setItem("productCatalogPage", "1");
   };
   const goToPreviousPage = () => {
     const newPage = Math.max(1, currentPage - 1);
     setCurrentPage(newPage);
-    localStorage.setItem('productCatalogPage', newPage.toString());
+    localStorage.setItem("productCatalogPage", newPage.toString());
   };
   const goToNextPage = () => {
     const newPage = Math.min(totalPages, currentPage + 1);
     setCurrentPage(newPage);
-    localStorage.setItem('productCatalogPage', newPage.toString());
+    localStorage.setItem("productCatalogPage", newPage.toString());
   };
   const goToLastPage = () => {
     setCurrentPage(totalPages);
-    localStorage.setItem('productCatalogPage', totalPages.toString());
+    localStorage.setItem("productCatalogPage", totalPages.toString());
   };
 
   // Handle barcode scanner input (EAN + Enter)
-  const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleBarcodeInput = async (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Enter") {
       const ean = searchTerm.trim();
-      
+
       // Check if input looks like an EAN (13 digits)
       if (/^\d{13}$/.test(ean)) {
         const product = await getProductByEan(ean);
-        
+
         if (product) {
           // Add one unit to cart (scroll preserved by memoized callback)
           onAddToCart(ean, 1);
-          
+
           // Show success message
           setBarcodeMessage(`✓ ${product.title} añadido al carrito`);
-          setTimeout(() => setBarcodeMessage(''), 3000);
-          
+          setTimeout(() => setBarcodeMessage(""), 3000);
+
           // Clear search without resetting pagination
-          setSearchTerm('');
+          setSearchTerm("");
         } else {
           // Show error message
           setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
-          setTimeout(() => setBarcodeMessage(''), 3000);
+          setTimeout(() => setBarcodeMessage(""), 3000);
         }
       }
     }
@@ -158,14 +177,16 @@ function ProductCatalog({
             placeholder="Buscar por EAN, REF o Nombre - Escáner: EAN + Enter"
           />
         </div>
-        
+
         {/* Barcode Scanner Message */}
         {barcodeMessage && (
-          <div className={`mt-2 p-3 rounded-lg text-sm font-medium ${
-            barcodeMessage.startsWith('✓') 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
-          }`}>
+          <div
+            className={`mt-2 p-3 rounded-lg text-sm font-medium ${
+              barcodeMessage.startsWith("✓")
+                ? "bg-green-100 text-green-800 border border-green-200"
+                : "bg-red-100 text-red-800 border border-red-200"
+            }`}
+          >
             {barcodeMessage}
           </div>
         )}
@@ -174,7 +195,9 @@ function ProductCatalog({
       {/* Pagination Info */}
       {!isLoading && allProducts.length > 0 && (
         <div className="mb-4 text-sm text-gray-600 text-center">
-          Mostrando {allProducts.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, allProducts.length)} de {allProducts.length} productos
+          Mostrando {allProducts.length > 0 ? startIndex + 1 : 0}-
+          {Math.min(endIndex, allProducts.length)} de {allProducts.length}{" "}
+          productos
         </div>
       )}
 
@@ -182,7 +205,10 @@ function ProductCatalog({
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {[...Array(10)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow-sm border p-4 animate-pulse">
+            <div
+              key={i}
+              className="bg-white rounded-lg shadow-sm border p-4 animate-pulse"
+            >
               <div className="w-full h-32 bg-gray-200 rounded mb-3"></div>
               <div className="h-4 bg-gray-200 rounded mb-2"></div>
               <div className="h-6 bg-gray-200 rounded mb-3"></div>
@@ -207,7 +233,9 @@ function ProductCatalog({
 
       {!isLoading && allProducts.length === 0 && (
         <div className="text-center text-gray-500 mt-8">
-          {searchTerm ? 'No se encontraron productos' : 'No hay productos disponibles'}
+          {searchTerm
+            ? "No se encontraron productos"
+            : "No hay productos disponibles"}
         </div>
       )}
 

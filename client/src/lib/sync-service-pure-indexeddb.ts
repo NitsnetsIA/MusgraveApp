@@ -531,6 +531,7 @@ async function syncProcessedOrdersFromServer(forceFullSync: boolean = false): Pr
           await DatabaseService.addOrderItem({
             order_id: order.order_id,
             item_ean: item.item_ean,
+            item_ref: item.item_ref || '',
             item_title: item.item_title,
             item_description: item.item_description,
             unit_of_measure: item.unit_of_measure,
