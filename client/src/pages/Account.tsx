@@ -35,20 +35,27 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
     try {
       setStats(prev => ({ ...prev, loading: true }));
 
-      // Get product count
-      const products = await DatabaseService.getAllProducts();
+      // Get product count - use getProducts without searchTerm to get all active products
+      const products = await DatabaseService.getProducts();
       const productCount = products.length;
 
       // Get cached image count
       const cachedImageCount = await imageCacheService.getCachedImageCount();
 
-      // Get purchase order count
-      const purchaseOrders = await DatabaseService.getAllPurchaseOrders();
+      // Get purchase order count - pass empty string to get all
+      const purchaseOrders = await DatabaseService.getPurchaseOrdersForUser('');
       const purchaseOrderCount = purchaseOrders.length;
 
-      // Get completed orders count
-      const orders = await DatabaseService.getAllOrders();
+      // Get completed orders count - pass empty string to get all
+      const orders = await DatabaseService.getOrdersForUser('');
       const completedOrderCount = orders.length;
+
+      console.log('Stats loaded:', {
+        productCount,
+        cachedImageCount,
+        purchaseOrderCount,
+        completedOrderCount
+      });
 
       setStats({
         productCount,
