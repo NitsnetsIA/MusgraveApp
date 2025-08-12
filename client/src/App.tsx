@@ -235,11 +235,14 @@ function Router() {
         const taxRate = Number(product.tax_rate) || 0.21;
         return {
           ean: product.ean,
+          ref: product.ref, // FIXED: Include ref field for test cart items
           title: product.title,
           description: product.description,
           base_price: Number(product.base_price) || 0,
           tax_rate: taxRate,
           quantity: Math.floor(Math.random() * 3) + 1, // Random quantity 1-3
+          unit_of_measure: product.unit_of_measure,
+          quantity_measure: product.quantity_measure,
           image_url: product.image_url
         };
       });
