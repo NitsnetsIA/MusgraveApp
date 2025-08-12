@@ -169,49 +169,7 @@ export async function sendPurchaseOrderToServer(
   }
 }
 
-// Check if a purchase order exists on the server
-async function checkIfOrderExistsOnServer(purchaseOrderId: string): Promise<boolean> {
-  try {
-    const query = `
-      query CheckPurchaseOrder($purchaseOrderId: String!, $storeId: String!) {
-        purchaseOrders(purchase_order_id: $purchaseOrderId, store_id: $storeId, limit: 1) {
-          purchase_orders {
-            purchase_order_id
-          }
-          total
-        }
-      }
-    `;
 
-    const variables = {
-      purchaseOrderId: purchaseOrderId,
-      storeId: 'ES001'
-    };
-
-    const response = await fetch('https://pim-grocery-ia64.replit.app/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
-    });
-
-    if (!response.ok) {
-      console.warn(`Failed to check if order ${purchaseOrderId} exists on server: HTTP ${response.status}`);
-      return false; // Assume it doesn't exist if we can't check
-    }
-
-    const data = await response.json();
-    if (data.errors) {
-      console.warn(`GraphQL errors checking order ${purchaseOrderId}:`, data.errors);
-      return false;
-    }
-
-    const total = data.data?.purchaseOrders?.total || 0;
-    return total > 0;
-  } catch (error) {
-    console.warn(`Error checking if order ${purchaseOrderId} exists on server:`, error);
-    return false; // Assume it doesn't exist if we can't check
-  }
-}
 
 export async function syncPendingPurchaseOrders(): Promise<void> {
   try {
