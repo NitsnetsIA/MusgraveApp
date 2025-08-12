@@ -1,6 +1,9 @@
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronLeft, User } from 'lucide-react';
+import { ChevronLeft, User, Database, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DatabaseService } from '@/lib/database-service';
+import { imageCacheService } from '@/lib/image-cache-service';
 
 interface AccountProps {
   user?: any;
@@ -10,6 +13,55 @@ interface AccountProps {
 
 export default function Account({ user, store, deliveryCenter }: AccountProps) {
   const [, setLocation] = useLocation();
+  const [stats, setStats] = useState<{
+    productCount: number;
+    cachedImageCount: number;
+    purchaseOrderCount: number;
+    completedOrderCount: number;
+    loading: boolean;
+  }>({
+    productCount: 0,
+    cachedImageCount: 0,
+    purchaseOrderCount: 0,
+    completedOrderCount: 0,
+    loading: true
+  });
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setStats(prev => ({ ...prev, loading: true }));
+
+      // Get product count
+      const products = await DatabaseService.getAllProducts();
+      const productCount = products.length;
+
+      // Get cached image count
+      const cachedImageCount = await imageCacheService.getCachedImageCount();
+
+      // Get purchase order count
+      const purchaseOrders = await DatabaseService.getAllPurchaseOrders();
+      const purchaseOrderCount = purchaseOrders.length;
+
+      // Get completed orders count
+      const orders = await DatabaseService.getAllOrders();
+      const completedOrderCount = orders.length;
+
+      setStats({
+        productCount,
+        cachedImageCount,
+        purchaseOrderCount,
+        completedOrderCount,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      setStats(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   return (
     <div className="p-4">
@@ -73,6 +125,50 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
               <span className="w-20 text-gray-600">Nombre:</span>
               <span className="font-medium">{deliveryCenter?.name || store?.delivery_center_name || 'N/A'}</span>
             </div>
+          </div>
+        </div>
+
+        {/* Downloaded Data Section */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <h2 className="font-medium text-gray-900 mb-3 border-b pb-2 flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Datos descargados
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Productos:</span>
+              <span className="font-medium">
+                {stats.loading ? '...' : `${stats.productCount} (${stats.cachedImageCount}/${stats.productCount} fotografías descargadas)`}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Órdenes de compra:</span>
+              <span className="font-medium">
+                {stats.loading ? '...' : stats.purchaseOrderCount}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Pedidos completados:</span>
+              <span className="font-medium">
+                {stats.loading ? '...' : stats.completedOrderCount}
+              </span>
+            </div>
+            {!stats.loading && stats.productCount > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Progreso de imágenes:</span>
+                  <span className="text-gray-500">
+                    {Math.round((stats.cachedImageCount / stats.productCount) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                  <div 
+                    className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${Math.round((stats.cachedImageCount / stats.productCount) * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

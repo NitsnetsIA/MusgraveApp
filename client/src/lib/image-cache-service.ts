@@ -130,6 +130,22 @@ class ImageCacheService {
     });
   }
 
+  // Get count of cached images
+  async getCachedImageCount(): Promise<number> {
+    if (!this.serviceWorkerReady) {
+      return 0;
+    }
+
+    try {
+      const cache = await caches.open('musgrave-images-v1');
+      const cachedRequests = await cache.keys();
+      return cachedRequests.length;
+    } catch (error) {
+      console.warn('Error getting cached image count:', error);
+      return 0;
+    }
+  }
+
   // Clear image cache
   async clearImageCache(): Promise<void> {
     if (!this.serviceWorkerReady || !navigator.serviceWorker.controller) {

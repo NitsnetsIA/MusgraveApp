@@ -141,7 +141,6 @@ async function processImageQueue() {
   
   // Process in batches of 10 to prevent overwhelming
   const BATCH_SIZE = 10;
-  const BATCH_DELAY = 2000; // 2 seconds between batches
   
   while (imageDownloadQueue.length > 0) {
     const batch = imageDownloadQueue.splice(0, BATCH_SIZE);
@@ -211,12 +210,6 @@ async function processImageQueue() {
     // Break if we've processed all images
     if (processedImages >= totalImages) {
       break;
-    }
-    
-    // Delay between batches if more to process
-    if (imageDownloadQueue.length > 0) {
-      console.log(`⏸️ Batch delay (${BATCH_DELAY}ms) before next batch...`);
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
     }
   }
   
