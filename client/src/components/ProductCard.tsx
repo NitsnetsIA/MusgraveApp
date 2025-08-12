@@ -3,7 +3,10 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatSpanishCurrency, formatPricePerUnit } from '@/lib/utils/currency';
-import { calculateDisplayPrice } from '@/lib/schema-migrate';
+// Function moved inline since schema-migrate was deleted
+const calculateDisplayPrice = (basePrice: number, taxRate: number): number => {
+  return basePrice * (1 + taxRate);
+};
 
 interface ProductCardProps {
   product: any;

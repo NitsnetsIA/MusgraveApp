@@ -63,7 +63,7 @@ function Router() {
   }, [user]); // Remove getStoreByCode from dependencies to prevent infinite loop
 
   // Authentication handlers
-  const handleLogin = async (email: string, password: string, syncEntities: string[] = ['taxes', 'products', 'deliveryCenters', 'stores', 'users'], storageType: 'sql' | 'indexeddb' = 'indexeddb'): Promise<boolean> => {
+  const handleLogin = async (email: string, password: string, syncEntities: string[] = ['taxes', 'products', 'deliveryCenters', 'stores', 'users'], storageType: 'indexeddb' = 'indexeddb'): Promise<boolean> => {
     console.log('handleLogin called with:', { email, password, syncEntities, storageType });
     setIsLoading(true);
     
@@ -78,7 +78,7 @@ function Router() {
         setUser(authenticatedUser);
         setSelectedSyncEntities(syncEntities);
         
-        // Show sync screen after successful login - IndexedDB or SQL.js based on selection
+        // Show sync screen after successful login - IndexedDB only
         setShowSyncScreen(true);
         return true;
       }
@@ -255,7 +255,7 @@ function Router() {
       return;
     }
     
-    const orderId = await createPurchaseOrder(user.email, store.code, cartItems);
+    const orderId = await createPurchaseOrder(user?.email || '', store.code, cartItems);
     setLastOrderId(orderId);
     clearCart();
     setCartOpen(false);

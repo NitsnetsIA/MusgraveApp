@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Database schema types for SQLite (sql.js)
+// Database schema types for IndexedDB
 export interface Tax {
   code: string;
   name: string;

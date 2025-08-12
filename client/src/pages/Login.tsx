@@ -231,38 +231,13 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
                   </div>
                 </div>
 
-                {/* Storage Type Selection */}
+                {/* Storage Type - Fixed to IndexedDB only */}
                 <div className="space-y-3">
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Tipo de almacenamiento:
+                    Almacenamiento:
                   </FormLabel>
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input 
-                        type="radio" 
-                        id="storage-indexeddb" 
-                        name="storage-type" 
-                        checked={storageType === 'indexeddb'} 
-                        onChange={() => setStorageType('indexeddb')}
-                        className="text-musgrave-500 focus:ring-musgrave-500"
-                      />
-                      <label htmlFor="storage-indexeddb" className="text-xs text-gray-600 cursor-pointer">
-                        IndexedDB (Recomendado) - Sin límites, mejor rendimiento
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2 opacity-50">
-                      <input 
-                        type="radio" 
-                        id="storage-sql" 
-                        name="storage-type" 
-                        checked={false}
-                        disabled={true}
-                        className="text-musgrave-500 focus:ring-musgrave-500"
-                      />
-                      <label htmlFor="storage-sql" className="text-xs text-gray-400 cursor-not-allowed">
-                        SQL.js (Deshabilitado) - Solo IndexedDB soportado
-                      </label>
-                    </div>
+                  <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-800">
+                    ✓ IndexedDB - Almacenamiento nativo del navegador
                   </div>
                 </div>
                 

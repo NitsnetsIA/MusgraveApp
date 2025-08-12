@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DatabaseService as IndexedDBService } from '@/lib/indexeddb';
 import { UnifiedDatabaseService } from '@/lib/database-service';
-import { loginUserOnline } from '@/lib/sync-service';
+// Import removed: sync-service was deleted, login is now handled by database-service
 import type { User, Product, PurchaseOrder, Order, CartItem } from '@shared/schema';
 
 // Helper functions
@@ -38,6 +38,45 @@ function generateProcessedOrderId(): string {
 export function useDatabase() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // Simple online login function
+  const performOnlineLogin = async (email: string, password: string) => {
+    try {
+      const loginMutation = `
+        mutation LoginUser($input: LoginInput!) {
+          loginUser(input: $input) {
+            email
+            store_id
+            name
+            is_active
+          }
+        }
+      `;
+      
+      const response = await fetch('https://pim-grocery-ia64.replit.app/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: loginMutation,
+          variables: { input: { email, password } }
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data?.loginUser) {
+          return {
+            success: true,
+            user: data.data.loginUser,
+            message: 'Login successful'
+          };
+        }
+      }
+      return { success: false, user: null, message: 'Invalid credentials' };
+    } catch (error) {
+      return { success: false, user: null, message: 'Network error' };
+    }
+  };
 
   useEffect(() => {
     async function init() {
@@ -83,7 +122,7 @@ export function useDatabase() {
       
       // First, try online authentication against GraphQL server
       console.log('Attempting online authentication...');
-      const onlineResult = await loginUserOnline(email, password);
+      const onlineResult = await performOnlineLogin(email, password);
       
       if (onlineResult.success && onlineResult.user) {
         console.log('Online authentication successful:', onlineResult.user);
