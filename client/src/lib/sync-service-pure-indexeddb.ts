@@ -238,14 +238,20 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
     
     // Queue images for background caching after products are synced
-    console.log(`📷 Queuing ${allProducts.length} product images for background caching...`);
+    console.log(`📷 Preparing ${allProducts.length} product images for background caching...`);
     const imageUrls = allProducts
       .map(product => product.image_url)
-      .filter(url => url && typeof url === 'string' && url.trim() !== '');
+      .filter(url => url && typeof url === 'string' && url.trim() !== '')
+      .filter((url, index, array) => array.indexOf(url) === index); // Remove duplicates
     
     if (imageUrls.length > 0) {
-      await imageCacheService.queueImagesForCache(imageUrls);
-      console.log(`🎯 Queued ${imageUrls.length} images for background download`);
+      console.log(`🎯 Queuing ${imageUrls.length} unique images for background download`);
+      
+      // Add delay before starting image cache to let sync complete
+      setTimeout(async () => {
+        await imageCacheService.queueImagesForCache(imageUrls);
+        console.log(`✅ Image caching queue initiated with ${imageUrls.length} images`);
+      }, 1000);
     } else {
       console.log('⏭️ No valid image URLs found in products');
     }

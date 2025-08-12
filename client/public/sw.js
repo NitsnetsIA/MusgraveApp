@@ -127,71 +127,101 @@ function queueImagesForBackground(imageUrls) {
   sendCacheStatus();
 }
 
-// Process image download queue in background
+// Process image download queue in background with batch processing
 async function processImageQueue() {
   if (isProcessingQueue || imageDownloadQueue.length === 0) {
     return;
   }
   
   isProcessingQueue = true;
-  console.log(`🔄 Starting background image cache process. Queue: ${imageDownloadQueue.length} images`);
-  
   const totalImages = imageDownloadQueue.length;
   let processedImages = 0;
   
+  console.log(`🔄 Starting batch image cache process. Queue: ${totalImages} images`);
+  
+  // Process in batches of 10 to prevent overwhelming
+  const BATCH_SIZE = 10;
+  const BATCH_DELAY = 2000; // 2 seconds between batches
+  
   while (imageDownloadQueue.length > 0) {
-    const imageUrl = imageDownloadQueue.shift();
+    const batch = imageDownloadQueue.splice(0, BATCH_SIZE);
+    console.log(`📦 Processing batch of ${batch.length} images. Remaining: ${imageDownloadQueue.length}`);
     
-    try {
-      // Check if already cached
-      const cachedResponse = await caches.match(imageUrl);
-      if (cachedResponse) {
-        processedImages++;
-        notifyProgress(processedImages, totalImages);
-        continue;
-      }
-      
-      // Download and cache image with timeout and retry
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
+    // Process batch concurrently but with limits
+    const batchPromises = batch.map(async (imageUrl, index) => {
       try {
-        const response = await fetch(imageUrl, { 
-          signal: controller.signal,
-          cache: 'no-cache' // Force fresh fetch
-        });
-        clearTimeout(timeoutId);
+        // Stagger requests within batch
+        await new Promise(resolve => setTimeout(resolve, index * 100));
         
-        if (response.ok) {
-          const cache = await caches.open(CACHE_NAME);
-          await cache.put(imageUrl, response);
-          console.log(`💾 Background cached image ${processedImages + 1}/${totalImages}:`, imageUrl);
-        } else {
-          console.warn(`⚠️ Failed to fetch image (${response.status}):`, imageUrl);
+        // Check if already cached
+        const cachedResponse = await caches.match(imageUrl);
+        if (cachedResponse) {
+          return { success: true, url: imageUrl, cached: true };
         }
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        console.warn(`⚠️ Fetch timeout/error for image:`, imageUrl, fetchError.name);
+        
+        // Download with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        
+        try {
+          const response = await fetch(imageUrl, { 
+            signal: controller.signal,
+            cache: 'no-cache'
+          });
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(imageUrl, response.clone());
+            return { success: true, url: imageUrl, cached: false };
+          } else {
+            return { success: false, url: imageUrl, error: `HTTP ${response.status}` };
+          }
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          return { success: false, url: imageUrl, error: fetchError.name };
+        }
+        
+      } catch (error) {
+        return { success: false, url: imageUrl, error: error.message };
+      }
+    });
+    
+    // Wait for batch completion
+    const results = await Promise.allSettled(batchPromises);
+    
+    // Process results
+    results.forEach((result, index) => {
+      processedImages++;
+      if (result.status === 'fulfilled') {
+        const { success, url, cached, error } = result.value;
+        if (success) {
+          console.log(`💾 ${cached ? 'Already cached' : 'Cached'} image ${processedImages}/${totalImages}`);
+        } else {
+          console.warn(`⚠️ Failed to cache image ${processedImages}/${totalImages}: ${error}`);
+        }
+      } else {
+        console.error(`❌ Batch processing error for image ${processedImages}/${totalImages}:`, result.reason);
       }
       
-      processedImages++;
+      // Update progress for each image
       notifyProgress(processedImages, totalImages);
-      
-      // Small delay to prevent blocking and allow for network recovery
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-    } catch (error) {
-      console.error('❌ Error caching image in background:', imageUrl, error);
-      processedImages++;
-      notifyProgress(processedImages, totalImages);
-      
-      // Continue processing even if one image fails
-      continue;
+    });
+    
+    // Break if we've processed all images
+    if (processedImages >= totalImages) {
+      break;
+    }
+    
+    // Delay between batches if more to process
+    if (imageDownloadQueue.length > 0) {
+      console.log(`⏸️ Batch delay (${BATCH_DELAY}ms) before next batch...`);
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
     }
   }
   
   isProcessingQueue = false;
-  console.log('✅ Background image caching completed');
+  console.log(`✅ Background image caching completed. Processed ${processedImages} images.`);
   
   // Notify completion
   sendCacheStatus();
