@@ -296,6 +296,24 @@ export class DatabaseService {
       throw error;
     }
   }
+
+  static async updatePurchaseOrder(purchaseOrderId: string, updates: any): Promise<void> {
+    try {
+      await IndexedDBService.updatePurchaseOrder(purchaseOrderId, updates);
+    } catch (error) {
+      console.error('Error updating purchase order:', error);
+      throw error;
+    }
+  }
+
+  static async clearPurchaseOrderItems(purchaseOrderId: string): Promise<void> {
+    try {
+      await IndexedDBService.clearPurchaseOrderItems(purchaseOrderId);
+    } catch (error) {
+      console.error('Error clearing purchase order items:', error);
+      throw error;
+    }
+  }
 }
 
 // For backward compatibility, export as UnifiedDatabaseService too

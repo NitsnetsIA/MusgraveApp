@@ -37,8 +37,11 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
     onProgress?.('📦 Enviando órdenes de compra pendientes...', 93);
     await syncPendingPurchaseOrders();
 
-    onProgress?.('🛒 Importando pedidos procesados del servidor...', 97);
+    onProgress?.('🛒 Importando pedidos procesados del servidor...', 95);
     await syncProcessedOrdersFromServer(forceFullSync);
+
+    onProgress?.('📋 Actualizando órdenes de compra desde el servidor...', 98);
+    await syncPurchaseOrdersFromServer(forceFullSync);
     
     onProgress?.('✅ Sincronización completada exitosamente', 100);
     console.log('✅ Pure IndexedDB synchronization completed successfully');
@@ -541,6 +544,166 @@ async function syncProcessedOrdersFromServer(forceFullSync: boolean = false): Pr
     
   } catch (error) {
     console.error('❌ Failed to sync processed orders:', error);
+    // Don't throw error - this shouldn't block the main sync process
+  }
+}
+
+// Sync purchase orders from GraphQL server to update local status
+async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Promise<void> {
+  console.log('🔄 Syncing purchase orders from GraphQL server...');
+  
+  try {
+    // Get last sync timestamp for incremental sync
+    let timestamp = '2025-08-11T00:22:10Z'; // Default starting date
+    if (!forceFullSync) {
+      const syncConfig = await DatabaseService.getSyncConfig('purchase_orders');
+      if (syncConfig && syncConfig.last_request) {
+        timestamp = new Date(syncConfig.last_request).toISOString();
+        console.log(`🔍 Incremental sync: checking for purchase orders modified after ${timestamp}`);
+      } else {
+        console.log('🔍 First sync: downloading purchase orders from default date');
+      }
+    } else {
+      console.log('🔍 Full sync: downloading all purchase orders');
+    }
+
+    const query = `
+      query PurchaseOrders($timestamp: String, $limit: Int, $offset: Int, $storeId: String) {
+        purchaseOrders(timestamp: $timestamp, limit: $limit, offset: $offset, store_id: $storeId) {
+          purchaseOrders {
+            purchase_order_id
+            user_email
+            store_id
+            status
+            subtotal
+            tax_total
+            final_total
+            server_sent_at
+            created_at
+            updated_at
+            items {
+              item_id
+              purchase_order_id
+              item_ean
+              item_title
+              item_description
+              unit_of_measure
+              quantity_measure
+              image_url
+              quantity
+              base_price_at_order
+              tax_rate_at_order
+              created_at
+              updated_at
+            }
+          }
+          total
+          limit
+          offset
+        }
+      }
+    `;
+
+    // Query purchase orders for the user's store only
+    const variables = {
+      timestamp: timestamp,
+      limit: 1000,
+      offset: 0,
+      storeId: STORE_ID // This ensures we only get purchase orders for ES001 store
+    };
+
+    console.log(`📊 Requesting purchase orders for store ${STORE_ID} since ${timestamp}`);
+    
+    const response = await fetch('https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (data.errors) {
+      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+    }
+
+    const purchaseOrdersData = data.data.purchaseOrders;
+    const purchaseOrders = purchaseOrdersData.purchaseOrders || [];
+    
+    console.log(`📋 Received ${purchaseOrders.length} purchase orders for store ${STORE_ID}`);
+    
+    if (purchaseOrders.length > 0) {
+      // Update each purchase order with server data (server is source of truth)
+      for (const serverOrder of purchaseOrders) {
+        console.log(`🔄 Updating purchase order ${serverOrder.purchase_order_id} with server data (status: ${serverOrder.status})`);
+        
+        // Check if purchase order exists locally
+        const existingOrder = await DatabaseService.getPurchaseOrder(serverOrder.purchase_order_id);
+        
+        if (existingOrder) {
+          // Update existing purchase order with server data
+          console.log(`📝 Overwriting local purchase order ${serverOrder.purchase_order_id} with server data`);
+          
+          // Update purchase order with server data
+          await DatabaseService.updatePurchaseOrder(serverOrder.purchase_order_id, {
+            status: serverOrder.status,
+            subtotal: serverOrder.subtotal,
+            tax_total: serverOrder.tax_total,
+            final_total: serverOrder.final_total,
+            server_sent_at: serverOrder.server_sent_at,
+            updated_at: serverOrder.updated_at
+          });
+          
+          // Clear existing items and add server items
+          await DatabaseService.clearPurchaseOrderItems(serverOrder.purchase_order_id);
+          
+        } else {
+          // Create new purchase order from server
+          console.log(`📦 Creating new purchase order ${serverOrder.purchase_order_id} from server`);
+          
+          await DatabaseService.savePurchaseOrder({
+            purchase_order_id: serverOrder.purchase_order_id,
+            user_email: serverOrder.user_email,
+            store_id: serverOrder.store_id,
+            status: serverOrder.status,
+            subtotal: serverOrder.subtotal,
+            tax_total: serverOrder.tax_total,
+            final_total: serverOrder.final_total,
+            server_sent_at: serverOrder.server_sent_at,
+            created_at: serverOrder.created_at,
+            updated_at: serverOrder.updated_at
+          });
+        }
+
+        // Add/update purchase order items with server data
+        for (const item of serverOrder.items) {
+          await DatabaseService.addPurchaseOrderItem({
+            purchase_order_id: serverOrder.purchase_order_id,
+            item_ean: item.item_ean,
+            item_title: item.item_title,
+            item_description: item.item_description,
+            unit_of_measure: item.unit_of_measure,
+            quantity_measure: item.quantity_measure,
+            image_url: item.image_url,
+            quantity: item.quantity,
+            base_price_at_order: item.base_price_at_order,
+            tax_rate_at_order: item.tax_rate_at_order
+          });
+        }
+      }
+
+      console.log(`✅ Successfully synchronized ${purchaseOrders.length} purchase orders from server`);
+    } else {
+      console.log('📭 No purchase order updates found on server');
+    }
+
+    // Update sync config
+    await DatabaseService.updateSyncConfig('purchase_orders', Date.now());
+    
+  } catch (error) {
+    console.error('❌ Failed to sync purchase orders from server:', error);
     // Don't throw error - this shouldn't block the main sync process
   }
 }

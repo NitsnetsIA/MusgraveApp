@@ -487,4 +487,12 @@ export class DatabaseService {
   static async updatePurchaseOrderStatus(purchaseOrderId: string, status: string): Promise<void> {
     await db.purchase_orders.update(purchaseOrderId, { status });
   }
+
+  static async updatePurchaseOrder(purchaseOrderId: string, updates: any): Promise<void> {
+    await db.purchase_orders.update(purchaseOrderId, updates);
+  }
+
+  static async clearPurchaseOrderItems(purchaseOrderId: string): Promise<void> {
+    await db.purchase_order_items.where('purchase_order_id').equals(purchaseOrderId).delete();
+  }
 }
