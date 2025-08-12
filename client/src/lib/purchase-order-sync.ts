@@ -169,6 +169,50 @@ export async function sendPurchaseOrderToServer(
   }
 }
 
+// Check if a purchase order exists on the server
+async function checkIfOrderExistsOnServer(purchaseOrderId: string): Promise<boolean> {
+  try {
+    const query = `
+      query CheckPurchaseOrder($purchaseOrderId: String!, $storeId: String!) {
+        purchaseOrders(purchase_order_id: $purchaseOrderId, store_id: $storeId, limit: 1) {
+          purchase_orders {
+            purchase_order_id
+          }
+          total
+        }
+      }
+    `;
+
+    const variables = {
+      purchaseOrderId: purchaseOrderId,
+      storeId: 'ES001'
+    };
+
+    const response = await fetch('https://pim-grocery-ia64.replit.app/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables })
+    });
+
+    if (!response.ok) {
+      console.warn(`Failed to check if order ${purchaseOrderId} exists on server: HTTP ${response.status}`);
+      return false; // Assume it doesn't exist if we can't check
+    }
+
+    const data = await response.json();
+    if (data.errors) {
+      console.warn(`GraphQL errors checking order ${purchaseOrderId}:`, data.errors);
+      return false;
+    }
+
+    const total = data.data?.purchaseOrders?.total || 0;
+    return total > 0;
+  } catch (error) {
+    console.warn(`Error checking if order ${purchaseOrderId} exists on server:`, error);
+    return false; // Assume it doesn't exist if we can't check
+  }
+}
+
 export async function syncPendingPurchaseOrders(): Promise<void> {
   try {
     console.log('🔄 Checking for pending purchase orders to sync...');
@@ -183,24 +227,25 @@ export async function syncPendingPurchaseOrders(): Promise<void> {
 
     console.log(`📦 Found ${pendingOrders.length} pending purchase orders to sync`);
     
-    // Filter out orders that might already be on server (to avoid duplicate errors)
+    // Check each pending order to see if it actually exists on server
     const ordersToSync = [];
+    
     for (const order of pendingOrders) {
-      // Check if this order was recently imported from server (has created_at very close to import time)
-      const orderAge = Date.now() - new Date(order.created_at).getTime();
-      const isRecentlyImported = orderAge < 5 * 60 * 1000; // 5 minutes
+      // Check if order exists on server by querying GraphQL
+      const existsOnServer = await checkIfOrderExistsOnServer(order.purchase_order_id);
       
-      if (isRecentlyImported && !order.server_send_at) {
-        console.log(`⏭️ Skipping recently imported order ${order.purchase_order_id} - likely already on server`);
+      if (existsOnServer) {
+        console.log(`⏭️ Order ${order.purchase_order_id} already exists on server - marking as sent`);
         // Mark it as sent to avoid future sync attempts
         await DatabaseService.updatePurchaseOrderSendStatus(order.purchase_order_id, new Date().toISOString());
       } else {
+        console.log(`📤 Order ${order.purchase_order_id} needs to be sent to server`);
         ordersToSync.push(order);
       }
     }
     
     if (ordersToSync.length === 0) {
-      console.log('✅ No orders need to be sent to server (all were recently imported)');
+      console.log('✅ No orders need to be sent to server (all already exist on server)');
       return;
     }
 
