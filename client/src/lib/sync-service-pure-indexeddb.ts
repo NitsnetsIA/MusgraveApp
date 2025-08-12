@@ -282,6 +282,8 @@ export async function resumeImageCaching() {
     const cachedCount = await imageCacheService.getCachedImageCount();
     const totalImages = products.filter(p => p.image_url && p.image_url.trim() !== '').length;
     
+    console.log(`📊 DEBUG: Found ${products.length} total products, ${totalImages} with valid images`);
+    
     console.log(`📊 Image caching status: ${cachedCount}/${totalImages} cached`);
     
     if (cachedCount < totalImages) {

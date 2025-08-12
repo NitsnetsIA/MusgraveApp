@@ -152,6 +152,8 @@ async function processImageQueue() {
         // Stagger requests within batch
         await new Promise(resolve => setTimeout(resolve, index * 100));
         
+        console.log(`📥 Processing image ${processedImages + index + 1}/${totalImages}: ${imageUrl}`);
+        
         // Check if already cached
         const cachedResponse = await caches.match(imageUrl);
         if (cachedResponse) {
@@ -172,8 +174,10 @@ async function processImageQueue() {
           if (response.ok) {
             const cache = await caches.open(CACHE_NAME);
             await cache.put(imageUrl, response.clone());
+            console.log(`✅ Successfully cached image ${processedImages + index + 1}/${totalImages}`);
             return { success: true, url: imageUrl, cached: false };
           } else {
+            console.warn(`❌ HTTP error ${response.status} for image ${processedImages + index + 1}/${totalImages}`);
             return { success: false, url: imageUrl, error: `HTTP ${response.status}` };
           }
         } catch (fetchError) {

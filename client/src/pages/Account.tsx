@@ -38,6 +38,9 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
       // Get product count - use getProducts without searchTerm to get all active products
       const products = await DatabaseService.getProducts();
       const productCount = products.length;
+      
+      // Count products with valid image URLs for accurate comparison
+      const productsWithImages = products.filter(p => p.image_url && p.image_url.trim() !== '').length;
 
       // Get cached image count
       const cachedImageCount = await imageCacheService.getCachedImageCount();
@@ -51,14 +54,15 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
       const completedOrderCount = orders.length;
 
       console.log('Stats loaded:', {
-        productCount,
+        totalProducts: productCount,
+        productsWithImages,
         cachedImageCount,
         purchaseOrderCount,
         completedOrderCount
       });
 
       setStats({
-        productCount,
+        productCount: productsWithImages, // Use products with images for accurate stats
         cachedImageCount,
         purchaseOrderCount,
         completedOrderCount,
@@ -180,6 +184,20 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
                     style={{ width: `${Math.round((stats.cachedImageCount / stats.productCount) * 100)}%` }}
                   ></div>
                 </div>
+                {stats.cachedImageCount < stats.productCount && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="mt-2 w-full text-xs"
+                    onClick={async () => {
+                      const { resumeImageCaching } = await import('@/lib/sync-service-pure-indexeddb');
+                      resumeImageCaching();
+                    }}
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Reanudar descarga
+                  </Button>
+                )}
               </div>
             )}
           </div>
