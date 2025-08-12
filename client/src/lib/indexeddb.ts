@@ -362,7 +362,8 @@ export class DatabaseService {
   // Get purchase orders that haven't been sent to server (server_send_at is null)
   static async getPendingPurchaseOrders(): Promise<PurchaseOrder[]> {
     return await db.purchase_orders.filter(order => 
-      order.server_send_at === null || order.server_send_at === undefined
+      (order.server_send_at === null || order.server_send_at === undefined) && 
+      order.server_send_at !== '1111-11-11T11:11:11.111Z' // Exclude orders with flag date (imported from server)
     ).toArray();
   }
 

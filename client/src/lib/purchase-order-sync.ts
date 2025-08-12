@@ -227,31 +227,9 @@ export async function syncPendingPurchaseOrders(): Promise<void> {
 
     console.log(`📦 Found ${pendingOrders.length} pending purchase orders to sync`);
     
-    // Check each pending order to see if it actually exists on server
-    const ordersToSync = [];
-    
+    console.log(`📤 Processing ${pendingOrders.length} genuinely pending purchase orders`);
+
     for (const order of pendingOrders) {
-      // Check if order exists on server by querying GraphQL
-      const existsOnServer = await checkIfOrderExistsOnServer(order.purchase_order_id);
-      
-      if (existsOnServer) {
-        console.log(`⏭️ Order ${order.purchase_order_id} already exists on server - marking as sent`);
-        // Mark it as sent to avoid future sync attempts
-        await DatabaseService.updatePurchaseOrderSendStatus(order.purchase_order_id, new Date().toISOString());
-      } else {
-        console.log(`📤 Order ${order.purchase_order_id} needs to be sent to server`);
-        ordersToSync.push(order);
-      }
-    }
-    
-    if (ordersToSync.length === 0) {
-      console.log('✅ No orders need to be sent to server (all already exist on server)');
-      return;
-    }
-
-    console.log(`📤 Syncing ${ordersToSync.length} genuine pending purchase orders`);
-
-    for (const order of ordersToSync) {
       try {
         // Get order items
         const items = await DatabaseService.getPurchaseOrderItems(order.purchase_order_id);

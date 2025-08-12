@@ -15,8 +15,8 @@ The application simulates a B2B grocery ordering system where registered store u
 - Enhanced incremental sync logging with detailed timestamps and entity-specific messages
 - Corrected SyncEntity interface documentation to include all tracked entities
 - **FIXED: Order detail display bug** - Corrected item_title field references in OrderDetail page to show product names correctly
-- **FIXED: Duplicate sync errors** - Prevented resyncing of recently imported orders that already exist on server
-- **OPTIMIZED: Pending order detection** - Added intelligent filtering to avoid unnecessary sync operations
+- **FIXED: Duplicate sync errors** - Orders imported from server now get flag date (1111-11-11T11:11:11.111Z) when server_send_at is null
+- **OPTIMIZED: Pending order detection** - getPendingPurchaseOrders now excludes orders with flag date to prevent re-sync attempts
 - All purchase order workflows now work perfectly: local creation → server sync → status updates → item sync
 
 ✅ **COMPLETED: Robust Offline-First Purchase Order System with GraphQL Sync**

@@ -681,7 +681,7 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
             subtotal: serverOrder.subtotal,
             tax_total: serverOrder.tax_total,
             final_total: serverOrder.final_total,
-            server_sent_at: serverOrder.server_sent_at,
+            server_sent_at: serverOrder.server_sent_at || '1111-11-11T11:11:11.111Z', // Flag for server orders with missing server_sent_at
             updated_at: serverOrder.updated_at
           });
           
@@ -721,7 +721,7 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
             subtotal: serverOrder.subtotal,
             tax_total: serverOrder.tax_total,
             final_total: serverOrder.final_total,
-            server_send_at: serverOrder.server_sent_at,
+            server_send_at: serverOrder.server_sent_at || '1111-11-11T11:11:11.111Z', // Flag for server orders with missing server_sent_at
             created_at: serverOrder.created_at,
             updated_at: serverOrder.updated_at
           });
