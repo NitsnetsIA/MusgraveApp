@@ -39,9 +39,9 @@ export default function Header({
           </button>
         </div>
         
-        {/* Image Cache Progress Indicator - Center area */}
-        <div className="flex-1 flex justify-center">
-          <ImageCacheIndicator />
+        {/* Image Cache Progress Indicator - Right side of logo */}
+        <div className="flex items-center">
+          <ImageCacheIndicator className="ml-2" />
         </div>
         <div className="flex items-center space-x-3">
           <button onClick={onCartToggle} className="relative">

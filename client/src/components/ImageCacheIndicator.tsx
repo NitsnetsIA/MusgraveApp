@@ -50,21 +50,17 @@ export const ImageCacheIndicator: React.FC<ImageCacheIndicatorProps> = ({
   const percentage = total > 0 ? Math.round((processed / total) * 100) : 0;
 
   return (
-    <div className={`flex items-center space-x-2 text-sm ${className}`}>
-      {/* Orange spinning icon to indicate active caching */}
-      <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent"></div>
-      
-      {/* Progress text in orange */}
-      <span className="text-orange-500 font-medium">
-        {processed.toLocaleString()}/{total.toLocaleString()} Imágenes sincronizadas
+    <div className={`flex flex-col items-center text-xs ${className}`}>
+      {/* Progress text in Musgrave green - smaller font */}
+      <span className="text-musgrave-500 font-medium leading-tight">
+        Descargando
       </span>
-      
-      {/* Optional percentage */}
-      {percentage > 0 && (
-        <span className="text-orange-400 text-xs">
-          ({percentage}%)
-        </span>
-      )}
+      <span className="text-musgrave-500 font-medium leading-tight">
+        Imágenes
+      </span>
+      <span className="text-musgrave-500 font-bold leading-tight">
+        {processed.toLocaleString()}/{total.toLocaleString()}
+      </span>
     </div>
   );
 };
