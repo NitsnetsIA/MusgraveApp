@@ -14,6 +14,7 @@ The application simulates a B2B grocery ordering system where registered store u
 - Added comprehensive sync config tracking for purchase_orders and orders entities
 - Enhanced incremental sync logging with detailed timestamps and entity-specific messages
 - Corrected SyncEntity interface documentation to include all tracked entities
+- **FIXED: Order detail display bug** - Corrected item_title field references in OrderDetail page to show product names correctly
 - All purchase order workflows now work perfectly: local creation → server sync → status updates → item sync
 
 ✅ **COMPLETED: Robust Offline-First Purchase Order System with GraphQL Sync**

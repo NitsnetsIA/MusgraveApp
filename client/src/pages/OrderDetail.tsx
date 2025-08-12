@@ -26,7 +26,7 @@ export default function OrderDetail() {
         // Item was removed
         modifications.push({
           ean: originalItem.item_ean,
-          title: originalItem.title,
+          title: originalItem.item_title,
           type: 'removed',
           originalQuantity: originalItem.quantity,
           finalQuantity: 0,
@@ -37,7 +37,7 @@ export default function OrderDetail() {
         // Item was modified
         modifications.push({
           ean: originalItem.item_ean,
-          title: originalItem.title,
+          title: originalItem.item_title,
           type: 'modified',
           originalQuantity: originalItem.quantity,
           finalQuantity: finalItem.quantity,
@@ -53,7 +53,7 @@ export default function OrderDetail() {
       if (!originalItem) {
         modifications.push({
           ean: finalItem.item_ean,
-          title: finalItem.title,
+          title: finalItem.item_title,
           type: 'added',
           originalQuantity: 0,
           finalQuantity: finalItem.quantity,
@@ -193,7 +193,7 @@ export default function OrderDetail() {
                           {item.image_url ? (
                             <img 
                               src={item.image_url} 
-                              alt={item.title}
+                              alt={item.item_title}
                               className="w-full h-full object-cover rounded"
                             />
                           ) : (
@@ -203,7 +203,7 @@ export default function OrderDetail() {
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-medium text-sm leading-tight line-clamp-2" style={{lineHeight: "1.2", minHeight: "2.4em"}}>{item.title}</div>
+                          <div className="font-medium text-sm leading-tight line-clamp-2" style={{lineHeight: "1.2", minHeight: "2.4em"}}>{item.item_title}</div>
                           <div className="text-xs text-gray-500">EAN:{item.item_ean}</div>
                         </div>
                       </div>
