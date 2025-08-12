@@ -98,6 +98,15 @@ self.addEventListener('message', (event) => {
     case 'CLEAR_IMAGE_CACHE':
       clearImageCache();
       break;
+    case 'CHECK_QUEUE_STATUS':
+      console.log(`📊 Queue status check: ${imageDownloadQueue.length} pending, processing: ${isProcessingQueue}`);
+      sendCacheStatus();
+      // Resume processing if stalled
+      if (!isProcessingQueue && imageDownloadQueue.length > 0) {
+        console.log('🔄 Resuming stalled queue processing...');
+        processImageQueue();
+      }
+      break;
   }
 });
 
@@ -142,24 +151,42 @@ async function processImageQueue() {
         continue;
       }
       
-      // Download and cache image
-      const response = await fetch(imageUrl);
-      if (response.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(imageUrl, response);
-        console.log(`💾 Background cached image ${processedImages + 1}/${totalImages}:`, imageUrl);
+      // Download and cache image with timeout and retry
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      try {
+        const response = await fetch(imageUrl, { 
+          signal: controller.signal,
+          cache: 'no-cache' // Force fresh fetch
+        });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(imageUrl, response);
+          console.log(`💾 Background cached image ${processedImages + 1}/${totalImages}:`, imageUrl);
+        } else {
+          console.warn(`⚠️ Failed to fetch image (${response.status}):`, imageUrl);
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        console.warn(`⚠️ Fetch timeout/error for image:`, imageUrl, fetchError.name);
       }
       
       processedImages++;
       notifyProgress(processedImages, totalImages);
       
-      // Small delay to prevent blocking
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Small delay to prevent blocking and allow for network recovery
+      await new Promise(resolve => setTimeout(resolve, 50));
       
     } catch (error) {
       console.error('❌ Error caching image in background:', imageUrl, error);
       processedImages++;
       notifyProgress(processedImages, totalImages);
+      
+      // Continue processing even if one image fails
+      continue;
     }
   }
   

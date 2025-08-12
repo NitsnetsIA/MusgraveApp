@@ -117,6 +117,19 @@ class ImageCacheService {
     });
   }
 
+  // Resume stalled queue processing
+  async resumeStalled(): Promise<void> {
+    if (!this.serviceWorkerReady || !navigator.serviceWorker.controller) {
+      console.warn('⚠️ Service Worker not ready for resume command');
+      return;
+    }
+
+    console.log('🔄 Manually resuming stalled image caching...');
+    navigator.serviceWorker.controller.postMessage({
+      type: 'CHECK_QUEUE_STATUS'
+    });
+  }
+
   // Clear image cache
   async clearImageCache(): Promise<void> {
     if (!this.serviceWorkerReady || !navigator.serviceWorker.controller) {

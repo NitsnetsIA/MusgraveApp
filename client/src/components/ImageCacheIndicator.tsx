@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { imageCacheService, ImageCacheProgress, ImageCacheStatus } from '@/lib/image-cache-service';
+import { imageCacheMonitor } from '@/lib/image-cache-monitor';
 
 interface ImageCacheIndicatorProps {
   className?: string;
@@ -17,12 +18,20 @@ export const ImageCacheIndicator: React.FC<ImageCacheIndicatorProps> = ({
     const handleProgress = (newProgress: ImageCacheProgress) => {
       setProgress(newProgress);
       setIsVisible(newProgress.total > 0 && newProgress.processed < newProgress.total);
+      imageCacheMonitor.updateProgress(); // Update monitor
     };
 
     // Status listener
     const handleStatus = (newStatus: ImageCacheStatus) => {
       setStatus(newStatus);
       setIsVisible(newStatus.queueLength > 0 || newStatus.isProcessing);
+      
+      // Start/stop monitoring based on processing status
+      if (newStatus.isProcessing && newStatus.queueLength > 0) {
+        imageCacheMonitor.startMonitoring();
+      } else {
+        imageCacheMonitor.stopMonitoring();
+      }
     };
 
     // Add listeners
@@ -36,6 +45,7 @@ export const ImageCacheIndicator: React.FC<ImageCacheIndicatorProps> = ({
     return () => {
       imageCacheService.removeProgressListener(handleProgress);
       imageCacheService.removeStatusListener(handleStatus);
+      imageCacheMonitor.stopMonitoring();
     };
   }, []);
 
