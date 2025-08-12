@@ -29,16 +29,11 @@ function ProductCatalog({
   });
   const PRODUCTS_PER_PAGE = 60;
   
-  // Use refs to prevent unnecessary reloads
-  const previousSearchRef = useRef(searchTerm);
+  // Use refs for scroll position preservation only
   const scrollPositionRef = useRef(0);
 
   // Save scroll position before loading
   useEffect(() => {
-    const saveScrollPosition = () => {
-      scrollPositionRef.current = window.scrollY;
-    };
-    
     const handleScroll = () => {
       scrollPositionRef.current = window.scrollY;
     };
@@ -48,12 +43,6 @@ function ProductCatalog({
   }, []);
 
   useEffect(() => {
-    // Only reload products if search term actually changed
-    if (previousSearchRef.current === searchTerm) {
-      return;
-    }
-    previousSearchRef.current = searchTerm;
-    
     async function loadProducts() {
       setIsLoading(true);
       const productList = await getProducts(searchTerm);
@@ -67,17 +56,10 @@ function ProductCatalog({
       }
       
       setIsLoading(false);
-      
-      // Preserve scroll position after a short delay to ensure DOM is updated
-      if (searchTerm === '' && scrollPositionRef.current > 0) {
-        setTimeout(() => {
-          window.scrollTo({ top: scrollPositionRef.current, behavior: 'instant' });
-        }, 50);
-      }
     }
 
     loadProducts();
-  }, [searchTerm, getProducts]);
+  }, [searchTerm]);
 
   // Calculate pagination
   const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
@@ -92,20 +74,25 @@ function ProductCatalog({
     return map;
   }, [cartItems]);
 
-  // Memoize callback functions to prevent ProductCard re-renders
+  // Memoize callback functions to prevent ProductCard re-renders while preserving scroll
   const memoizedOnAddToCart = useCallback((ean: string, quantity: number) => {
-    scrollPositionRef.current = window.scrollY; // Save current position
+    // Preserve scroll position during cart operations
+    const currentScroll = window.scrollY;
     onAddToCart(ean, quantity);
+    // Restore scroll position after operation
+    setTimeout(() => window.scrollTo(0, currentScroll), 10);
   }, [onAddToCart]);
 
   const memoizedOnUpdateCart = useCallback((ean: string, quantity: number) => {
-    scrollPositionRef.current = window.scrollY; // Save current position
+    const currentScroll = window.scrollY;
     onUpdateCart(ean, quantity);
+    setTimeout(() => window.scrollTo(0, currentScroll), 10);
   }, [onUpdateCart]);
 
   const memoizedOnRemoveFromCart = useCallback((ean: string) => {
-    scrollPositionRef.current = window.scrollY; // Save current position
+    const currentScroll = window.scrollY;
     onRemoveFromCart(ean);
+    setTimeout(() => window.scrollTo(0, currentScroll), 10);
   }, [onRemoveFromCart]);
 
   // Pagination handlers with localStorage persistence
@@ -128,8 +115,8 @@ function ProductCatalog({
     localStorage.setItem('productCatalogPage', totalPages.toString());
   };
 
-  // Handle barcode scanner input (EAN + Enter) - memoized to prevent re-renders
-  const handleBarcodeInput = useCallback(async (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Handle barcode scanner input (EAN + Enter)
+  const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       const ean = searchTerm.trim();
       
@@ -138,21 +125,15 @@ function ProductCatalog({
         const product = await getProductByEan(ean);
         
         if (product) {
-          // Save current scroll position before adding to cart
-          scrollPositionRef.current = window.scrollY;
-          
-          // Add one unit to cart
+          // Add one unit to cart (scroll preserved by memoized callback)
           onAddToCart(ean, 1);
           
           // Show success message
           setBarcodeMessage(`✓ ${product.title} añadido al carrito`);
           setTimeout(() => setBarcodeMessage(''), 3000);
           
-          // Clear search WITHOUT triggering the useEffect that causes reload
-          // by setting searchTerm directly without changing previousSearchRef
+          // Clear search without resetting pagination
           setSearchTerm('');
-          // Don't update previousSearchRef here so the useEffect won't reload products
-          
         } else {
           // Show error message
           setBarcodeMessage(`✗ Producto con EAN ${ean} no encontrado`);
@@ -160,7 +141,7 @@ function ProductCatalog({
         }
       }
     }
-  }, [searchTerm, getProductByEan, onAddToCart]);
+  };
 
   return (
     <div className="p-4">

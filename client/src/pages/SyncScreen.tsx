@@ -27,8 +27,7 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
         setProgress(progress);
       };
 
-      // Force full sync to reload all products
-      await performIndexedDBSync(onProgress, true);
+      await performIndexedDBSync(onProgress);
       
       setProgress(100);
       setCurrentMessage('✅ Sincronización IndexedDB completada exitosamente');
