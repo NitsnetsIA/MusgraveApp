@@ -82,24 +82,35 @@ export default function SyncScreenIndexedDB({ onSyncComplete }: SyncScreenProps)
   };
 
   const clearDatabase = async () => {
-    if (!confirm('¿Estás seguro de que quieres borrar todos los datos locales?')) {
+    if (!confirm('¿Estás seguro de que quieres borrar todos los datos locales e imágenes?')) {
       return;
     }
 
     try {
       setIsLoading(true);
       setCurrentMessage('Borrando base de datos...');
-      setProgress(0);
+      setProgress(25);
       
       await DatabaseService.clearDatabase();
+      
+      setCurrentMessage('Borrando caché de imágenes...');
+      setProgress(50);
+      
+      // Also clear image cache from Service Worker
+      const { imageCacheService } = await import('@/lib/image-cache-service');
+      await imageCacheService.clearImageCache();
+      
       await loadStats();
       
-      setCurrentMessage('✅ Base de datos borrada');
+      setCurrentMessage('✅ Base de datos e imágenes borradas');
       setSyncResults(null);
-      setProgress(0);
+      setProgress(100);
+      
+      // Reset progress after 2 seconds
+      setTimeout(() => setProgress(0), 2000);
     } catch (error) {
-      console.error('Clear database failed:', error);
-      setCurrentMessage('❌ Error al borrar la base de datos');
+      console.error('Clear database and cache failed:', error);
+      setCurrentMessage('❌ Error al borrar la base de datos e imágenes');
     } finally {
       setIsLoading(false);
     }

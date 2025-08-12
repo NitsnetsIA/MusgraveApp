@@ -62,12 +62,18 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
     try {
       console.log('🗑️ Clearing IndexedDB database completely...');
       await DatabaseService.clearAllData();
+      
+      // Also clear image cache from Service Worker
+      console.log('🗑️ Clearing image cache...');
+      const { imageCacheService } = await import('@/lib/image-cache-service');
+      await imageCacheService.clearImageCache();
+      
       setError('');
-      alert('Base de datos IndexedDB limpiada completamente. Recarga la página para continuar.');
-      console.log('✅ IndexedDB database cleared successfully');
+      alert('Base de datos IndexedDB e imágenes limpiadas completamente. Recarga la página para continuar.');
+      console.log('✅ IndexedDB database and image cache cleared successfully');
     } catch (error) {
-      console.error('Error clearing IndexedDB database:', error);
-      setError('Error al limpiar la base de datos IndexedDB');
+      console.error('Error clearing database and cache:', error);
+      setError('Error al limpiar la base de datos e imágenes');
     } finally {
       setIsResetting(false);
     }
