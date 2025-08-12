@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Settings } from 'lucide-react';
 import { loginSchema, type LoginForm } from '@shared/schema';
-import { UnifiedDatabaseService } from '@/lib/database-service';
+import { DatabaseService } from '@/lib/database-service';
 
 interface LoginProps {
   onLogin: (email: string, password: string, syncEntities?: string[], storageType?: 'indexeddb') => Promise<boolean>;
@@ -61,7 +61,7 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
     setIsResetting(true);
     try {
       console.log('🗑️ Clearing IndexedDB database completely...');
-      await UnifiedDatabaseService.clearAllData();
+      await DatabaseService.clearAllData();
       setError('');
       alert('Base de datos IndexedDB limpiada completamente. Recarga la página para continuar.');
       console.log('✅ IndexedDB database cleared successfully');
@@ -77,7 +77,7 @@ export default function Login({ onLogin, isLoading }: LoginProps) {
     setIsResetting(true);
     try {
       console.log('🔄 Resetting IndexedDB database to empty state...');
-      await UnifiedDatabaseService.clearAllData();
+      await DatabaseService.clearAllData();
       setError('');
       alert('Base de datos IndexedDB vaciada. Ahora inicia sesión para sincronizar con el servidor GraphQL.');
       console.log('✅ IndexedDB database reset successfully');

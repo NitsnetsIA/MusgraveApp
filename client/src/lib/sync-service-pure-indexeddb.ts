@@ -680,7 +680,7 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
           // Create new purchase order from server
           console.log(`📦 Creating new purchase order ${serverOrder.purchase_order_id} from server`);
           
-          await DatabaseService.savePurchaseOrder({
+          await DatabaseService.createPurchaseOrder({
             purchase_order_id: serverOrder.purchase_order_id,
             user_email: serverOrder.user_email,
             store_id: serverOrder.store_id,
@@ -688,26 +688,30 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
             subtotal: serverOrder.subtotal,
             tax_total: serverOrder.tax_total,
             final_total: serverOrder.final_total,
-            server_sent_at: serverOrder.server_sent_at,
+            server_send_at: serverOrder.server_sent_at,
             created_at: serverOrder.created_at,
             updated_at: serverOrder.updated_at
           });
-        }
-
-        // Add/update purchase order items with server data
-        for (const item of serverOrder.items) {
-          await DatabaseService.addPurchaseOrderItem({
-            purchase_order_id: serverOrder.purchase_order_id,
-            item_ean: item.item_ean,
-            item_title: item.item_title,
-            item_description: item.item_description,
-            unit_of_measure: item.unit_of_measure,
-            quantity_measure: item.quantity_measure,
-            image_url: item.image_url,
-            quantity: item.quantity,
-            base_price_at_order: item.base_price_at_order,
-            tax_rate_at_order: item.tax_rate_at_order
-          });
+          
+          // Add purchase order items if they exist
+          if (serverOrder.items && serverOrder.items.length > 0) {
+            for (const item of serverOrder.items) {
+              await DatabaseService.addPurchaseOrderItem({
+                purchase_order_id: serverOrder.purchase_order_id,
+                item_ean: item.item_ean,
+                item_title: item.item_title,
+                item_description: item.item_description,
+                unit_of_measure: item.unit_of_measure,
+                quantity_measure: item.quantity_measure,
+                image_url: item.image_url,
+                quantity: item.quantity,
+                base_price_at_order: item.base_price_at_order,
+                tax_rate_at_order: item.tax_rate_at_order,
+                created_at: item.created_at,
+                updated_at: item.updated_at
+              });
+            }
+          }
         }
       }
 
