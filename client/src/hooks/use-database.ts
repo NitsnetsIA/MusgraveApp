@@ -392,7 +392,9 @@ export function useDatabase() {
         server_send_at: null, // Initialize as not sent to server
       };
 
+      console.log('🔄 About to save purchase order to database:', purchaseOrder);
       await UnifiedDatabaseService.createPurchaseOrder(purchaseOrder);
+      console.log('✅ Purchase order saved to database successfully');
 
       // Add purchase order items using unified service
       const purchaseOrderItems: any[] = [];
