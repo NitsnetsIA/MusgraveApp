@@ -379,6 +379,7 @@ export function useDatabase() {
       const finalTotal = subtotal + taxTotal;
 
       // Initialize purchase order as "uncommunicated" - will change to "processing" if server sync succeeds
+      // IMPORTANT: server_send_at must be null so it gets detected as pending for sync
       const purchaseOrder = {
         purchase_order_id: purchaseOrderId,
         user_email: userEmail,

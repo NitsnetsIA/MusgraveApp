@@ -469,10 +469,22 @@ async function syncPendingPurchaseOrders(): Promise<void> {
   try {
     console.log('🔍 Checking for pending purchase orders...');
     
+    // Debug: First let's see all purchase orders
+    const { DatabaseService: IndexedDBService } = await import('./indexeddb');
+    const allOrders = await IndexedDBService.db.purchase_orders.toArray();
+    console.log(`🗂️ Total purchase orders in database: ${allOrders.length}`);
+    
+    if (allOrders.length > 0) {
+      console.log('📋 Purchase orders found:');
+      allOrders.forEach((order: any, index: number) => {
+        console.log(`  ${index + 1}. ID: ${order.purchase_order_id}, Status: ${order.status}, server_send_at: ${order.server_send_at}`);
+      });
+    }
+    
     // First check if there are actually any pending orders to sync
     const pendingOrders = await DatabaseService.getPendingPurchaseOrders();
     
-    console.log(`📊 Found ${pendingOrders.length} pending purchase orders`);
+    console.log(`📊 Found ${pendingOrders.length} pending purchase orders (server_send_at is null/undefined)`);
     
     if (pendingOrders.length === 0) {
       console.log('⏭️ No pending purchase orders to sync - skipping');
