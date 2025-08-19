@@ -423,9 +423,13 @@ export function useDatabase() {
         await UnifiedDatabaseService.addPurchaseOrderItem(orderItem);
       }
 
-      // Send to GraphQL server in background - don't block user
+      console.log(`✅ Purchase order ${purchaseOrderId} created locally and saved to IndexedDB`);
+      console.log('📤 Will be synchronized to server during next sync operation');
+      
+      // Optional: Try immediate send in background but don't depend on it
       setTimeout(async () => {
         try {
+          console.log(`🚀 Attempting immediate background sync for order ${purchaseOrderId}`);
           const { sendPurchaseOrderToServer } = await import(
             "../lib/purchase-order-sync"
           );
@@ -448,17 +452,17 @@ export function useDatabase() {
               new Date().toISOString(),
             );
             console.log(
-              `✅ Purchase order ${purchaseOrderId} sent to server successfully - status updated to 'processing'`,
+              `✅ Purchase order ${purchaseOrderId} sent to server successfully via background sync`,
             );
           } else {
             console.log(
-              `💾 Purchase order ${purchaseOrderId} remains as 'uncommunicated' - will retry sync later`,
+              `💾 Purchase order ${purchaseOrderId} background sync failed - will retry during manual sync`,
             );
           }
         } catch (serverError) {
-          console.error(
-            `Background sync failed for purchase order ${purchaseOrderId}:`,
-            serverError,
+          console.log(
+            `⚠️ Background sync failed for purchase order ${purchaseOrderId} (normal, will sync later):`,
+            serverError.message,
           );
         }
       }, 100); // Send after 100ms to not block UI

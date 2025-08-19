@@ -36,7 +36,9 @@ export async function performPureIndexedDBSync(onProgress?: (message: string, pr
     await syncUsersDirectly(forceFullSync);
 
     onProgress?.('📦 Enviando órdenes de compra pendientes...', 93);
+    console.log('🔄 About to call syncPendingPurchaseOrders...');
     await syncPendingPurchaseOrders();
+    console.log('✅ syncPendingPurchaseOrders completed');
 
     onProgress?.('🛒 Importando pedidos procesados del servidor...', 95);
     await syncProcessedOrdersFromServer(forceFullSync);
@@ -465,8 +467,12 @@ async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> 
 // Sync pending purchase orders to GraphQL server
 async function syncPendingPurchaseOrders(): Promise<void> {
   try {
+    console.log('🔍 Checking for pending purchase orders...');
+    
     // First check if there are actually any pending orders to sync
     const pendingOrders = await DatabaseService.getPendingPurchaseOrders();
+    
+    console.log(`📊 Found ${pendingOrders.length} pending purchase orders`);
     
     if (pendingOrders.length === 0) {
       console.log('⏭️ No pending purchase orders to sync - skipping');
@@ -475,11 +481,13 @@ async function syncPendingPurchaseOrders(): Promise<void> {
     
     console.log('🔄 Syncing pending purchase orders to server...');
     
-    const { syncPendingPurchaseOrders } = await import('./purchase-order-sync');
-    await syncPendingPurchaseOrders();
+    // Import and call the actual sync function
+    const { syncPendingPurchaseOrders: actualSyncFunction } = await import('./purchase-order-sync');
+    await actualSyncFunction();
     console.log('✅ Pending purchase orders sync completed');
   } catch (error) {
     console.error('❌ Failed to sync pending purchase orders:', error);
+    console.error('Error details:', error);
     // Don't throw error - this shouldn't block the main sync process
   }
 }
