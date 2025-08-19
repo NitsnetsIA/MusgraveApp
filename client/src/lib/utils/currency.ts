@@ -14,15 +14,23 @@ export function formatSpanishCurrency(amount: number): string {
 
 /**
  * Format price per unit in Spanish format
- * @param price - Price per unit
- * @param unit - Unit (e.g., "kg", "L", "unidad")
- * @returns Formatted price per unit string
+ * @param totalPrice - Total price of the product
+ * @param quantityMeasure - Quantity measure (e.g., 0.5 for 0.5kg)
+ * @param unitOfMeasure - Unit of measure (e.g., "kg", "L", "unidad")
+ * @returns Formatted price per unit string (e.g., "8,26 €/kg")
  */
-export function formatPricePerUnit(price: number, unit: string): string {
+export function formatPricePerUnit(totalPrice: number, quantityMeasure: number, unitOfMeasure: string): string {
+  if (!quantityMeasure || quantityMeasure <= 0) {
+    return ''; // Return empty if no valid quantity
+  }
+  
+  // Calculate price per unit (e.g., 4.13 / 0.5 = 8.26 €/kg)
+  const pricePerUnit = totalPrice / quantityMeasure;
+  
   const formattedPrice = new Intl.NumberFormat('es-ES', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(price);
+  }).format(pricePerUnit);
   
-  return `${formattedPrice} €/${unit}`;
+  return `${formattedPrice} €/${unitOfMeasure}`;
 }
