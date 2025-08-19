@@ -32,8 +32,8 @@ export async function sendPurchaseOrderToServer(
   try {
     console.log(`🚀 Sending purchase order ${purchaseOrder.purchase_order_id} to GraphQL server...`);
     
-    // Use the same endpoint as sync service to avoid CORS issues
-    const endpoint = GRAPHQL_ENDPOINT;
+    // Use the external GraphQL server URL for database connection
+    const EXTERNAL_ENDPOINT = 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/';
     
     // Format the mutation exactly like the working CURL example
     const createOrderMutation = `
@@ -101,11 +101,13 @@ export async function sendPurchaseOrderToServer(
     console.log('📊 Sending complete purchase order with items to GraphQL server');
     console.log('Variables:', JSON.stringify(variables, null, 2));
 
-    const orderResponse = await fetch(endpoint, {
+    const orderResponse = await fetch(EXTERNAL_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
+      mode: 'cors',
       body: JSON.stringify({ 
         query: createOrderMutation,
         variables 
