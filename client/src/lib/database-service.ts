@@ -71,6 +71,24 @@ export class DatabaseService {
     }
   }
 
+  // Get pending purchase orders (not sent to server)
+  static async getPendingPurchaseOrders(): Promise<any[]> {
+    console.log('DatabaseService.getPendingPurchaseOrders called');
+    
+    try {
+      const pendingOrders = await IndexedDBService.getPendingPurchaseOrders();
+      console.log(`IndexedDB getPendingPurchaseOrders returned ${pendingOrders.length} pending orders`);
+      return pendingOrders;
+    } catch (error) {
+      console.error('Error getting pending purchase orders from IndexedDB:', error);
+      return [];
+    }
+  }
+
+
+
+
+
   // Get user by email
   static async getUserByEmail(email: string): Promise<any | null> {
     console.log(`DatabaseService.getUserByEmail called for: ${email}`);
