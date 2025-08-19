@@ -10,8 +10,8 @@ The application simulates a B2B grocery ordering system where registered store u
 
 ✅ **COMPLETED: Purchase Order ID Format Update (January 19, 2025)**
 - Updated purchase order ID format from MUS-14467492-4HXU to [STORE-CODE]-[TIMESTAMP]-[4RANDOM]
-- New format: ST001-202508181646-4HXU (store code ST001, timestamp YYYYMMDDHHMI, 4 random chars)
-- Store code automatically converted from ES001 to ST001 format
+- New format: ES001-202501191450-4HXU (uses store code as-is, timestamp YYYYMMDDHHMI, 4 random chars)
+- Store code used directly without any conversion (ES001 stays ES001)
 - Purchase orders now sync successfully to external GraphQL server without CORS issues
 
 ✅ **COMPLETED: Purchase Order GraphQL Sync Fix (January 19, 2025)**

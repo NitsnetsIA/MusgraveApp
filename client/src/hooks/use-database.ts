@@ -20,8 +20,8 @@ function generateUUID(): string {
 }
 
 function generatePurchaseOrderId(storeCode: string = "ES001"): string {
-  // Convert store code ES001 to ST001 format
-  const storePrefix = storeCode.replace("ES", "ST");
+  // Use store code as-is without conversion
+  const storePrefix = storeCode;
   
   // Generate timestamp in YYYYMMDDHHMI format
   const now = new Date();
