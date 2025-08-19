@@ -8,6 +8,20 @@ The application simulates a B2B grocery ordering system where registered store u
 
 ## Recent Changes (January 2025)
 
+✅ **COMPLETED: Purchase Order ID Format Update (January 19, 2025)**
+- Updated purchase order ID format from MUS-14467492-4HXU to [STORE-CODE]-[TIMESTAMP]-[4RANDOM]
+- New format: ST001-202508181646-4HXU (store code ST001, timestamp YYYYMMDDHHMI, 4 random chars)
+- Store code automatically converted from ES001 to ST001 format
+- Purchase orders now sync successfully to external GraphQL server without CORS issues
+
+✅ **COMPLETED: Purchase Order GraphQL Sync Fix (January 19, 2025)**
+- Fixed CORS issue preventing purchase orders from reaching external GraphQL server
+- Added proper CORS headers to Express server for external API communication
+- Purchase orders now successfully created locally and synchronized to external database
+- Complete purchase order workflow: local creation → automatic sync to external server → status tracking
+
+## Recent Changes (January 2025)
+
 ✅ **COMPLETED: Auto-Resume Image Caching + Account Statistics (January 12, 2025)**
 - Added "Datos descargados" section in My Account page showing real-time statistics
 - Products count, cached images (X/Y format), purchase orders, and completed orders

@@ -19,15 +19,27 @@ function generateUUID(): string {
   });
 }
 
-function generatePurchaseOrderId(): string {
-  const musgraveCenterCode = "MUS";
-  const timestamp = Date.now().toString().slice(-8);
+function generatePurchaseOrderId(storeCode: string = "ES001"): string {
+  // Convert store code ES001 to ST001 format
+  const storePrefix = storeCode.replace("ES", "ST");
+  
+  // Generate timestamp in YYYYMMDDHHMI format
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const timestamp = `${year}${month}${day}${hours}${minutes}`;
+  
+  // Generate 4 random alphanumeric characters
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let suffix = "";
   for (let i = 0; i < 4; i++) {
     suffix += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return `${musgraveCenterCode}-${timestamp}-${suffix}`;
+  
+  return `${storePrefix}-${timestamp}-${suffix}`;
 }
 
 function generateProcessedOrderId(): string {
@@ -362,7 +374,7 @@ export function useDatabase() {
   ): Promise<string> => {
     try {
       const { UnifiedDatabaseService } = await import("@/lib/database-service");
-      const purchaseOrderId = generatePurchaseOrderId();
+      const purchaseOrderId = generatePurchaseOrderId(storeId);
       const now = new Date().toISOString();
 
       let subtotal = 0;
