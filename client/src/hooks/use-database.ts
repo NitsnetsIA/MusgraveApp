@@ -429,6 +429,19 @@ export function useDatabase() {
       console.log(`✅ Purchase order ${purchaseOrderId} created locally and saved to IndexedDB`);
       console.log('📤 Will be synchronized to server during next sync operation');
       
+      // IMMEDIATE DEBUG: Verify the order was actually saved
+      setTimeout(async () => {
+        try {
+          const savedOrder = await UnifiedDatabaseService.getPurchaseOrder(purchaseOrderId);
+          console.log(`🔍 DEBUG: Verification - order saved?`, savedOrder ? 'YES' : 'NO');
+          
+          const allOrders = await UnifiedDatabaseService.getPendingPurchaseOrders();
+          console.log(`🔍 DEBUG: Total pending orders in DB: ${allOrders.length}`);
+        } catch (error) {
+          console.error('🔍 DEBUG: Error verifying saved order:', error);
+        }
+      }, 500);
+      
       // Optional: Try immediate send in background but don't depend on it
       setTimeout(async () => {
         try {
