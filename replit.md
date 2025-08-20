@@ -20,6 +20,12 @@ The application simulates a B2B grocery ordering system where registered store u
 - Purchase orders now successfully created locally and synchronized to external database
 - Complete purchase order workflow: local creation → automatic sync to external server → status tracking
 
+✅ **COMPLETED: Service Worker Deployment Fix (January 20, 2025)**
+- Fixed Service Worker not being deployed correctly causing old cached versions
+- Updated deploy script to copy Service Worker to deployment root directory
+- Added cache versioning system to prevent stale SW issues
+- Service Worker now deploys with proper timestamp versioning (2025-01-20-1033)
+
 ## Recent Changes (January 2025)
 
 ✅ **COMPLETED: Auto-Resume Image Caching + Account Statistics (January 12, 2025)**

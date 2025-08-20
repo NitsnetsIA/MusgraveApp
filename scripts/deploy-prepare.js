@@ -38,6 +38,18 @@ async function prepareForDeployment() {
       }
     }
     
+    // Copy Service Worker to root of dist/ directory
+    const swSourcePath = path.join(sourceDir, 'sw.js');
+    const swTargetPath = path.join(targetDir, 'sw.js');
+    
+    try {
+      await fs.access(swSourcePath);
+      await fs.copyFile(swSourcePath, swTargetPath);
+      console.log('Copied Service Worker to deployment root');
+    } catch (error) {
+      console.warn('Service Worker not found, skipping copy');
+    }
+    
     // Create _redirects file for SPA routing (Replit deployments support this)
     const redirectsContent = '/* /index.html 200\n';
     await fs.writeFile(path.join(targetDir, '_redirects'), redirectsContent);

@@ -1,7 +1,9 @@
 // Service Worker for Musgrave App - Image Caching System
 // Implements Cache-First strategy for offline image support
+// VERSION: 2025-01-20-10:33 - Updated for deployment with proper cache versioning
 
-const CACHE_NAME = 'musgrave-images-v1';
+const CACHE_VERSION = '2025-01-20-1033';
+const CACHE_NAME = `musgrave-images-v${CACHE_VERSION}`;
 
 // Image file extensions to intercept
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
