@@ -1,7 +1,7 @@
 import { DatabaseService } from './indexeddb';
 import { imageCacheService } from './image-cache-service';
 
-const GRAPHQL_ENDPOINT = 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/'; // Direct external endpoint for nutrition_label_url support
+const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT || 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/'; // Use env var for production or fallback to dev
 const STORE_ID = 'ES001';
 
 // Pure IndexedDB sync with incremental sync support

@@ -32,8 +32,8 @@ export async function sendPurchaseOrderToServer(
   try {
     console.log(`🚀 Sending purchase order ${purchaseOrder.purchase_order_id} to GraphQL server...`);
     
-    // Use the external GraphQL server URL for database connection
-    const EXTERNAL_ENDPOINT = 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/';
+    // Use environment variable for production or fallback to dev
+    const EXTERNAL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT || 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/';
     
     // Format the mutation exactly like the working CURL example
     const createOrderMutation = `

@@ -123,7 +123,11 @@ Preferred communication style: Simple, everyday language.
 - **Build Process**: Vite builds to `dist/public/`, deployment script moves files to `dist/`
 - **SPA Routing**: `_redirects` file handles client-side routing for React Router
 - **Deployment Script**: `scripts/deploy-prepare.js` automates file preparation for static hosting
-- **Build Command**: `npm run build` followed by deployment preparation script
+- **Production Build**: `scripts/build-for-production.js` sets production GraphQL endpoint
+- **Environment Configuration**: Uses `VITE_GRAPHQL_ENDPOINT` for GraphQL server switching
+- **GraphQL Endpoints**: 
+  - Development: `https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/`
+  - Production: `https://pim-grocery-ia64.replit.app/graphql`
 
 ### Data Storage Architecture
 - **Client-side Database**: IndexedDB for offline-first data storage with better performance for large datasets
