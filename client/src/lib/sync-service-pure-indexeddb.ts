@@ -1,7 +1,7 @@
 import { DatabaseService } from './indexeddb';
 import { imageCacheService } from './image-cache-service';
 
-const GRAPHQL_ENDPOINT = '/api/graphql'; // Use server proxy to avoid CORS
+const GRAPHQL_ENDPOINT = 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/'; // Direct external endpoint for nutrition_label_url support
 const STORE_ID = 'ES001';
 
 // Pure IndexedDB sync with incremental sync support
@@ -248,18 +248,29 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
 // Separate function to handle image caching logic
 async function queueImageCaching(products: any[]) {
   console.log(`📷 Preparing ${products.length} product images for background caching...`);
-  const imageUrls = products
-    .map(product => product.image_url)
-    .filter(url => url && typeof url === 'string' && url.trim() !== '')
-    .filter((url, index, array) => array.indexOf(url) === index); // Remove duplicates
   
-  if (imageUrls.length > 0) {
-    console.log(`🎯 Queuing ${imageUrls.length} unique images for background download`);
+  // Collect both product images and nutrition label images
+  const imageUrls: string[] = [];
+  
+  products.forEach(product => {
+    if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim() !== '') {
+      imageUrls.push(product.image_url);
+    }
+    if (product.nutrition_label_url && typeof product.nutrition_label_url === 'string' && product.nutrition_label_url.trim() !== '') {
+      imageUrls.push(product.nutrition_label_url);
+    }
+  });
+  
+  // Remove duplicates
+  const uniqueImageUrls = imageUrls.filter((url, index, array) => array.indexOf(url) === index);
+  
+  if (uniqueImageUrls.length > 0) {
+    console.log(`🎯 Queuing ${uniqueImageUrls.length} unique images (product + nutrition) for background download`);
     
     // Add delay before starting image cache to let sync complete
     setTimeout(async () => {
-      await imageCacheService.queueImagesForCache(imageUrls);
-      console.log(`✅ Image caching queue initiated with ${imageUrls.length} images`);
+      await imageCacheService.queueImagesForCache(uniqueImageUrls);
+      console.log(`✅ Image caching queue initiated with ${uniqueImageUrls.length} images`);
     }, 1000);
   } else {
     console.log('⏭️ No valid image URLs found in products');
@@ -283,7 +294,13 @@ export async function resumeImageCaching() {
     // Get current cached image count
     const { imageCacheService } = await import('./image-cache-service');
     const cachedCount = await imageCacheService.getCachedImageCount();
-    const totalImages = products.filter(p => p.image_url && p.image_url.trim() !== '').length;
+    
+    // Count both product images and nutrition label images
+    let totalImages = 0;
+    products.forEach(p => {
+      if (p.image_url && p.image_url.trim() !== '') totalImages++;
+      if (p.nutrition_label_url && p.nutrition_label_url.trim() !== '') totalImages++;
+    });
     
     console.log(`📊 DEBUG: Found ${products.length} total products, ${totalImages} with valid images`);
     
@@ -471,8 +488,7 @@ async function syncPendingPurchaseOrders(): Promise<void> {
     console.log('🔍 Checking for pending purchase orders...');
     
     // Debug: First let's see all purchase orders
-    const { DatabaseService: IndexedDBService } = await import('./indexeddb');
-    const allOrders = await IndexedDBService.db.purchase_orders.toArray();
+    const allOrders = await DatabaseService.getPurchaseOrders();
     console.log(`🗂️ Total purchase orders in database: ${allOrders.length}`);
     
     if (allOrders.length > 0) {
