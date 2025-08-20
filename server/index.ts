@@ -1,5 +1,4 @@
 import express, { type Request, Response, NextFunction } from "express";
-import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -49,16 +48,6 @@ app.use((req, res, next) => {
   });
 
   next();
-});
-
-// Add route for static test page
-app.get('/test', (req, res) => {
-  res.sendFile(path.resolve('./client/static.html'));
-});
-
-// Add route for React CDN test page
-app.get('/react-test', (req, res) => {
-  res.sendFile(path.resolve('./client/src/react-cdn.html'));
 });
 
 (async () => {
