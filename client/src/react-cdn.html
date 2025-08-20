@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musgrave - React CDN Test</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        .logo {
+            display: inline-block;
+            background-color: #10b981;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #111827;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #6b7280;
+            font-size: 1.125rem;
+        }
+        button {
+            margin: 0.5rem;
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        .success {
+            background-color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        function MusgraveApp() {
+            const [message, setMessage] = React.useState("React desde CDN funcionando");
+            
+            return (
+                <div className="container">
+                    <div className="logo">M</div>
+                    <h1>Musgrave</h1>
+                    <p>{message}</p>
+                    <button onClick={() => setMessage("¡React funciona perfectamente!")}>
+                        Probar React State
+                    </button>
+                    <br />
+                    <button 
+                        className="success"
+                        onClick={() => window.location.href = '/'}
+                    >
+                        Volver a aplicación original
+                    </button>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MusgraveApp />);
+    </script>
+</body>
+</html>

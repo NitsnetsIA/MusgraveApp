@@ -56,6 +56,11 @@ app.get('/test', (req, res) => {
   res.sendFile(path.resolve('./client/static.html'));
 });
 
+// Add route for React CDN test page
+app.get('/react-test', (req, res) => {
+  res.sendFile(path.resolve('./client/src/react-cdn.html'));
+});
+
 (async () => {
   const server = await registerRoutes(app);
 
