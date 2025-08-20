@@ -139,7 +139,7 @@ export default function ProductDetail({
     );
   }
 
-  const finalPrice = product.base_price * (1 + product.tax_rate);
+  const finalPrice = Number(product.base_price) * (1 + Number(product.tax_rate));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,7 +198,7 @@ export default function ProductDetail({
                   {formatSpanishCurrency(finalPrice)}
                 </div>
                 <div className="text-sm text-gray-500">
-                  IVA {(product.tax_rate * 100).toFixed(0)}% incl.
+                  IVA {(Number(product.tax_rate) * 100).toFixed(0)}% incl.
                 </div>
               </div>
             </div>
