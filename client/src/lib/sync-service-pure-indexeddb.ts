@@ -171,6 +171,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
             unit_of_measure
             quantity_measure
             image_url
+            nutrition_label_url
             is_active
             created_at
             updated_at

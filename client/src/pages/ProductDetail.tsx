@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useRoute } from 'wouter';
-import { ChevronLeft, Minus, Plus } from 'lucide-react';
+import { ChevronLeft, Minus, Plus, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDatabase } from '@/hooks/use-database';
@@ -27,6 +27,7 @@ export default function ProductDetail({
   const [isLoading, setIsLoading] = useState(true);
   const [localQuantity, setLocalQuantity] = useState(1);
   const [inputValue, setInputValue] = useState('1');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -117,6 +118,21 @@ export default function ProductDetail({
     onAddToCart(product.ean, 1);
   };
 
+  // Get available images for carousel
+  const getAvailableImages = () => {
+    const images = [];
+    if (product?.image_url) {
+      images.push({ url: product.image_url, type: 'product', label: 'Producto' });
+    }
+    if (product?.nutrition_label_url) {
+      images.push({ url: product.nutrition_label_url, type: 'nutrition', label: 'Información Nutricional' });
+    }
+    return images;
+  };
+
+  const availableImages = getAvailableImages();
+  const hasMultipleImages = availableImages.length > 1;
+
   if (isLoading) {
     return (
       <div className="p-4">
@@ -166,27 +182,73 @@ export default function ProductDetail({
       {/* Product Detail */}
       <div className="p-4 max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          {/* Product Image */}
-          <div className="w-full h-64 bg-gray-100 flex items-center justify-center overflow-hidden">
-            {product.image_url ? (
-              <img 
-                src={product.image_url} 
-                alt={product.title}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.style.display = 'none';
-                  const nextElement = target.nextElementSibling as HTMLElement;
-                  if (nextElement) nextElement.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            <div 
-              className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500"
-              style={{ display: product.image_url ? 'none' : 'flex' }}
-            >
-              <span className="text-4xl">📦</span>
-            </div>
+          {/* Product Image Carousel */}
+          <div className="w-full h-64 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+            {availableImages.length > 0 ? (
+              <>
+                <img 
+                  src={availableImages[currentImageIndex]?.url} 
+                  alt={availableImages[currentImageIndex]?.label}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.style.display = 'none';
+                    const nextElement = target.nextElementSibling as HTMLElement;
+                    if (nextElement) nextElement.style.display = 'flex';
+                  }}
+                />
+                <div 
+                  className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 absolute"
+                  style={{ display: 'none' }}
+                >
+                  <span className="text-4xl">📦</span>
+                </div>
+                
+                {/* Carousel Controls */}
+                {hasMultipleImages && (
+                  <>
+                    <button
+                      onClick={() => setCurrentImageIndex((prev) => 
+                        prev === 0 ? availableImages.length - 1 : prev - 1
+                      )}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentImageIndex((prev) => 
+                        prev === availableImages.length - 1 ? 0 : prev + 1
+                      )}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                    
+                    {/* Image Indicators */}
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                      {availableImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Image Label */}
+                    <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                      {availableImages[currentImageIndex]?.label}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                <span className="text-4xl">📦</span>
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
@@ -210,7 +272,7 @@ export default function ProductDetail({
                   </div>
                 </div>
                 <div className="text-sm text-gray-500">
-                  IVA {((Number(product.tax_rate) || 0.21) * 100).toFixed(0)}% incl.
+                  IVA {((Number(product.tax_rate) || 0) * 100).toFixed(0)}% incl.
                 </div>
               </div>
             </div>
