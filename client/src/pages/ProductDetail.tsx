@@ -174,8 +174,10 @@ export default function ProductDetail({
                 alt={product.title}
                 className="w-full h-full object-contain"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling!.style.display = 'flex';
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
+                  const nextElement = target.nextElementSibling as HTMLElement;
+                  if (nextElement) nextElement.style.display = 'flex';
                 }}
               />
             ) : null}
@@ -208,7 +210,7 @@ export default function ProductDetail({
                   </div>
                 </div>
                 <div className="text-sm text-gray-500">
-                  IVA {(Number(product.tax_rate) * 100).toFixed(0)}% incl.
+                  IVA {((Number(product.tax_rate) || 0.21) * 100).toFixed(0)}% incl.
                 </div>
               </div>
             </div>
