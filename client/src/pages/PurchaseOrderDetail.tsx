@@ -179,8 +179,22 @@ export default function PurchaseOrderDetail() {
                     <tr key={index} className="border-b">
                       <td className="p-2">
                         <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 bg-gray-100 rounded flex-shrink-0">
-                            <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                          <div className="w-8 h-8 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                            {item.image_url ? (
+                              <img 
+                                src={item.image_url} 
+                                alt={item.item_title || item.title || "Producto"}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling!.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <div 
+                              className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500"
+                              style={{ display: item.image_url ? 'none' : 'flex' }}
+                            >
                               IMG
                             </div>
                           </div>
