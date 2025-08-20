@@ -253,11 +253,14 @@ async function queueImageCaching(products: any[]) {
   const imageUrls: string[] = [];
   
   products.forEach(product => {
-    if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim() !== '') {
-      imageUrls.push(product.image_url);
-    }
-    if (product.nutrition_label_url && typeof product.nutrition_label_url === 'string' && product.nutrition_label_url.trim() !== '') {
-      imageUrls.push(product.nutrition_label_url);
+    // Only cache images for active products
+    if (product.is_active) {
+      if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim() !== '') {
+        imageUrls.push(product.image_url);
+      }
+      if (product.nutrition_label_url && typeof product.nutrition_label_url === 'string' && product.nutrition_label_url.trim() !== '') {
+        imageUrls.push(product.nutrition_label_url);
+      }
     }
   });
   
@@ -295,11 +298,13 @@ export async function resumeImageCaching() {
     const { imageCacheService } = await import('./image-cache-service');
     const cachedCount = await imageCacheService.getCachedImageCount();
     
-    // Count both product images and nutrition label images
+    // Count both product images and nutrition label images (only for active products)
     let totalImages = 0;
     products.forEach(p => {
-      if (p.image_url && p.image_url.trim() !== '') totalImages++;
-      if (p.nutrition_label_url && p.nutrition_label_url.trim() !== '') totalImages++;
+      if (p.is_active) {
+        if (p.image_url && p.image_url.trim() !== '') totalImages++;
+        if (p.nutrition_label_url && p.nutrition_label_url.trim() !== '') totalImages++;
+      }
     });
     
     console.log(`📊 DEBUG: Found ${products.length} total products, ${totalImages} with valid images`);

@@ -29,6 +29,17 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
 
   useEffect(() => {
     loadStats();
+    
+    // Update stats in real-time when image cache progress changes
+    const handleProgress = () => {
+      loadStats(); // Reload stats when progress updates
+    };
+    
+    imageCacheService.addProgressListener(handleProgress);
+    
+    return () => {
+      imageCacheService.removeProgressListener(handleProgress);
+    };
   }, []);
 
   const loadStats = async () => {
@@ -39,8 +50,14 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
       const products = await DatabaseService.getProducts();
       const productCount = products.length;
       
-      // Count products with valid image URLs for accurate comparison
-      const productsWithImages = products.filter(p => p.image_url && p.image_url.trim() !== '').length;
+      // Count total images for active products (product images + nutrition labels)
+      let totalImageCount = 0;
+      products.forEach(p => {
+        if (p.is_active) {
+          if (p.image_url && p.image_url.trim() !== '') totalImageCount++;
+          if (p.nutrition_label_url && p.nutrition_label_url.trim() !== '') totalImageCount++;
+        }
+      });
 
       // Get cached image count
       const cachedImageCount = await imageCacheService.getCachedImageCount();
@@ -62,7 +79,7 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
       });
 
       setStats({
-        productCount: productsWithImages, // Use products with images for accurate stats
+        productCount: totalImageCount, // Use total images (product + nutrition) for accurate stats
         cachedImageCount,
         purchaseOrderCount,
         completedOrderCount,
@@ -153,7 +170,7 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Imágenes:</span>
+              <span className="text-gray-600">Imágenes (prod. + nutric.):</span>
               <span className="font-medium">
                 {stats.loading ? '...' : `${stats.cachedImageCount}/${stats.productCount}`}
               </span>
