@@ -57,6 +57,7 @@ class ImageCacheService {
         
         switch (type) {
           case 'IMAGE_CACHE_PROGRESS':
+            console.log('📊 Image cache progress update:', data);
             this.notifyProgressListeners(data);
             break;
           case 'CACHE_STATUS':
@@ -180,6 +181,7 @@ class ImageCacheService {
 
   // Notify progress listeners
   private notifyProgressListeners(progress: ImageCacheProgress): void {
+    console.log(`🔔 Notifying ${this.progressListeners.size} progress listeners:`, progress);
     this.progressListeners.forEach(listener => {
       try {
         listener(progress);

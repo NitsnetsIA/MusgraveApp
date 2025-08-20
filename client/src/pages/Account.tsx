@@ -35,17 +35,24 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
     // Update only image stats in real-time when image cache progress changes
     const handleProgress = async () => {
       try {
+        console.log('Account: Image progress update detected');
         const cachedImageCount = await imageCacheService.getCachedImageCount();
+        console.log('Account: Updated cached image count:', cachedImageCount);
         setStats(prev => ({ ...prev, cachedImageCount }));
       } catch (error) {
         console.error('Error updating image count:', error);
       }
     };
     
-    imageCacheService.addProgressListener(handleProgress);
+    const handleProgressEvent = (progress: any) => {
+      console.log('Account: Progress event received:', progress);
+      handleProgress();
+    };
+    
+    imageCacheService.addProgressListener(handleProgressEvent);
     
     return () => {
-      imageCacheService.removeProgressListener(handleProgress);
+      imageCacheService.removeProgressListener(handleProgressEvent);
     };
   }, []);
 
