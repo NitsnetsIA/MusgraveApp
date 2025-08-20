@@ -15,12 +15,14 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
   const [, setLocation] = useLocation();
   const [stats, setStats] = useState<{
     productCount: number;
+    totalImageCount: number;
     cachedImageCount: number;
     purchaseOrderCount: number;
     completedOrderCount: number;
     loading: boolean;
   }>({
     productCount: 0,
+    totalImageCount: 0,
     cachedImageCount: 0,
     purchaseOrderCount: 0,
     completedOrderCount: 0,
@@ -30,9 +32,14 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
   useEffect(() => {
     loadStats();
     
-    // Update stats in real-time when image cache progress changes
-    const handleProgress = () => {
-      loadStats(); // Reload stats when progress updates
+    // Update only image stats in real-time when image cache progress changes
+    const handleProgress = async () => {
+      try {
+        const cachedImageCount = await imageCacheService.getCachedImageCount();
+        setStats(prev => ({ ...prev, cachedImageCount }));
+      } catch (error) {
+        console.error('Error updating image count:', error);
+      }
     };
     
     imageCacheService.addProgressListener(handleProgress);
@@ -79,7 +86,8 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
       });
 
       setStats({
-        productCount: totalImageCount, // Use total images (product + nutrition) for accurate stats
+        productCount, // Total number of products
+        totalImageCount, // Total images for progress calculation
         cachedImageCount,
         purchaseOrderCount,
         completedOrderCount,
@@ -172,7 +180,7 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Imágenes (prod. + nutric.):</span>
               <span className="font-medium">
-                {stats.loading ? '...' : `${stats.cachedImageCount}/${stats.productCount}`}
+                {stats.loading ? '...' : `${stats.cachedImageCount}/${stats.totalImageCount}`}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -187,21 +195,21 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
                 {stats.loading ? '...' : stats.completedOrderCount}
               </span>
             </div>
-            {!stats.loading && stats.productCount > 0 && (
+            {!stats.loading && stats.totalImageCount > 0 && (
               <div className="mt-3 pt-3 border-t">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">Progreso de imágenes:</span>
                   <span className="text-gray-500">
-                    {Math.round((stats.cachedImageCount / stats.productCount) * 100)}%
+                    {Math.round((stats.cachedImageCount / stats.totalImageCount) * 100)}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                   <div 
                     className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${Math.round((stats.cachedImageCount / stats.productCount) * 100)}%` }}
+                    style={{ width: `${Math.round((stats.cachedImageCount / stats.totalImageCount) * 100)}%` }}
                   ></div>
                 </div>
-                {stats.cachedImageCount < stats.productCount && (
+                {stats.cachedImageCount < stats.totalImageCount && (
                   <Button 
                     size="sm" 
                     variant="outline" 
