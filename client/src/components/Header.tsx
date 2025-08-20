@@ -7,6 +7,7 @@ interface HeaderProps {
   store?: any;
   isOffline: boolean;
   cartItemCount: number;
+  isCartPending?: boolean;
   onMenuToggle: () => void;
   onCartToggle: () => void;
 }
@@ -16,6 +17,7 @@ export default function Header({
   store,
   isOffline,
   cartItemCount,
+  isCartPending = false,
   onMenuToggle,
   onCartToggle
 }: HeaderProps) {
@@ -45,11 +47,14 @@ export default function Header({
         </div>
         <div className="flex items-center space-x-3">
           <button onClick={onCartToggle} className="relative">
-            <ShoppingCart className="h-6 w-6 text-gray-600" />
+            <ShoppingCart className={`h-6 w-6 ${isCartPending ? 'text-musgrave-500 animate-pulse' : 'text-gray-600'}`} />
             {cartItemCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {cartItemCount}
               </span>
+            )}
+            {isCartPending && (
+              <span className="absolute -top-1 -right-1 bg-musgrave-500 text-white text-xs rounded-full h-3 w-3 animate-ping"></span>
             )}
           </button>
         </div>

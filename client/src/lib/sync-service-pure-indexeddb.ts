@@ -761,9 +761,9 @@ async function syncPurchaseOrdersFromServer(forceFullSync: boolean = false): Pro
         // Check if purchase order exists locally
         const existingOrder = await DatabaseService.getPurchaseOrder(serverOrder.purchase_order_id);
         
-        // Map server status to frontend status
+        // Map server status to frontend status, ignore case sensitive
         const mapServerStatus = (serverStatus: string): string => {
-          switch (serverStatus) {
+          switch (serverStatus.toUpperCase()) {
             case 'COMPLETADO':
               return 'completed';
             case 'PROCESANDO':

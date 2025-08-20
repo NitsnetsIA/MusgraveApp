@@ -11,13 +11,15 @@ interface ProductDetailProps {
   onUpdateCart: (ean: string, quantity: number) => void;
   onRemoveFromCart: (ean: string) => void;
   cartItems: any[];
+  isCartPending?: boolean;
 }
 
 export default function ProductDetail({ 
   onAddToCart, 
   onUpdateCart, 
   onRemoveFromCart, 
-  cartItems 
+  cartItems,
+  isCartPending = false
 }: ProductDetailProps) {
   const [, setLocation] = useLocation();
   const [, params] = useRoute('/products/:ean');
@@ -347,10 +349,15 @@ export default function ProductDetail({
               ) : (
                 <Button
                   onClick={handleAddToCart}
-                  className="w-full bg-musgrave-500 hover:bg-musgrave-600 text-white h-12 text-lg font-medium"
+                  disabled={isCartPending}
+                  className={`w-full h-12 text-lg font-medium ${
+                    isCartPending 
+                      ? 'bg-musgrave-300 cursor-not-allowed' 
+                      : 'bg-musgrave-500 hover:bg-musgrave-600'
+                  } text-white`}
                   size="lg"
                 >
-                  AÑADIR AL CARRITO
+                  {isCartPending ? 'AÑADIENDO...' : 'AÑADIR AL CARRITO'}
                 </Button>
               )}
             </div>

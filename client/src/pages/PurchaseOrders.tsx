@@ -39,7 +39,9 @@ export default function PurchaseOrders({ user }: PurchaseOrdersProps) {
   }, [user?.email]); // Remove getPurchaseOrders to prevent infinite loop
 
   const getStatusText = (status: string) => {
+    console.log('status', status);
     switch (status) {
+
       case 'uncommunicated':
         return 'Sin comunicar';
       case 'processing':

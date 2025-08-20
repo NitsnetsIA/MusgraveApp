@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useTransition, useReducer, useCallback } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { CartProvider, useCart } from "@/contexts/CartContext";
 
 // Import database hook and types
 import { useDatabase } from "@/hooks/use-database";
-import type { User, CartItem } from "@shared/schema";
+import type { User } from "@shared/schema";
 
 // Import components and pages
 import Layout from "@/components/Layout";
@@ -42,7 +43,7 @@ function Router() {
   // Application state
   const [user, setUser] = useState<User | null>(null);
   const [store, setStore] = useState<any>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
   const [showSyncScreen, setShowSyncScreen] = useState(false);
   const [selectedSyncEntities, setSelectedSyncEntities] = useState<string[]>(['taxes', 'products', 'deliveryCenters', 'stores', 'users']);
   
@@ -51,6 +52,11 @@ function Router() {
   const [cartOpen, setCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string>('');
+  const [isPending, startTransition] = useTransition();
+
+  // Use cart context instead of local state
+  const { state: cartState, addToCart, updateCartItem, removeFromCart, clearCart, setCart, setPending } = useCart();
+  const cartItems = cartState.items;
 
   // Load user data when user changes
   useEffect(() => {
@@ -95,7 +101,7 @@ function Router() {
   const handleLogout = () => {
     setUser(null);
     setStore(null);
-    setCartItems([]);
+    clearCart();
     setSideMenuOpen(false);
     setCartOpen(false);
     setShowSyncScreen(false);
@@ -119,21 +125,17 @@ function Router() {
     setLocation('/');
   };
 
-  // Cart management - simplified without debouncing
-  const addToCart = async (ean: string, quantity: number) => {
+  // Cart management - using context to prevent unnecessary re-renders
+  const handleAddToCart = async (ean: string, quantity: number) => {
     try {
-      // Find existing item in cart
-      const existingItemIndex = cartItems.findIndex(item => item.ean === ean);
+      setPending(true);
       
-      if (existingItemIndex >= 0) {
-        // Update existing item quantity without moving position to reduce DOM changes
-        setCartItems(prevItems => 
-          prevItems.map((item, index) => 
-            index === existingItemIndex 
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          )
-        );
+      // Check if item already exists in cart
+      const existingItem = cartItems.find(item => item.ean === ean);
+      
+      if (existingItem) {
+        // Update existing item quantity
+        updateCartItem(ean, existingItem.quantity + quantity);
       } else {
         // Add new item - get product details using unified service
         const { UnifiedDatabaseService } = await import('./lib/database-service');
@@ -149,7 +151,7 @@ function Router() {
             title: product.title?.substring(0, 30)
           });
           
-          const newItem: CartItem = {
+          const newItem = {
             ean: product.ean,
             ref: product.ref,
             title: product.title,
@@ -164,8 +166,8 @@ function Router() {
           
           console.log(`✅ Cart item created with ref:`, newItem.ref);
           
-          // Add new item at the end to minimize DOM restructuring
-          setCartItems(prev => [...prev, newItem]);
+          // Add new item using context
+          addToCart(newItem);
         }
       }
     } catch (error) {
@@ -175,10 +177,12 @@ function Router() {
         description: "No se pudo añadir el producto al carrito",
         variant: "destructive",
       });
+    } finally {
+      setPending(false);
     }
   };
 
-  const updateCartItem = (ean: string, quantity: number) => {
+  const handleUpdateCartItem = (ean: string, quantity: number) => {
     if (quantity === 0) {
       removeFromCart(ean);
       return;
@@ -190,20 +194,16 @@ function Router() {
       return; // No change needed
     }
     
-    const updatedItems = cartItems.map(item =>
-      item.ean === ean ? { ...item, quantity } : item
-    );
-    setCartItems(updatedItems);
+    updateCartItem(ean, quantity);
   };
 
-  const removeFromCart = (ean: string) => {
-    const updatedItems = cartItems.filter(item => item.ean !== ean);
-    setCartItems(updatedItems);
+  const handleRemoveFromCart = (ean: string) => {
+    removeFromCart(ean);
     // Removed product removed toast message
   };
 
-  const clearCart = () => {
-    setCartItems([]);
+  const handleClearCart = () => {
+    clearCart();
   };
 
   // Removed automatic cart cleaning function for better checkout performance
@@ -224,15 +224,15 @@ function Router() {
         return;
       }
 
-      // Clear current cart
-      setCartItems([]);
+            // Clear current cart
+      clearCart();
 
       // Select exactly 30 random ACTIVE products
       const shuffled = [...activeProducts].sort(() => 0.5 - Math.random());
       const selectedProducts = shuffled.slice(0, Math.min(30, activeProducts.length));
 
       // Create cart items with random quantities (1-3)
-      const testCartItems: CartItem[] = selectedProducts.map(product => {
+      const testCartItems = selectedProducts.map(product => {
         const taxRate = Number(product.tax_rate) || 0.21;
         return {
           ean: product.ean,
@@ -249,7 +249,7 @@ function Router() {
       });
 
       console.log(`Test cart created with ${testCartItems.length} ACTIVE products (target: 30) - no invalid EANs possible`);
-      setCartItems(testCartItems);
+      setCart(testCartItems);
       
     } catch (error) {
       console.error('Error creating test cart:', error);
@@ -328,36 +328,38 @@ function Router() {
       cartOpen={cartOpen}
       setCartOpen={setCartOpen}
       cartItems={cartItems}
-      updateCartItem={updateCartItem}
-      removeFromCart={removeFromCart}
-      addToCart={addToCart}
-      clearCart={clearCart}
+      updateCartItem={handleUpdateCartItem}
+      removeFromCart={handleRemoveFromCart}
+      addToCart={handleAddToCart}
+      clearCart={handleClearCart}
       onCheckout={handleCheckout}
       onCreateTestCart={createTestCart}
+      isCartPending={isPending}
     >
       <Switch>
         <Route path="/" component={() => (
           <ProductCatalog 
-            cartItems={cartItems}
-            onAddToCart={addToCart} 
-            onUpdateCart={updateCartItem}
-            onRemoveFromCart={removeFromCart}
+            onAddToCart={handleAddToCart} 
+            onUpdateCart={handleUpdateCartItem}
+            onRemoveFromCart={handleRemoveFromCart}
+            getCartQuantity={(ean: string) => cartItems.find(item => item.ean === ean)?.quantity || 0}
           />
         )} />
         <Route path="/catalog" component={() => (
           <ProductCatalog 
-            cartItems={cartItems}
-            onAddToCart={addToCart} 
-            onUpdateCart={updateCartItem}
-            onRemoveFromCart={removeFromCart}
+            onAddToCart={handleAddToCart} 
+            onUpdateCart={handleUpdateCartItem}
+            onRemoveFromCart={handleRemoveFromCart}
+            getCartQuantity={(ean: string) => cartItems.find(item => item.ean === ean)?.quantity || 0}
           />
         )} />
         <Route path="/products/:ean" component={() => (
           <ProductDetail 
             cartItems={cartItems}
-            onAddToCart={addToCart} 
-            onUpdateCart={updateCartItem}
-            onRemoveFromCart={removeFromCart}
+            onAddToCart={handleAddToCart} 
+            onUpdateCart={handleUpdateCartItem}
+            onRemoveFromCart={handleRemoveFromCart}
+            isCartPending={isPending}
           />
         )} />
         <Route path="/purchase-orders" component={() => <PurchaseOrders user={user} />} />
@@ -377,8 +379,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <CartProvider>
+          <Toaster />
+          <Router />
+        </CartProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

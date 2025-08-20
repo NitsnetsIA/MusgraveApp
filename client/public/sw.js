@@ -60,7 +60,7 @@ async function handleImageRequest(request) {
     // Try cache first (Cache-First strategy)
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
-      console.log('📷 Serving image from cache:', request.url);
+      //console.log('📷 Serving image from cache:', request.url);
       return cachedResponse;
     }
 

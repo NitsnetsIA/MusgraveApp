@@ -12,20 +12,21 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { useDatabase } from "@/hooks/use-database";
 
+
 interface ProductCatalogProps {
-  cartItems: any[];
   onAddToCart: (ean: string, quantity: number) => void;
   onUpdateCart: (ean: string, quantity: number) => void;
   onRemoveFromCart: (ean: string) => void;
+  getCartQuantity: (ean: string) => number;
 }
 
 function ProductCatalog({
-  cartItems,
   onAddToCart,
   onUpdateCart,
   onRemoveFromCart,
+  getCartQuantity
 }: ProductCatalogProps) {
-  const { getProducts, getProductByEan } = useDatabase();
+  const { getProducts, getProductByEan, getTaxRate } = useDatabase();
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -77,42 +78,18 @@ function ProductCatalog({
   const endIndex = startIndex + PRODUCTS_PER_PAGE;
   const currentProducts = allProducts.slice(startIndex, endIndex);
 
-  // Memoize cart lookup to prevent unnecessary re-renders
-  const cartItemsMap = useMemo(() => {
-    const map = new Map();
-    cartItems.forEach((item) => map.set(item.ean, item.quantity));
-    return map;
-  }, [cartItems]);
+  // Memoize current products to prevent re-renders when cart changes
+  const memoizedCurrentProducts = useMemo(() => currentProducts, [currentProducts]);
 
-  // Memoize callback functions to prevent ProductCard re-renders while preserving scroll
-  const memoizedOnAddToCart = useCallback(
-    (ean: string, quantity: number) => {
-      // Preserve scroll position during cart operations
-      const currentScroll = window.scrollY;
-      onAddToCart(ean, quantity);
-      // Restore scroll position after operation
-      setTimeout(() => window.scrollTo(0, currentScroll), 10);
-    },
-    [onAddToCart],
-  );
+  // Memoize cart functions to prevent re-renders
+  const memoizedOnAddToCart = useCallback(onAddToCart, [onAddToCart]);
+  const memoizedOnUpdateCart = useCallback(onUpdateCart, [onUpdateCart]);
+  const memoizedOnRemoveFromCart = useCallback(onRemoveFromCart, [onRemoveFromCart]);
+  const memoizedGetCartQuantity = useCallback(getCartQuantity, [getCartQuantity]);
 
-  const memoizedOnUpdateCart = useCallback(
-    (ean: string, quantity: number) => {
-      const currentScroll = window.scrollY;
-      onUpdateCart(ean, quantity);
-      setTimeout(() => window.scrollTo(0, currentScroll), 10);
-    },
-    [onUpdateCart],
-  );
 
-  const memoizedOnRemoveFromCart = useCallback(
-    (ean: string) => {
-      const currentScroll = window.scrollY;
-      onRemoveFromCart(ean);
-      setTimeout(() => window.scrollTo(0, currentScroll), 10);
-    },
-    [onRemoveFromCart],
-  );
+
+
 
   // Pagination handlers with localStorage persistence
   const goToFirstPage = () => {
@@ -280,15 +257,15 @@ function ProductCatalog({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {currentProducts.map((product) => (
-            <ProductCard
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {memoizedCurrentProducts.map((product) => (
+            <MemoizedProductCard
               key={product.ean}
               product={product}
-              cartQuantity={cartItemsMap.get(product.ean) || 0}
               onAddToCart={memoizedOnAddToCart}
               onUpdateCart={memoizedOnUpdateCart}
               onRemoveFromCart={memoizedOnRemoveFromCart}
+              initialCartQuantity={memoizedGetCartQuantity(product.ean)}
             />
           ))}
         </div>
@@ -358,6 +335,14 @@ function ProductCatalog({
     </div>
   );
 }
+
+// Memoized ProductCard component that only re-renders when its specific cart quantity changes
+const MemoizedProductCard = memo(ProductCard, (prevProps, nextProps) => {
+  // Only re-render if the cart quantity for this specific product changes
+  return prevProps.cartQuantity === nextProps.cartQuantity &&
+         prevProps.isCartPending === nextProps.isCartPending &&
+         prevProps.product.ean === nextProps.product.ean;
+});
 
 // Export memoized component to prevent unnecessary re-renders when parent state changes
 export default memo(ProductCatalog);

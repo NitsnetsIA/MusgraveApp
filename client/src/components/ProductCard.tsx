@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,37 +11,29 @@ const calculateDisplayPrice = (basePrice: number, taxRate: number): number => {
 
 interface ProductCardProps {
   product: any;
-  cartQuantity?: number;
   onAddToCart: (ean: string, quantity: number) => void;
   onUpdateCart: (ean: string, quantity: number) => void;
   onRemoveFromCart: (ean: string) => void;
+  initialCartQuantity?: number;
 }
 
 function ProductCard({ 
   product, 
-  cartQuantity = 0, 
   onAddToCart, 
   onUpdateCart, 
-  onRemoveFromCart 
+  onRemoveFromCart, 
+  initialCartQuantity = 0 
 }: ProductCardProps) {
   const [, setLocation] = useLocation();
-  const [localQuantity, setLocalQuantity] = useState(() => cartQuantity || 1);
-  const [inputValue, setInputValue] = useState(() => (cartQuantity || 1).toString());
+  
+  // Use local state only - no subscription to cart context
+  const [localQuantity, setLocalQuantity] = useState(() => initialCartQuantity || 1);
+  const [inputValue, setInputValue] = useState(() => (initialCartQuantity || 1).toString());
   const inputRef = useRef<HTMLInputElement>(null);
-  const isInCart = cartQuantity > 0;
+  const isInCart = initialCartQuantity > 0;
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
-  const prevCartQuantityRef = useRef(cartQuantity);
 
-  // Only update local state if cart quantity actually changed (not on re-renders)
-  useEffect(() => {
-    if (cartQuantity !== prevCartQuantityRef.current) {
-      prevCartQuantityRef.current = cartQuantity;
-      if (isInCart) {
-        setLocalQuantity(cartQuantity);
-        setInputValue(cartQuantity.toString());
-      }
-    }
-  }, [cartQuantity, isInCart]);
+
 
   // Clean up timeout on unmount
   useEffect(() => {
@@ -52,7 +44,7 @@ function ProductCard({
     };
   }, []);
 
-  const handleQuantityChange = (newQuantity: number) => {
+  const handleQuantityChange = useCallback((newQuantity: number) => {
     const qty = Math.max(0, newQuantity);
     
     // Update local state immediately for responsive UI
@@ -70,9 +62,9 @@ function ProductCard({
     } else if (isInCart && qty === 0) {
       onRemoveFromCart(product.ean);
     }
-  };
+  }, [isInCart, onUpdateCart, onRemoveFromCart, product.ean]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
     
@@ -93,20 +85,20 @@ function ProductCard({
         }
       }, 300); // Shorter delay for typing
     }
-  };
+  }, [isInCart, onUpdateCart, onRemoveFromCart, product.ean]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     onAddToCart(product.ean, 1); // Always add 1 when clicking AÑADIR
-  };
+  }, [onAddToCart, product.ean]);
 
-  const handleRemove = () => {
+  const handleRemove = useCallback(() => {
     onRemoveFromCart(product.ean);
     setLocalQuantity(1);
-  };
+  }, [onRemoveFromCart, product.ean]);
 
-  const handleProductClick = () => {
+  const handleProductClick = useCallback(() => {
     setLocation(`/products/${product.ean}`);
-  };
+  }, [setLocation, product.ean]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-4 h-[360px] flex flex-col">
@@ -203,5 +195,17 @@ function ProductCard({
   );
 }
 
-// Export memoized component to prevent unnecessary re-renders when props haven't changed
-export default memo(ProductCard);
+// Custom comparison function for memo to prevent unnecessary re-renders
+const arePropsEqual = (prevProps: ProductCardProps, nextProps: ProductCardProps) => {
+  // Only re-render if these specific props change
+  return (
+    prevProps.product.ean === nextProps.product.ean &&
+    prevProps.product.title === nextProps.product.title &&
+    prevProps.product.base_price === nextProps.product.base_price &&
+    prevProps.product.image_url === nextProps.product.image_url &&
+    prevProps.initialCartQuantity === nextProps.initialCartQuantity
+  );
+};
+
+// Export memoized component with custom comparison to prevent unnecessary re-renders
+export default memo(ProductCard, arePropsEqual);

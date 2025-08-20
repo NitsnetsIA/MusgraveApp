@@ -20,6 +20,7 @@ interface LayoutProps {
   clearCart: () => void;
   onCheckout: () => void;
   onCreateTestCart?: () => void;
+  isCartPending?: boolean;
 }
 
 export default function Layout({
@@ -37,7 +38,8 @@ export default function Layout({
   addToCart,
   clearCart,
   onCheckout,
-  onCreateTestCart
+  onCreateTestCart,
+  isCartPending = false
 }: LayoutProps) {
   const { isOffline } = useDatabase();
 
@@ -56,6 +58,7 @@ export default function Layout({
         store={store}
         isOffline={isOffline}
         cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+        isCartPending={isCartPending}
         onMenuToggle={() => setSideMenuOpen(true)}
         onCartToggle={() => setCartOpen(true)}
       />
