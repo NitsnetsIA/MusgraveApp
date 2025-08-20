@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, memo } from 'react';
+import { useLocation } from 'wouter';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ function ProductCard({
   onUpdateCart, 
   onRemoveFromCart 
 }: ProductCardProps) {
+  const [, setLocation] = useLocation();
   const [localQuantity, setLocalQuantity] = useState(() => cartQuantity || 1);
   const [inputValue, setInputValue] = useState(() => (cartQuantity || 1).toString());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,10 +104,17 @@ function ProductCard({
     setLocalQuantity(1);
   };
 
+  const handleProductClick = () => {
+    setLocation(`/products/${product.ean}`);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-4 h-[360px] flex flex-col">
-      {/* Fixed height image section */}
-      <div className="w-full h-32 bg-gray-100 rounded mb-3 flex items-center justify-center flex-shrink-0">
+      {/* Fixed height image section - clickeable para ir a detalle */}
+      <div 
+        className="w-full h-32 bg-gray-100 rounded mb-3 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-gray-200 transition-colors"
+        onClick={handleProductClick}
+      >
         {product.image_url ? (
           <img 
             src={product.image_url} 
@@ -117,8 +126,8 @@ function ProductCard({
         )}
       </div>
       
-      {/* Fixed height title section - exactly 2 lines */}
-      <div className="h-10 mb-2 flex-shrink-0">
+      {/* Fixed height title section - exactly 2 lines - clickeable para ir a detalle */}
+      <div className="h-10 mb-2 flex-shrink-0 cursor-pointer hover:text-musgrave-600 transition-colors" onClick={handleProductClick}>
         <h3 className="font-medium text-sm leading-5 line-clamp-2 overflow-hidden text-ellipsis">
           {product.title}
         </h3>

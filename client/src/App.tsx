@@ -23,6 +23,7 @@ import OrderDetail from "@/pages/OrderDetail";
 import Account from "@/pages/Account";
 import OrderSuccess from "@/pages/OrderSuccess";
 import OrderConfirmation from "@/pages/OrderConfirmation";
+import ProductDetail from "@/pages/ProductDetail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -337,6 +338,22 @@ function Router() {
       <Switch>
         <Route path="/" component={() => (
           <ProductCatalog 
+            cartItems={cartItems}
+            onAddToCart={addToCart} 
+            onUpdateCart={updateCartItem}
+            onRemoveFromCart={removeFromCart}
+          />
+        )} />
+        <Route path="/catalog" component={() => (
+          <ProductCatalog 
+            cartItems={cartItems}
+            onAddToCart={addToCart} 
+            onUpdateCart={updateCartItem}
+            onRemoveFromCart={removeFromCart}
+          />
+        )} />
+        <Route path="/products/:ean" component={() => (
+          <ProductDetail 
             cartItems={cartItems}
             onAddToCart={addToCart} 
             onUpdateCart={updateCartItem}
