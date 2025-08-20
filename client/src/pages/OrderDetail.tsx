@@ -27,6 +27,8 @@ export default function OrderDetail() {
         modifications.push({
           ean: originalItem.item_ean,
           title: originalItem.item_title,
+          item_ref: originalItem.item_ref,
+          image_url: originalItem.image_url,
           type: 'removed',
           originalQuantity: originalItem.quantity,
           finalQuantity: 0,
@@ -38,6 +40,8 @@ export default function OrderDetail() {
         modifications.push({
           ean: originalItem.item_ean,
           title: originalItem.item_title,
+          item_ref: originalItem.item_ref,
+          image_url: originalItem.image_url,
           type: 'modified',
           originalQuantity: originalItem.quantity,
           finalQuantity: finalItem.quantity,
@@ -54,6 +58,8 @@ export default function OrderDetail() {
         modifications.push({
           ean: finalItem.item_ean,
           title: finalItem.item_title,
+          item_ref: finalItem.item_ref,
+          image_url: finalItem.image_url,
           type: 'added',
           originalQuantity: 0,
           finalQuantity: finalItem.quantity,
@@ -205,6 +211,7 @@ export default function OrderDetail() {
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-sm leading-tight line-clamp-2" style={{lineHeight: "1.2", minHeight: "2.4em"}}>{item.item_title}</div>
                           <div className="text-xs text-gray-500">EAN:{item.item_ean}</div>
+                          <div className="text-xs text-gray-500">REF:{item.item_ref || 'NO REF'}</div>
                         </div>
                       </div>
                     </td>
@@ -267,14 +274,29 @@ export default function OrderDetail() {
                   <tr key={index} className="border-b">
                     <td className="p-3">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0">
-                          <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                        <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                          {mod.image_url ? (
+                            <img 
+                              src={mod.image_url} 
+                              alt={mod.title || "Producto"}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling!.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500"
+                            style={{ display: mod.image_url ? 'none' : 'flex' }}
+                          >
                             IMG
                           </div>
                         </div>
                         <div>
                           <div className="font-medium">{mod.title}</div>
                           <div className="text-xs text-gray-500">EAN:{mod.ean}</div>
+                          <div className="text-xs text-gray-500">REF:{mod.item_ref || 'NO REF'}</div>
                         </div>
                       </div>
                     </td>
