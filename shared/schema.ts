@@ -40,6 +40,7 @@ export interface Product {
   unit_of_measure: string;
   quantity_measure: number;
   image_url?: string;
+  nutrition_label_url?: string;
   is_active: number; // 1 for true, 0 for false
   created_at?: string; // ISO string
   updated_at?: string; // ISO string
