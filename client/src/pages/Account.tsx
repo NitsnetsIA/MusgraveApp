@@ -79,7 +79,7 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
 
       console.log('Stats loaded:', {
         totalProducts: productCount,
-        productsWithImages,
+        totalImageCount,
         cachedImageCount,
         purchaseOrderCount,
         completedOrderCount

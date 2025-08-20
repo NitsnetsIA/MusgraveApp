@@ -493,7 +493,7 @@ async function syncPendingPurchaseOrders(): Promise<void> {
     console.log('🔍 Checking for pending purchase orders...');
     
     // Debug: First let's see all purchase orders
-    const allOrders = await DatabaseService.getPurchaseOrders();
+    const allOrders = await DatabaseService.getPurchaseOrdersForUser('');
     console.log(`🗂️ Total purchase orders in database: ${allOrders.length}`);
     
     if (allOrders.length > 0) {
