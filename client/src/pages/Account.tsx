@@ -157,6 +157,18 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
 
           </div>
         </div>
+        
+        {/* Developer Settings */}
+        <div className="mt-6">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setLocation('/developer-settings')}
+            className="w-full text-gray-600 border-gray-300 hover:bg-gray-50"
+          >
+            ⚙️ Configuración de Desarrollo
+          </Button>
+        </div>
       </div>
     </div>
   );
