@@ -150,7 +150,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     console.log('🔍 Full sync: downloading all products');
   }
   
-  // Simple query without pagination since GraphQL schema doesn't support it
+  // Simple query without nutrition_label_url until server supports it
   const query = `
     query Products {
       products {
@@ -164,7 +164,6 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
           unit_of_measure
           quantity_measure
           image_url
-          nutrition_label_url
           is_active
           created_at
           updated_at
@@ -187,23 +186,29 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   
   console.log(`📦 Received ${totalProducts} products from GraphQL`);
   
+  // Add nutrition_label_url field with null value for now since server doesn't support it yet
+  const productsWithNutritionField = allProducts.map((product: any) => ({
+    ...product,
+    nutrition_label_url: null // Will be populated when server supports this field
+  }));
+  
   if (onProgress) {
     onProgress(`📦 Sincronizando productos... ${totalProducts}`, 50);
   }
   
   // CRITICAL FIX: Only do bulk insert if we have products to insert
-  if (allProducts.length > 0) {
+  if (productsWithNutritionField.length > 0) {
     const isIncremental = !forceFullSync && timestampFilter !== '';
-    console.log(`🚀 ${isIncremental ? 'INCREMENTAL UPDATE' : 'OPTIMIZED BULK INSERT'}: ${isIncremental ? 'Updating' : 'Inserting'} ${allProducts.length} products...`);
+    console.log(`🚀 ${isIncremental ? 'INCREMENTAL UPDATE' : 'OPTIMIZED BULK INSERT'}: ${isIncremental ? 'Updating' : 'Inserting'} ${productsWithNutritionField.length} products...`);
     
     // DEBUG: Log first few products to check is_active and ref values
-    if (allProducts.length > 0) {
-      console.log(`DEBUG: About to ${isIncremental ? 'update' : 'insert'} product with is_active:`, allProducts[0].is_active, `(type: ${typeof allProducts[0].is_active})`);
-      console.log(`DEBUG: First product ref field:`, allProducts[0].ref, `(has ref: ${allProducts[0].hasOwnProperty('ref')})`);
-      console.log(`DEBUG: First 3 products refs:`, allProducts.slice(0, 3).map(p => ({ ean: p.ean, ref: p.ref })));
+    if (productsWithNutritionField.length > 0) {
+      console.log(`DEBUG: About to ${isIncremental ? 'update' : 'insert'} product with is_active:`, productsWithNutritionField[0].is_active, `(type: ${typeof productsWithNutritionField[0].is_active})`);
+      console.log(`DEBUG: First product ref field:`, productsWithNutritionField[0].ref, `(has ref: ${productsWithNutritionField[0].hasOwnProperty('ref')})`);
+      console.log(`DEBUG: First 3 products refs:`, productsWithNutritionField.slice(0, 3).map((p: any) => ({ ean: p.ean, ref: p.ref })));
     }
     
-    await DatabaseService.syncProducts(allProducts, isIncremental);
+    await DatabaseService.syncProducts(productsWithNutritionField, isIncremental);
   } else {
     console.log(`⏭️ No products to update, preserving existing products`);
   }
@@ -211,11 +216,11 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   // Update sync config
   await DatabaseService.updateSyncConfig('products', Date.now());
   
-  if (allProducts.length > 0) {
+  if (productsWithNutritionField.length > 0) {
     console.log(`✅ ${totalProducts} products synced to IndexedDB successfully`);
     
     // Always queue images for caching to resume incomplete downloads
-    await queueImageCaching(allProducts);
+    await queueImageCaching(productsWithNutritionField);
   }
 }
 
@@ -224,8 +229,8 @@ async function queueImageCaching(products: any[]) {
   console.log(`📷 Preparing ${products.length} product images for background caching...`);
   
   // Collect both main images and nutritional label images
-  const imageUrls = [];
-  products.forEach(product => {
+  const imageUrls: string[] = [];
+  products.forEach((product: any) => {
     if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim() !== '') {
       imageUrls.push(product.image_url);
     }
