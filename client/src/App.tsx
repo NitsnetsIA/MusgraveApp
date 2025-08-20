@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -24,7 +24,6 @@ import Account from "@/pages/Account";
 import OrderSuccess from "@/pages/OrderSuccess";
 import OrderConfirmation from "@/pages/OrderConfirmation";
 import ProductDetail from "@/pages/ProductDetail";
-import DeveloperSettings from "@/pages/DeveloperSettings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -366,7 +365,6 @@ function Router() {
         <Route path="/orders" component={() => <Orders user={user} />} />
         <Route path="/orders/:id" component={OrderDetail} />
         <Route path="/account" component={() => <Account user={user} store={store} />} />
-        <Route path="/developer-settings" component={() => <DeveloperSettings />} />
         <Route path="/order-success" component={() => <OrderSuccess orderId={lastOrderId} />} />
         <Route path="/order-confirmation/:orderId" component={OrderConfirmation} />
         <Route component={NotFound} />

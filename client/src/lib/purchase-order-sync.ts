@@ -1,25 +1,7 @@
 import { DatabaseService } from './indexeddb';
 import { PurchaseOrder, PurchaseOrderItem } from './indexeddb';
 
-// GraphQL endpoint configuration  
-const DEV_GRAPHQL_ENDPOINT = 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/';
-const PROD_GRAPHQL_ENDPOINT = 'https://pim-grocery-ia64.replit.app/graphql';
-
-function getGraphQLEndpoint(): string {
-  // Check for environment variable first (for deployment)
-  if (import.meta.env.VITE_GRAPHQL_ENDPOINT) {
-    return import.meta.env.VITE_GRAPHQL_ENDPOINT;
-  }
-  
-  // Check local storage for developer preference
-  const savedEndpoint = localStorage.getItem('graphql_endpoint_preference');
-  if (savedEndpoint === 'production') {
-    return PROD_GRAPHQL_ENDPOINT;
-  }
-  
-  // Default to development
-  return DEV_GRAPHQL_ENDPOINT;
-}
+const GRAPHQL_ENDPOINT = '/api/graphql';
 
 interface PurchaseOrderInput {
   purchase_order_id: string;
@@ -50,8 +32,8 @@ export async function sendPurchaseOrderToServer(
   try {
     console.log(`🚀 Sending purchase order ${purchaseOrder.purchase_order_id} to GraphQL server...`);
     
-    // Use global endpoint function
-    const EXTERNAL_ENDPOINT = getGraphQLEndpoint();
+    // Use environment variable for production or fallback to dev
+    const EXTERNAL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT || 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/';
     
     // Format the mutation exactly like the working CURL example
     const createOrderMutation = `

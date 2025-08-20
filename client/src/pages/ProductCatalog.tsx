@@ -146,8 +146,7 @@ function ProductCatalog({
       const request = indexedDB.open('MsgDatabase', 1);
       
       request.onsuccess = async function(event) {
-        const target = event.target as IDBRequest;
-        const db = target.result as IDBDatabase;
+        const db = event.target.result as IDBDatabase;
         
         try {
           const transaction = db.transaction(['products', 'sync_config'], 'readwrite');

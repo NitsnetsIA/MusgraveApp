@@ -64,18 +64,6 @@ export default function SyncScreen({ onSyncComplete, selectedEntities = ['taxes'
           </h2>
         </div>
         
-        {/* Developer Settings Link */}
-        <div className="text-center mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => setLocation('/developer-settings')}
-            className="text-xs text-gray-500 hover:text-gray-700"
-          >
-            ⚙️ Configuración de Desarrollo
-          </Button>
-        </div>
-        
         {/* Progress */}
         <div className="space-y-4">
           <Progress value={progress} className="w-full h-2" />

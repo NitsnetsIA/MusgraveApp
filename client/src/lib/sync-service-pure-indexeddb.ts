@@ -1,25 +1,7 @@
 import { DatabaseService } from './indexeddb';
 import { imageCacheService } from './image-cache-service';
 
-// GraphQL endpoint configuration
-const DEV_GRAPHQL_ENDPOINT = 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/';
-const PROD_GRAPHQL_ENDPOINT = 'https://pim-grocery-ia64.replit.app/graphql';
-
-function getGraphQLEndpoint(): string {
-  // Check for environment variable first (for deployment)
-  if (import.meta.env.VITE_GRAPHQL_ENDPOINT) {
-    return import.meta.env.VITE_GRAPHQL_ENDPOINT;
-  }
-  
-  // Check local storage for developer preference
-  const savedEndpoint = localStorage.getItem('graphql_endpoint_preference');
-  if (savedEndpoint === 'production') {
-    return PROD_GRAPHQL_ENDPOINT;
-  }
-  
-  // Default to development
-  return DEV_GRAPHQL_ENDPOINT;
-}
+const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT || 'https://dcf77d88-2e9d-4810-ad7c-bda46c3afaed-00-19tc7g93ztbc4.riker.replit.dev:3000/'; // Use env var for production or fallback to dev
 const STORE_ID = 'ES001';
 
 // Pure IndexedDB sync with incremental sync support
@@ -106,7 +88,7 @@ async function syncTaxesDirectly(forceFullSync: boolean = false): Promise<void> 
     }
   `;
   
-  const response = await fetch(getGraphQLEndpoint(), {
+  const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query })
@@ -201,7 +183,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
       }
     `;
     
-    const response = await fetch(getGraphQLEndpoint(), {
+    const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query })
@@ -370,7 +352,7 @@ async function syncDeliveryCentersDirectly(forceFullSync: boolean = false): Prom
     }
   `;
   
-  const response = await fetch(getGraphQLEndpoint(), {
+  const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query })
@@ -426,7 +408,7 @@ async function syncStoresDirectly(forceFullSync: boolean = false): Promise<void>
     }
   `;
   
-  const response = await fetch(getGraphQLEndpoint(), {
+  const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query })
@@ -483,7 +465,7 @@ async function syncUsersDirectly(forceFullSync: boolean = false): Promise<void> 
     }
   `;
   
-  const response = await fetch(getGraphQLEndpoint(), {
+  const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query })
