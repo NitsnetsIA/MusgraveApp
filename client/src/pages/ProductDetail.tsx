@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useRoute } from 'wouter';
-import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
+import { ChevronLeft, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDatabase } from '@/hooks/use-database';
@@ -27,7 +27,6 @@ export default function ProductDetail({
   const [isLoading, setIsLoading] = useState(true);
   const [localQuantity, setLocalQuantity] = useState(1);
   const [inputValue, setInputValue] = useState('1');
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -118,27 +117,6 @@ export default function ProductDetail({
     onAddToCart(product.ean, 1);
   };
 
-  // Create images array for carousel
-  const images = [];
-  if (product?.image_url) {
-    images.push({ url: product.image_url, label: 'Imagen principal' });
-  }
-  if (product?.nutrition_label_url) {
-    images.push({ url: product.nutrition_label_url, label: 'Etiqueta nutricional' });
-  }
-
-  const nextImage = () => {
-    if (images.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % images.length);
-    }
-  };
-
-  const prevImage = () => {
-    if (images.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="p-4">
@@ -188,77 +166,27 @@ export default function ProductDetail({
       {/* Product Detail */}
       <div className="p-4 max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          {/* Product Image Carousel */}
-          <div className="relative w-full h-64 bg-gray-100 overflow-hidden">
-            {images.length > 0 ? (
-              <>
-                <img 
-                  src={images[currentImageIndex].url} 
-                  alt={images[currentImageIndex].label}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.style.display = 'none';
-                    const nextElement = target.nextElementSibling as HTMLElement;
-                    if (nextElement) nextElement.style.display = 'flex';
-                  }}
-                />
-                
-                {/* Fallback for broken images */}
-                <div 
-                  className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 absolute inset-0"
-                  style={{ display: 'none' }}
-                >
-                  <span className="text-4xl">📦</span>
-                </div>
-
-                {/* Carousel controls - only show if multiple images */}
-                {images.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
-                      aria-label="Imagen anterior"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-opacity"
-                      aria-label="Siguiente imagen"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-
-                    {/* Image indicators */}
-                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                      {images.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentImageIndex(index)}
-                          className={`w-2 h-2 rounded-full transition-colors ${
-                            index === currentImageIndex 
-                              ? 'bg-white' 
-                              : 'bg-white bg-opacity-50'
-                          }`}
-                          aria-label={`Ir a imagen ${index + 1}`}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Image label */}
-                    <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                      {images[currentImageIndex].label}
-                    </div>
-                  </>
-                )}
-              </>
-            ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                <span className="text-4xl">📦</span>
-              </div>
-            )}
+          {/* Product Image */}
+          <div className="w-full h-64 bg-gray-100 flex items-center justify-center overflow-hidden">
+            {product.image_url ? (
+              <img 
+                src={product.image_url} 
+                alt={product.title}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
+                  const nextElement = target.nextElementSibling as HTMLElement;
+                  if (nextElement) nextElement.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500"
+              style={{ display: product.image_url ? 'none' : 'flex' }}
+            >
+              <span className="text-4xl">📦</span>
+            </div>
           </div>
 
           {/* Product Info */}

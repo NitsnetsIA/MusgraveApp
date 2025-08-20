@@ -26,14 +26,6 @@ The application simulates a B2B grocery ordering system where registered store u
 - Added cache versioning system to prevent stale SW issues
 - Service Worker now deploys with proper timestamp versioning (2025-01-20-1033)
 
-✅ **COMPLETED: Product Detail Page with Image Carousel (January 20, 2025)**
-- Created individual product detail page accessible by clicking product image/title
-- Added nutrition_label_url field to Product schema and GraphQL sync
-- Implemented image carousel with two images: main product image and nutritional label
-- Carousel features: navigation arrows, indicators, image labels, fallback handling
-- Product detail page maintains same cart functionality as catalog cards
-- Added price per unit display and product description section
-
 ## Recent Changes (January 2025)
 
 ✅ **COMPLETED: Auto-Resume Image Caching + Account Statistics (January 12, 2025)**

@@ -153,10 +153,10 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   let offset = 0;
   const limit = 1000;
   let totalProcessed = 0;
-  let totalProducts = 0;
-  let allProducts: any[] = [];
-
-  // Paginated query to get all products
+  let totalProducts = 0; // We'll get this from the first response
+  let serverLastUpdated = 0;
+  let allProducts: any[] = []; // Collect all products for bulk insert
+  
   while (true) {
     const query = `
       query {
@@ -192,46 +192,43 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
     
     const products = data.data.products.products;
-    totalProducts = data.data.products.total;
+    totalProducts = data.data.products.total; // Get total from response
     
-    console.log(`📦 Received ${products.length} products (offset: ${offset}, total: ${totalProducts})`);
+    console.log(`📦 Received ${products.length} products (offset: ${offset})`);
     
     if (products.length === 0) break;
     
+    // OPTIMIZED: Collect products for bulk insert instead of individual inserts
     allProducts.push(...products);
-    totalProcessed += products.length;
     
-    if (onProgress) {
-      const productProgress = Math.floor((totalProcessed / totalProducts) * 40);
+    totalProcessed += products.length;
+    console.log(`📦 Processed ${totalProcessed} products so far...`);
+    
+    // Update progress based on how many products we've processed
+    if (totalProducts > 0 && onProgress) {
+      const productProgress = Math.floor((totalProcessed / totalProducts) * 40); // Products take 40% of progress (30-70)
       onProgress(`📦 Sincronizando productos... ${totalProcessed}/${totalProducts}`, 30 + productProgress);
     }
     
     offset += limit;
     
+    // Continue until we've processed all products
     if (totalProcessed >= totalProducts) break;
   }
-
-  console.log(`📦 Total products collected: ${allProducts.length}`);
-  
-  // Add nutrition_label_url field with null value for now since server doesn't support it yet
-  const productsWithNutritionField = allProducts.map((product: any) => ({
-    ...product,
-    nutrition_label_url: null // Will be populated when server supports this field
-  }));
   
   // CRITICAL FIX: Only do bulk insert if we have products to insert
-  if (productsWithNutritionField.length > 0) {
+  if (allProducts.length > 0) {
     const isIncremental = !forceFullSync && timestampFilter !== '';
-    console.log(`🚀 ${isIncremental ? 'INCREMENTAL UPDATE' : 'OPTIMIZED BULK INSERT'}: ${isIncremental ? 'Updating' : 'Inserting'} ${productsWithNutritionField.length} products...`);
+    console.log(`🚀 ${isIncremental ? 'INCREMENTAL UPDATE' : 'OPTIMIZED BULK INSERT'}: ${isIncremental ? 'Updating' : 'Inserting'} ${allProducts.length} products...`);
     
     // DEBUG: Log first few products to check is_active and ref values
-    if (productsWithNutritionField.length > 0) {
-      console.log(`DEBUG: About to ${isIncremental ? 'update' : 'insert'} product with is_active:`, productsWithNutritionField[0].is_active, `(type: ${typeof productsWithNutritionField[0].is_active})`);
-      console.log(`DEBUG: First product ref field:`, productsWithNutritionField[0].ref, `(has ref: ${productsWithNutritionField[0].hasOwnProperty('ref')})`);
-      console.log(`DEBUG: First 3 products refs:`, productsWithNutritionField.slice(0, 3).map((p: any) => ({ ean: p.ean, ref: p.ref })));
+    if (allProducts.length > 0) {
+      console.log(`DEBUG: About to ${isIncremental ? 'update' : 'insert'} product with is_active:`, allProducts[0].is_active, `(type: ${typeof allProducts[0].is_active})`);
+      console.log(`DEBUG: First product ref field:`, allProducts[0].ref, `(has ref: ${allProducts[0].hasOwnProperty('ref')})`);
+      console.log(`DEBUG: First 3 products refs:`, allProducts.slice(0, 3).map(p => ({ ean: p.ean, ref: p.ref })));
     }
     
-    await DatabaseService.syncProducts(productsWithNutritionField, isIncremental);
+    await DatabaseService.syncProducts(allProducts, isIncremental);
   } else {
     console.log(`⏭️ No products to update, preserving existing products`);
   }
@@ -239,39 +236,29 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   // Update sync config
   await DatabaseService.updateSyncConfig('products', Date.now());
   
-  if (productsWithNutritionField.length > 0) {
-    console.log(`✅ ${allProducts.length} products synced to IndexedDB successfully`);
+  if (allProducts.length > 0) {
+    console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
     
     // Always queue images for caching to resume incomplete downloads
-    await queueImageCaching(productsWithNutritionField);
+    await queueImageCaching(allProducts);
   }
 }
 
 // Separate function to handle image caching logic
 async function queueImageCaching(products: any[]) {
   console.log(`📷 Preparing ${products.length} product images for background caching...`);
+  const imageUrls = products
+    .map(product => product.image_url)
+    .filter(url => url && typeof url === 'string' && url.trim() !== '')
+    .filter((url, index, array) => array.indexOf(url) === index); // Remove duplicates
   
-  // Collect both main images and nutritional label images
-  const imageUrls: string[] = [];
-  products.forEach((product: any) => {
-    if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim() !== '') {
-      imageUrls.push(product.image_url);
-    }
-    if (product.nutrition_label_url && typeof product.nutrition_label_url === 'string' && product.nutrition_label_url.trim() !== '') {
-      imageUrls.push(product.nutrition_label_url);
-    }
-  });
-  
-  // Remove duplicates
-  const uniqueImageUrls = imageUrls.filter((url, index, array) => array.indexOf(url) === index);
-  
-  if (uniqueImageUrls.length > 0) {
-    console.log(`🎯 Queuing ${uniqueImageUrls.length} unique images (including nutritional labels) for background download`);
+  if (imageUrls.length > 0) {
+    console.log(`🎯 Queuing ${imageUrls.length} unique images for background download`);
     
     // Add delay before starting image cache to let sync complete
     setTimeout(async () => {
-      await imageCacheService.queueImagesForCache(uniqueImageUrls);
-      console.log(`✅ Image caching queue initiated with ${uniqueImageUrls.length} images`);
+      await imageCacheService.queueImagesForCache(imageUrls);
+      console.log(`✅ Image caching queue initiated with ${imageUrls.length} images`);
     }, 1000);
   } else {
     console.log('⏭️ No valid image URLs found in products');
