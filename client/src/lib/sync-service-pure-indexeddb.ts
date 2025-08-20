@@ -150,71 +150,45 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     console.log('🔍 Full sync: downloading all products');
   }
   
-  let offset = 0;
-  const limit = 1000;
-  let totalProcessed = 0;
-  let totalProducts = 0; // We'll get this from the first response
-  let serverLastUpdated = 0;
-  let allProducts: any[] = []; // Collect all products for bulk insert
-  
-  while (true) {
-    const query = `
-      query {
-        products(limit: ${limit}, offset: ${offset}${timestampFilter}) {
-          products {
-            ean
-            ref
-            title
-            description
-            base_price
-            tax_code
-            unit_of_measure
-            quantity_measure
-            image_url
-            nutrition_label_url
-            is_active
-            created_at
-            updated_at
-          }
-          total
-          limit
-          offset
+  // Simple query without pagination since GraphQL schema doesn't support it
+  const query = `
+    query Products {
+      products {
+        products {
+          ean
+          ref
+          title
+          description
+          base_price
+          tax_code
+          unit_of_measure
+          quantity_measure
+          image_url
+          nutrition_label_url
+          is_active
+          created_at
+          updated_at
         }
       }
-    `;
-    
-    const response = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
-    });
-    
-    const data = await response.json();
-    if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
-    
-    const products = data.data.products.products;
-    totalProducts = data.data.products.total; // Get total from response
-    
-    console.log(`📦 Received ${products.length} products (offset: ${offset})`);
-    
-    if (products.length === 0) break;
-    
-    // OPTIMIZED: Collect products for bulk insert instead of individual inserts
-    allProducts.push(...products);
-    
-    totalProcessed += products.length;
-    console.log(`📦 Processed ${totalProcessed} products so far...`);
-    
-    // Update progress based on how many products we've processed
-    if (totalProducts > 0 && onProgress) {
-      const productProgress = Math.floor((totalProcessed / totalProducts) * 40); // Products take 40% of progress (30-70)
-      onProgress(`📦 Sincronizando productos... ${totalProcessed}/${totalProducts}`, 30 + productProgress);
     }
+  `;
     
-    offset += limit;
-    
-    // Continue until we've processed all products
-    if (totalProcessed >= totalProducts) break;
+  const response = await fetch(GRAPHQL_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query })
+  });
+  
+  const data = await response.json();
+  if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+  
+  const allProducts = data.data.products.products;
+  const totalProducts = allProducts.length;
+  
+  console.log(`📦 Received ${totalProducts} products from GraphQL`);
+  
+  if (onProgress) {
+    onProgress(`📦 Sincronizando productos... ${totalProducts}`, 50);
   }
   
   // CRITICAL FIX: Only do bulk insert if we have products to insert
@@ -238,7 +212,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   await DatabaseService.updateSyncConfig('products', Date.now());
   
   if (allProducts.length > 0) {
-    console.log(`✅ ${totalProcessed} products synced to IndexedDB with OPTIMIZED bulk insert`);
+    console.log(`✅ ${totalProducts} products synced to IndexedDB successfully`);
     
     // Always queue images for caching to resume incomplete downloads
     await queueImageCaching(allProducts);
@@ -248,18 +222,28 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
 // Separate function to handle image caching logic
 async function queueImageCaching(products: any[]) {
   console.log(`📷 Preparing ${products.length} product images for background caching...`);
-  const imageUrls = products
-    .map(product => product.image_url)
-    .filter(url => url && typeof url === 'string' && url.trim() !== '')
-    .filter((url, index, array) => array.indexOf(url) === index); // Remove duplicates
   
-  if (imageUrls.length > 0) {
-    console.log(`🎯 Queuing ${imageUrls.length} unique images for background download`);
+  // Collect both main images and nutritional label images
+  const imageUrls = [];
+  products.forEach(product => {
+    if (product.image_url && typeof product.image_url === 'string' && product.image_url.trim() !== '') {
+      imageUrls.push(product.image_url);
+    }
+    if (product.nutrition_label_url && typeof product.nutrition_label_url === 'string' && product.nutrition_label_url.trim() !== '') {
+      imageUrls.push(product.nutrition_label_url);
+    }
+  });
+  
+  // Remove duplicates
+  const uniqueImageUrls = imageUrls.filter((url, index, array) => array.indexOf(url) === index);
+  
+  if (uniqueImageUrls.length > 0) {
+    console.log(`🎯 Queuing ${uniqueImageUrls.length} unique images (including nutritional labels) for background download`);
     
     // Add delay before starting image cache to let sync complete
     setTimeout(async () => {
-      await imageCacheService.queueImagesForCache(imageUrls);
-      console.log(`✅ Image caching queue initiated with ${imageUrls.length} images`);
+      await imageCacheService.queueImagesForCache(uniqueImageUrls);
+      console.log(`✅ Image caching queue initiated with ${uniqueImageUrls.length} images`);
     }, 1000);
   } else {
     console.log('⏭️ No valid image URLs found in products');
