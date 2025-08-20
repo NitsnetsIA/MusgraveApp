@@ -150,51 +150,74 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
     console.log('🔍 Full sync: downloading all products');
   }
   
-  // Simple query without nutrition_label_url until server supports it
-  const query = `
-    query Products {
-      products {
-        products {
-          ean
-          ref
-          title
-          description
-          base_price
-          tax_code
-          unit_of_measure
-          quantity_measure
-          image_url
-          is_active
-          created_at
-          updated_at
+  let offset = 0;
+  const limit = 1000;
+  let totalProcessed = 0;
+  let totalProducts = 0;
+  let allProducts: any[] = [];
+
+  // Paginated query to get all products
+  while (true) {
+    const query = `
+      query {
+        products(limit: ${limit}, offset: ${offset}${timestampFilter}) {
+          products {
+            ean
+            ref
+            title
+            description
+            base_price
+            tax_code
+            unit_of_measure
+            quantity_measure
+            image_url
+            is_active
+            created_at
+            updated_at
+          }
+          total
+          limit
+          offset
         }
       }
-    }
-  `;
+    `;
     
-  const response = await fetch(GRAPHQL_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query })
-  });
-  
-  const data = await response.json();
-  if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
-  
-  const allProducts = data.data.products.products;
-  const totalProducts = allProducts.length;
-  
-  console.log(`📦 Received ${totalProducts} products from GraphQL`);
+    const response = await fetch(GRAPHQL_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    
+    const data = await response.json();
+    if (data.errors) throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+    
+    const products = data.data.products.products;
+    totalProducts = data.data.products.total;
+    
+    console.log(`📦 Received ${products.length} products (offset: ${offset}, total: ${totalProducts})`);
+    
+    if (products.length === 0) break;
+    
+    allProducts.push(...products);
+    totalProcessed += products.length;
+    
+    if (onProgress) {
+      const productProgress = Math.floor((totalProcessed / totalProducts) * 40);
+      onProgress(`📦 Sincronizando productos... ${totalProcessed}/${totalProducts}`, 30 + productProgress);
+    }
+    
+    offset += limit;
+    
+    if (totalProcessed >= totalProducts) break;
+  }
+
+  console.log(`📦 Total products collected: ${allProducts.length}`);
   
   // Add nutrition_label_url field with null value for now since server doesn't support it yet
   const productsWithNutritionField = allProducts.map((product: any) => ({
     ...product,
     nutrition_label_url: null // Will be populated when server supports this field
   }));
-  
-  if (onProgress) {
-    onProgress(`📦 Sincronizando productos... ${totalProducts}`, 50);
-  }
   
   // CRITICAL FIX: Only do bulk insert if we have products to insert
   if (productsWithNutritionField.length > 0) {
@@ -217,7 +240,7 @@ async function syncProductsDirectly(onProgress?: (message: string, progress: num
   await DatabaseService.updateSyncConfig('products', Date.now());
   
   if (productsWithNutritionField.length > 0) {
-    console.log(`✅ ${totalProducts} products synced to IndexedDB successfully`);
+    console.log(`✅ ${allProducts.length} products synced to IndexedDB successfully`);
     
     // Always queue images for caching to resume incomplete downloads
     await queueImageCaching(productsWithNutritionField);
