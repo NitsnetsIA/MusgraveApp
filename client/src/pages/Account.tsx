@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronLeft, User, Database, Download } from 'lucide-react';
+import { ChevronLeft, User, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatabaseService } from '@/lib/database-service';
-import { imageCacheService } from '@/lib/image-cache-service';
+
 
 interface AccountProps {
   user?: any;
@@ -15,15 +15,11 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
   const [, setLocation] = useLocation();
   const [stats, setStats] = useState<{
     productCount: number;
-    totalImageCount: number;
-    cachedImageCount: number;
     purchaseOrderCount: number;
     completedOrderCount: number;
     loading: boolean;
   }>({
     productCount: 0,
-    totalImageCount: 0,
-    cachedImageCount: 0,
     purchaseOrderCount: 0,
     completedOrderCount: 0,
     loading: true
@@ -31,50 +27,15 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
 
   useEffect(() => {
     loadStats();
-    
-    // Update only image stats in real-time when image cache progress changes
-    const handleProgress = async () => {
-      try {
-        console.log('Account: Image progress update detected');
-        const cachedImageCount = await imageCacheService.getCachedImageCount();
-        console.log('Account: Updated cached image count:', cachedImageCount);
-        setStats(prev => ({ ...prev, cachedImageCount }));
-      } catch (error) {
-        console.error('Error updating image count:', error);
-      }
-    };
-    
-    const handleProgressEvent = (progress: any) => {
-      console.log('Account: Progress event received:', progress);
-      handleProgress();
-    };
-    
-    imageCacheService.addProgressListener(handleProgressEvent);
-    
-    return () => {
-      imageCacheService.removeProgressListener(handleProgressEvent);
-    };
   }, []);
 
   const loadStats = async () => {
     try {
       setStats(prev => ({ ...prev, loading: true }));
 
-      // Get product count - use getProducts without searchTerm to get all active products
+      // Get product count - use getProducts without searchTerm to get all products
       const products = await DatabaseService.getProducts();
       const productCount = products.length;
-      
-      // Count total images for active products (product images + nutrition labels)
-      let totalImageCount = 0;
-      products.forEach(p => {
-        if (p.is_active) {
-          if (p.image_url && p.image_url.trim() !== '') totalImageCount++;
-          if (p.nutrition_label_url && p.nutrition_label_url.trim() !== '') totalImageCount++;
-        }
-      });
-
-      // Get cached image count
-      const cachedImageCount = await imageCacheService.getCachedImageCount();
 
       // Get purchase order count - pass empty string to get all
       const purchaseOrders = await DatabaseService.getPurchaseOrdersForUser('');
@@ -85,17 +46,13 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
       const completedOrderCount = orders.length;
 
       console.log('Stats loaded:', {
-        totalProducts: productCount,
-        totalImageCount,
-        cachedImageCount,
+        productCount,
         purchaseOrderCount,
         completedOrderCount
       });
 
       setStats({
-        productCount, // Total number of products
-        totalImageCount, // Total images for progress calculation
-        cachedImageCount,
+        productCount,
         purchaseOrderCount,
         completedOrderCount,
         loading: false
@@ -184,12 +141,7 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
                 {stats.loading ? '...' : stats.productCount}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Imágenes (prod. + nutric.):</span>
-              <span className="font-medium">
-                {stats.loading ? '...' : `${stats.cachedImageCount}/${stats.totalImageCount}`}
-              </span>
-            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Órdenes de compra:</span>
               <span className="font-medium">
@@ -202,36 +154,7 @@ export default function Account({ user, store, deliveryCenter }: AccountProps) {
                 {stats.loading ? '...' : stats.completedOrderCount}
               </span>
             </div>
-            {!stats.loading && stats.totalImageCount > 0 && (
-              <div className="mt-3 pt-3 border-t">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Progreso de imágenes:</span>
-                  <span className="text-gray-500">
-                    {Math.round((stats.cachedImageCount / stats.totalImageCount) * 100)}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                  <div 
-                    className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${Math.round((stats.cachedImageCount / stats.totalImageCount) * 100)}%` }}
-                  ></div>
-                </div>
-                {stats.cachedImageCount < stats.totalImageCount && (
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="mt-2 w-full text-xs"
-                    onClick={async () => {
-                      const { resumeImageCaching } = await import('@/lib/sync-service-pure-indexeddb');
-                      resumeImageCaching();
-                    }}
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Reanudar descarga
-                  </Button>
-                )}
-              </div>
-            )}
+
           </div>
         </div>
       </div>
