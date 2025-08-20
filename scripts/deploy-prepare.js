@@ -55,14 +55,8 @@ async function prepareForDeployment() {
     await fs.writeFile(path.join(targetDir, '_redirects'), redirectsContent);
     console.log('Created _redirects file for SPA routing');
     
-    // Create .env.production file with production GraphQL endpoint
-    const envContent = 'VITE_GRAPHQL_ENDPOINT=https://pim-grocery-ia64.replit.app/graphql\n';
-    await fs.writeFile(path.join(targetDir, '.env.production'), envContent);
-    console.log('Created .env.production with production GraphQL endpoint');
-    
     console.log('✅ Deployment preparation complete!');
     console.log('Files are now ready for static deployment from the dist/ directory');
-    console.log('Production GraphQL endpoint: https://pim-grocery-ia64.replit.app/graphql');
     
   } catch (error) {
     console.error('❌ Error preparing deployment:', error.message);
