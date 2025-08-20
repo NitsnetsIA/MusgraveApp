@@ -4,7 +4,7 @@ import { ChevronLeft, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDatabase } from '@/hooks/use-database';
-import { formatSpanishCurrency } from '@/lib/utils/currency';
+import { formatSpanishCurrency, formatPricePerUnit } from '@/lib/utils/currency';
 
 interface ProductDetailProps {
   onAddToCart: (ean: string, quantity: number) => void;
@@ -139,16 +139,8 @@ export default function ProductDetail({
     );
   }
 
-  // Debug: Log product data to see what we're getting
-  console.log('Product data in detail page:', product);
-  console.log('base_price:', product.base_price, 'type:', typeof product.base_price);
-  console.log('tax_rate:', product.tax_rate, 'type:', typeof product.tax_rate);
-  
-  const basePrice = Number(product.base_price) || 0;
-  const taxRate = Number(product.tax_rate) || 0.21; // Default to 21% if no tax rate
-  const finalPrice = basePrice * (1 + taxRate);
-  
-  console.log('Calculated values - basePrice:', basePrice, 'taxRate:', taxRate, 'finalPrice:', finalPrice);
+  // Use the same price calculation as ProductCard
+  const finalPrice = Number(product.base_price) || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -203,11 +195,20 @@ export default function ProductDetail({
                 {product.title}
               </h1>
               <div className="flex items-center justify-between mb-3">
-                <div className="text-2xl font-bold text-musgrave-600">
-                  {formatSpanishCurrency(finalPrice)}
+                <div className="flex flex-col">
+                  <div className="text-2xl font-bold text-musgrave-600">
+                    {formatSpanishCurrency(finalPrice)}
+                  </div>
+                  {/* Price per unit like in ProductCard */}
+                  <div className="text-sm text-gray-500">
+                    {product.quantity_measure && product.unit_of_measure 
+                      ? formatPricePerUnit(product.base_price, product.quantity_measure, product.unit_of_measure)
+                      : ''
+                    }
+                  </div>
                 </div>
                 <div className="text-sm text-gray-500">
-                  IVA {(taxRate * 100).toFixed(0)}% incl.
+                  IVA {(Number(product.tax_rate) * 100).toFixed(0)}% incl.
                 </div>
               </div>
             </div>
